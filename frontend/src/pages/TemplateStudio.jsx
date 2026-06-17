@@ -236,6 +236,7 @@ export default function TemplateStudio() {
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [libraryTemplates, setLibraryTemplates] = useState([]);
   const [selectedLibraryIds, setSelectedLibraryIds] = useState([]);
+  const [selectedLibraryShopId, setSelectedLibraryShopId] = useState(null);
   const [libraryLoading, setLibraryLoading] = useState(false);
   
   // Static templates tab state
@@ -436,6 +437,14 @@ export default function TemplateStudio() {
     try {
       const res = await axios.get(`${API_BASE}/templates/other-shops`);
       setLibraryTemplates(res.data);
+      if (res.data.length > 0) {
+        const uniqueShopIds = Array.from(new Set(res.data.map(t => t.shop_id)));
+        if (uniqueShopIds.length > 0) {
+          setSelectedLibraryShopId(uniqueShopIds[0]);
+        }
+      } else {
+        setSelectedLibraryShopId(null);
+      }
     } catch (err) {
       console.error('Kütüphane şablonları yüklenemedi:', err);
     } finally {
@@ -460,6 +469,7 @@ export default function TemplateStudio() {
   useEffect(() => {
     if (showLibraryModal) {
       setSelectedLibraryIds([]);
+      setSelectedLibraryShopId(null);
       fetchLibraryTemplates();
     }
   }, [showLibraryModal]);
@@ -1116,7 +1126,8 @@ export default function TemplateStudio() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 animate-fade-in">
+    <>
+      <div className="max-w-6xl mx-auto py-8 px-4 animate-fade-in">
       {view === 'list' ? (
         <>
           <div className="flex items-center justify-between mb-6">
@@ -1631,6 +1642,7 @@ export default function TemplateStudio() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Library Modal */}
       {showLibraryModal && (
@@ -1670,112 +1682,147 @@ export default function TemplateStudio() {
                     Diğer mağazalarınızda şablon oluşturduğunuzda burada listelenecektir.
                   </p>
                 </div>
-              ) : (
-                <>
-                  {/* Selection Action Bar */}
-                  <div className="flex items-center justify-between pb-4 border-b border-[#1e293b] mb-6">
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => {
-                          if (selectedLibraryIds.length === libraryTemplates.length) {
-                            setSelectedLibraryIds([]);
-                          } else {
-                            setSelectedLibraryIds(libraryTemplates.map(t => t.id));
-                          }
-                        }}
-                        className="text-xs bg-[#1e293b] hover:bg-[#2e3b4e] text-slate-300 px-3 py-1.5 rounded-lg border border-[#334155] transition-colors font-medium"
-                      >
-                        {selectedLibraryIds.length === libraryTemplates.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
-                      </button>
-                      {selectedLibraryIds.length > 0 && (
-                        <span className="text-xs text-amber-500 font-semibold animate-pulse">
-                          {selectedLibraryIds.length} şablon seçildi
-                        </span>
-                      )}
-                    </div>
-                    {selectedLibraryIds.length > 0 && (
-                      <button
-                        onClick={() => handleCopyTemplates(selectedLibraryIds)}
-                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transform hover:scale-[1.02]"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Seçilenleri Dükkanıma Ekle ({selectedLibraryIds.length})</span>
-                      </button>
-                    )}
-                  </div>
+              ) : (() => {
+                const uniqueShops = Array.from(new Set(libraryTemplates.map(t => t.shop_id)))
+                  .map(id => {
+                    const match = libraryTemplates.find(t => t.shop_id === id);
+                    return {
+                      shop_id: id,
+                      shop_name: match ? match.shop_name : 'Bilinmeyen Mağaza'
+                    };
+                  });
+                const filteredTemplates = libraryTemplates.filter(t => t.shop_id === selectedLibraryShopId);
+                const isAllSelected = filteredTemplates.length > 0 && selectedLibraryIds.length === filteredTemplates.length;
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {libraryTemplates.map(tpl => {
-                      const isSelected = selectedLibraryIds.includes(tpl.id);
-                      return (
-                        <div 
-                          key={tpl.id} 
+                return (
+                  <>
+                    {/* Shop Tabs Selector */}
+                    {uniqueShops.length > 0 && (
+                      <div className="flex items-center space-x-2 pb-4 border-b border-[#1e293b] mb-6 overflow-x-auto">
+                        {uniqueShops.map(shop => (
+                          <button
+                            key={shop.shop_id}
+                            onClick={() => {
+                              setSelectedLibraryShopId(shop.shop_id);
+                              setSelectedLibraryIds([]); // Clear selection when switching shops
+                            }}
+                            className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap ${
+                              selectedLibraryShopId === shop.shop_id
+                                ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-lg shadow-amber-500/10'
+                                : 'bg-[#151f32]/40 text-slate-400 border-[#1e293b] hover:text-white hover:border-slate-700'
+                            }`}
+                          >
+                            {shop.shop_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Selection Action Bar */}
+                    <div className="flex items-center justify-between pb-4 border-b border-[#1e293b] mb-6">
+                      <div className="flex items-center space-x-3">
+                        <button
                           onClick={() => {
-                            if (isSelected) {
-                              setSelectedLibraryIds(selectedLibraryIds.filter(id => id !== tpl.id));
+                            if (isAllSelected) {
+                              setSelectedLibraryIds([]);
                             } else {
-                              setSelectedLibraryIds([...selectedLibraryIds, tpl.id]);
+                              setSelectedLibraryIds(filteredTemplates.map(t => t.id));
                             }
                           }}
-                          className={`group relative rounded-2xl overflow-hidden p-4 flex space-x-4 cursor-pointer transition-all border ${
-                            isSelected 
-                              ? 'border-amber-500 bg-amber-500/5' 
-                              : 'bg-[#151f32]/60 border-[#1e293b] hover:border-slate-700'
-                          }`}
+                          className="text-xs bg-[#1e293b] hover:bg-[#2e3b4e] text-slate-300 px-3 py-1.5 rounded-lg border border-[#334155] transition-colors font-medium"
                         >
-                          <div className="w-24 h-24 bg-slate-950 rounded-xl overflow-hidden flex-shrink-0 relative border border-[#1e293b]">
-                            <img 
-                              src={`http://localhost:3001/${tpl.background_path}`} 
-                              alt={tpl.name}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            {/* Checkbox overlay indicator */}
-                            <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                          {isAllSelected ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                        </button>
+                        {selectedLibraryIds.length > 0 && (
+                          <span className="text-xs text-amber-500 font-semibold animate-pulse">
+                            {selectedLibraryIds.length} şablon seçildi
+                          </span>
+                        )}
+                      </div>
+                      {selectedLibraryIds.length > 0 && (
+                        <button
+                          onClick={() => handleCopyTemplates(selectedLibraryIds)}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transform hover:scale-[1.02]"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Seçilenleri Dükkanıma Ekle ({selectedLibraryIds.length})</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredTemplates.map(tpl => {
+                        const isSelected = selectedLibraryIds.includes(tpl.id);
+                        return (
+                          <div 
+                            key={tpl.id} 
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedLibraryIds(selectedLibraryIds.filter(id => id !== tpl.id));
+                              } else {
+                                setSelectedLibraryIds([...selectedLibraryIds, tpl.id]);
+                              }
+                            }}
+                            className={`group relative rounded-2xl overflow-hidden p-4 flex space-x-4 cursor-pointer transition-all border ${
                               isSelected 
-                                ? 'bg-amber-500 border-amber-500 text-slate-950' 
-                                : 'bg-black/40 border-slate-500 text-transparent'
-                            }`}>
-                              <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="3">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="flex-1 flex flex-col justify-between min-w-0">
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <h4 className="font-bold text-white text-sm truncate pr-2">{tpl.name}</h4>
-                                <span className="text-[9px] bg-slate-800 text-slate-400 border border-[#1e293b] px-2 py-0.5 rounded-full flex-shrink-0">
-                                  {tpl.shop_name}
-                                </span>
+                                ? 'border-amber-500 bg-amber-500/5' 
+                                : 'bg-[#151f32]/60 border-[#1e293b] hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="w-24 h-24 bg-slate-950 rounded-xl overflow-hidden flex-shrink-0 relative border border-[#1e293b]">
+                              <img 
+                                src={`http://localhost:3001/${tpl.background_path}`} 
+                                alt={tpl.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              {/* Checkbox overlay indicator */}
+                              <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                isSelected 
+                                  ? 'bg-amber-500 border-amber-500 text-slate-950' 
+                                  : 'bg-black/40 border-slate-500 text-transparent'
+                              }`}>
+                                <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="3">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
                               </div>
-                              <p className="text-[10px] text-slate-400">Tip: {tpl.type === 'flat' ? 'Düz' : 'Perspektif'}</p>
-                              <p className="text-[10px] text-slate-500 truncate">
-                                Uyumlu Oranlar: {tpl.config.compatible_ratios ? tpl.config.compatible_ratios.join(', ') : ''}
-                              </p>
                             </div>
-                            <div className="flex justify-end pt-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyTemplates([tpl.id]);
-                                }}
-                                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>Dükkanıma Ekle</span>
-                              </button>
+                            <div className="flex-1 flex flex-col justify-between min-w-0">
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <h4 className="font-bold text-white text-sm truncate pr-2">{tpl.name}</h4>
+                                  <span className="text-[9px] bg-slate-800 text-slate-400 border border-[#1e293b] px-2 py-0.5 rounded-full flex-shrink-0">
+                                    {tpl.shop_name}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400">Tip: {tpl.type === 'flat' ? 'Düz' : 'Perspektif'}</p>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  Uyumlu Oranlar: {tpl.config.compatible_ratios ? tpl.config.compatible_ratios.join(', ') : ''}
+                                </p>
+                              </div>
+                              <div className="flex justify-end pt-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyTemplates([tpl.id]);
+                                  }}
+                                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Dükkanıma Ekle</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
