@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import db, { getActiveShop } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,7 +12,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Configure multer for template backgrounds
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, join(__dirname, '../..', 'storage/templates'));
+    const activeShop = getActiveShop();
+    const shopName = getShopStorageName(activeShop.shop_id);
+    const destDir = join(__dirname, '../..', 'storage', shopName, 'templates');
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    cb(null, destDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -46,7 +52,8 @@ router.post('/', upload.single('background'), (req, res, next) => {
     const { name, type, config } = req.body;
     const id = uuidv4();
     const activeShop = getActiveShop();
-    const background_path = req.file ? `storage/templates/${req.file.filename}` : '';
+    const shopName = getShopStorageName(activeShop.shop_id);
+    const background_path = req.file ? `storage/${shopName}/templates/${req.file.filename}` : '';
     
     const stmt = db.prepare(
       'INSERT INTO templates (id, shop_id, name, type, config, background_path) VALUES (?, ?, ?, ?, ?, ?)'
@@ -101,47 +108,68 @@ router.get('/other-shops', (req, res, next) => {
   }
 });
 
-// Copy template from another shop to the active shop
+// Copy template(s) from another shop to the active shop
 router.post('/copy', (req, res, next) => {
   try {
-    const { templateId } = req.body;
-    if (!templateId) {
-      return res.status(400).json({ error: 'templateId is required' });
+    const { templateId, templateIds } = req.body;
+    const idsToCopy = [];
+    if (templateId) idsToCopy.push(templateId);
+    if (templateIds && Array.isArray(templateIds)) {
+      idsToCopy.push(...templateIds);
     }
+    
+    if (idsToCopy.length === 0) {
+      return res.status(400).json({ error: 'templateId or templateIds array is required' });
+    }
+    
     const activeShop = getActiveShop();
-    
     const getStmt = db.prepare('SELECT * FROM templates WHERE id = ?');
-    const sourceTemplate = getStmt.get(templateId);
-    if (!sourceTemplate) {
-      return res.status(404).json({ error: 'Source template not found' });
-    }
-    
-    let newBackgroundPath = '';
-    if (sourceTemplate.background_path) {
-      const srcFullPath = join(__dirname, '../..', sourceTemplate.background_path);
-      if (fs.existsSync(srcFullPath)) {
-        const ext = sourceTemplate.background_path.split('.').pop();
-        const newFilename = `template-copy-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
-        newBackgroundPath = `storage/templates/${newFilename}`;
-        const destFullPath = join(__dirname, '../..', newBackgroundPath);
-        fs.copyFileSync(srcFullPath, destFullPath);
-      }
-    }
-    
-    const newId = uuidv4();
     const insertStmt = db.prepare(
       'INSERT INTO templates (id, shop_id, name, type, config, background_path) VALUES (?, ?, ?, ?, ?, ?)'
     );
-    insertStmt.run(newId, activeShop.shop_id, `${sourceTemplate.name} (Kopya)`, sourceTemplate.type, sourceTemplate.config, newBackgroundPath);
     
-    res.json({
-      id: newId,
-      shop_id: activeShop.shop_id,
-      name: `${sourceTemplate.name} (Kopya)`,
-      type: sourceTemplate.type,
-      config: JSON.parse(sourceTemplate.config),
-      background_path: newBackgroundPath
-    });
+    const copied = [];
+    
+    db.exec('BEGIN');
+    try {
+      for (const idToCopy of idsToCopy) {
+        const sourceTemplate = getStmt.get(idToCopy);
+        if (!sourceTemplate) continue;
+        
+        let newBackgroundPath = '';
+        if (sourceTemplate.background_path) {
+          const srcFullPath = join(__dirname, '../..', sourceTemplate.background_path);
+          if (fs.existsSync(srcFullPath)) {
+            const activeShopName = getShopStorageName(activeShop.shop_id);
+            const ext = sourceTemplate.background_path.split('.').pop();
+            const newFilename = `template-copy-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+            newBackgroundPath = `storage/${activeShopName}/templates/${newFilename}`;
+            const destFullPath = join(__dirname, '../..', newBackgroundPath);
+            
+            // Ensure destination directory exists
+            const destDir = join(__dirname, '../..', 'storage', activeShopName, 'templates');
+            if (!fs.existsSync(destDir)) {
+              fs.mkdirSync(destDir, { recursive: true });
+            }
+            
+            fs.copyFileSync(srcFullPath, destFullPath);
+          }
+        }
+        
+        const newId = uuidv4();
+        insertStmt.run(newId, activeShop.shop_id, `${sourceTemplate.name} (Kopya)`, sourceTemplate.type, sourceTemplate.config, newBackgroundPath);
+        copied.push({
+          id: newId,
+          name: `${sourceTemplate.name} (Kopya)`
+        });
+      }
+      db.exec('COMMIT');
+    } catch (txErr) {
+      db.exec('ROLLBACK');
+      throw txErr;
+    }
+    
+    res.json({ success: true, copied });
   } catch (err) {
     next(err);
   }

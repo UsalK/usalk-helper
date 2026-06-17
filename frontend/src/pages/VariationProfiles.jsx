@@ -4,6 +4,7 @@ import {
   ArrowLeft, Plus, Trash2, Save, Grid, CheckCircle, 
   HelpCircle, Sparkles, AlertTriangle, Layers 
 } from 'lucide-react';
+import RECOMMENDED_DATA from './recommended_data.json';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -74,6 +75,53 @@ export default function VariationProfiles() {
     }
     setPriceMap(map);
     setView('editor');
+  };
+
+  const loadRecommendedSizesAndFrames = () => {
+    const ratio = selectedProfile.ratio;
+    const config = RECOMMENDED_DATA[ratio];
+    if (config) {
+      setSizes(config.sizes);
+      setFrames(config.frames);
+    }
+  };
+
+  const isRecommendedConfig = () => {
+    if (!selectedProfile) return false;
+    const ratio = selectedProfile.ratio;
+    const config = RECOMMENDED_DATA[ratio];
+    if (!config) return false;
+    
+    const sizeSet = new Set(sizes);
+    const frameSet = new Set(frames);
+    const recSizeSet = new Set(config.sizes);
+    const recFrameSet = new Set(config.frames);
+    
+    if (sizeSet.size !== recSizeSet.size || frameSet.size !== recFrameSet.size) return false;
+    for (let s of sizeSet) {
+      if (!recSizeSet.has(s)) return false;
+    }
+    for (let f of frameSet) {
+      if (!recFrameSet.has(f)) return false;
+    }
+    return true;
+  };
+
+  const loadRecommendedPrices = () => {
+    const ratio = selectedProfile.ratio;
+    const config = RECOMMENDED_DATA[ratio];
+    if (config && config.prices) {
+      const newMap = { ...priceMap };
+      sizes.forEach(s => {
+        frames.forEach(f => {
+          const key = `${s}_${f}`;
+          if (config.prices[key] !== undefined) {
+            newMap[key] = config.prices[key];
+          }
+        });
+      });
+      setPriceMap(newMap);
+    }
   };
 
   // Size additions and deletions
@@ -424,33 +472,46 @@ export default function VariationProfiles() {
                       <p className="text-xs text-slate-500 mt-0.5">Boyut ve çerçeve kesişim fiyatlarını girin.</p>
                     </div>
 
-                    {/* Bulk Matrix Fills */}
-                    <div className="flex items-center space-x-2 bg-[#151f32] border border-[#1e293b] rounded-xl p-2.5">
-                      <div className="w-24">
-                        <label className="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Taban Fiyat</label>
-                        <input
-                          type="number"
-                          value={bulkBasePrice}
-                          onChange={(e) => setBulkBasePrice(e.target.value)}
-                          className="w-full bg-[#0e1726] border border-[#1e293b] rounded px-1.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                        />
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isRecommendedConfig() && (
+                        <button
+                          type="button"
+                          onClick={loadRecommendedPrices}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold px-4.5 py-3 rounded-xl shadow-lg shadow-emerald-500/10 flex items-center space-x-1.5 transition-all transform hover:scale-[1.02]"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>Önerilen Fiyatları Ekle</span>
+                        </button>
+                      )}
+
+                      {/* Bulk Matrix Fills */}
+                      <div className="flex items-center space-x-2 bg-[#151f32] border border-[#1e293b] rounded-xl p-2.5">
+                        <div className="w-24">
+                          <label className="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Taban Fiyat</label>
+                          <input
+                            type="number"
+                            value={bulkBasePrice}
+                            onChange={(e) => setBulkBasePrice(e.target.value)}
+                            className="w-full bg-[#0e1726] border border-[#1e293b] rounded px-1.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Çerçeve Farkı</label>
+                          <input
+                            type="number"
+                            value={bulkFrameAddon}
+                            onChange={(e) => setBulkFrameAddon(e.target.value)}
+                            className="w-full bg-[#0e1726] border border-[#1e293b] rounded px-1.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={applyBulkPricing}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3 py-2 rounded-lg self-end"
+                        >
+                          Matrisi Doldur
+                        </button>
                       </div>
-                      <div className="w-24">
-                        <label className="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Çerçeve Farkı</label>
-                        <input
-                          type="number"
-                          value={bulkFrameAddon}
-                          onChange={(e) => setBulkFrameAddon(e.target.value)}
-                          className="w-full bg-[#0e1726] border border-[#1e293b] rounded px-1.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={applyBulkPricing}
-                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3 py-2 rounded-lg self-end"
-                      >
-                        Matrisi Doldur
-                      </button>
                     </div>
                   </div>
 
@@ -490,11 +551,22 @@ export default function VariationProfiles() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-[#0e1726]/40 border border-dashed border-[#1e293b] rounded-2xl p-12 text-center text-slate-600">
-                  <AlertTriangle className="w-8 h-8 mx-auto mb-3 text-slate-700" />
-                  <p className="text-xs leading-normal">
-                    Fiyat matrisini oluşturmak için sol taraftan en az bir <strong>Boyut</strong> ve bir <strong>Çerçeve</strong> eklemelisiniz.
-                  </p>
+                <div className="bg-[#0e1726]/40 border border-dashed border-[#1e293b] rounded-2xl p-12 text-center text-slate-600 flex flex-col items-center justify-center space-y-4">
+                  <Sparkles className="w-10 h-10 text-amber-500 animate-pulse" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-300">Önerilen Şablonu Kullanın</h4>
+                    <p className="text-xs leading-normal text-slate-500 mt-1 max-w-md mx-auto">
+                      Yeni açılan mağazalar için ana mağazada kullanılan dikey/yatay/kare oranlarına özel hazır boyut ve çerçeve şablonlarını tek tıkla yükleyebilirsiniz.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadRecommendedSizesAndFrames}
+                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-amber-500/10 flex items-center space-x-1.5 transform hover:scale-[1.02]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Önerilen Boyut ve Çerçeveleri Ekle</span>
+                  </button>
                 </div>
               )}
             </div>

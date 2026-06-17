@@ -2,7 +2,7 @@ import express from 'express';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { getActiveShop } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -17,7 +17,8 @@ router.post('/save', (req, res, next) => {
     
     // Create product mockups folder if it doesn't exist
     const activeShop = getActiveShop();
-    const productMockupDir = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, productId);
+    const shopName = getShopStorageName(activeShop.shop_id);
+    const productMockupDir = join(__dirname, '../..', 'storage', shopName, 'mockups', productId);
     if (!fs.existsSync(productMockupDir)) {
       fs.mkdirSync(productMockupDir, { recursive: true });
     }
@@ -30,7 +31,7 @@ router.post('/save', (req, res, next) => {
     const filePath = join(productMockupDir, `${templateId}_${cleanRatio}.jpg`);
     fs.writeFileSync(filePath, buffer);
     
-    res.json({ success: true, path: `storage/mockups/${activeShop.shop_id}/${productId}/${templateId}_${cleanRatio}.jpg` });
+    res.json({ success: true, path: `storage/${shopName}/mockups/${productId}/${templateId}_${cleanRatio}.jpg` });
   } catch (err) {
     next(err);
   }
@@ -41,7 +42,10 @@ router.get('/list/:productId', (req, res, next) => {
   try {
     const { productId } = req.params;
     const activeShop = getActiveShop();
-    let productMockupDir = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, productId);
+    const product = db.prepare('SELECT shop_id FROM products WHERE id = ?').get(productId);
+    const shopId = product ? product.shop_id : activeShop.shop_id;
+    const shopName = getShopStorageName(shopId);
+    let productMockupDir = join(__dirname, '../..', 'storage', shopName, 'mockups', productId);
     
     if (!fs.existsSync(productMockupDir)) {
       productMockupDir = join(__dirname, '../..', 'storage/mockups', productId);
@@ -57,12 +61,13 @@ router.get('/list/:productId', (req, res, next) => {
     });
     
     const mockups = files.map(file => {
-      const relativePath = fs.existsSync(join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, productId, file))
-        ? `${activeShop.shop_id}/${productId}/${file}`
-        : `${productId}/${file}`;
+      const hasShopDir = fs.existsSync(join(__dirname, '../..', 'storage', shopName, 'mockups', productId, file));
+      const relativePath = hasShopDir
+        ? `${shopName}/mockups/${productId}/${file}`
+        : `mockups/${productId}/${file}`;
       return {
         filename: file,
-        url: `http://localhost:3001/storage/mockups/${relativePath}`
+        url: `http://localhost:3001/storage/${relativePath}`
       };
     });
     
@@ -77,7 +82,10 @@ router.delete('/delete/:productId/:filename', (req, res, next) => {
   try {
     const { productId, filename } = req.params;
     const activeShop = getActiveShop();
-    let filePath = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, productId, filename);
+    const product = db.prepare('SELECT shop_id FROM products WHERE id = ?').get(productId);
+    const shopId = product ? product.shop_id : activeShop.shop_id;
+    const shopName = getShopStorageName(shopId);
+    let filePath = join(__dirname, '../..', 'storage', shopName, 'mockups', productId, filename);
     if (!fs.existsSync(filePath)) {
       filePath = join(__dirname, '../..', 'storage/mockups', productId, filename);
     }

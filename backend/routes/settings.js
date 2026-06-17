@@ -13,8 +13,6 @@ router.get('/', (req, res, next) => {
     settings.forEach(s => {
       result[s.key] = JSON.parse(s.value);
     });
-    // Force default_is_digital to false until further notice
-    result.default_is_digital = false;
     res.json(result);
   } catch (err) {
     next(err);

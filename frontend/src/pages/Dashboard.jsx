@@ -44,7 +44,6 @@ export default function Dashboard({ etsyConnected }) {
   // Shop configurations for AI prompting
   const [shopStyle, setShopStyle] = useState('vintage poster, art deco');
   const [targetMarket, setTargetMarket] = useState('US/UK');
-  const [isDigitalShop, setIsDigitalShop] = useState(false);
 
   // Pagination states
   const [totalCount, setTotalCount] = useState(0);
@@ -141,7 +140,6 @@ export default function Dashboard({ etsyConnected }) {
       if (res.data) {
         if (res.data.shop_style) setShopStyle(res.data.shop_style);
         if (res.data.target_market) setTargetMarket(res.data.target_market);
-        setIsDigitalShop(res.data.default_is_digital || false);
       }
     } catch (err) {
       console.error(err);
@@ -173,8 +171,7 @@ export default function Dashboard({ etsyConnected }) {
       status: 'live',
       price: listing.price ? (listing.price.amount / (listing.price.divisor || 100)) : 0,
       quantity: listing.quantity,
-      shop_section_id: listing.shop_section_id || '',
-      listing_type: listing.listing_type || 'physical'
+      shop_section_id: listing.shop_section_id || ''
     });
 
     setTitle(listing.title || '');
@@ -261,7 +258,7 @@ export default function Dashboard({ etsyConnected }) {
           title,
           description,
           tags,
-          materials: selectedProduct?.listing_type === 'download' ? undefined : materials,
+          materials,
           shop_section_id: selectedSectionId || null
         };
         await axios.post(`${API_BASE}/etsy/listings/${selectedProduct.id}/update`, payload);
@@ -797,7 +794,7 @@ export default function Dashboard({ etsyConnected }) {
           )}
           
           {/* Floating Batch Materials Update Bar (Sleek bottom toolbar) */}
-          {activeTab !== 'local' && !isDigitalShop && selectedListingIds.length > 0 && (
+          {activeTab !== 'local' && selectedListingIds.length > 0 && (
             <div className="sticky bottom-6 left-0 right-0 bg-[#0b0f19] border border-amber-500/20 rounded-3xl p-5 shadow-2xl z-30 space-y-4 animate-fade-in-up">
               <div className="flex items-center justify-between border-b border-[#1e293b] pb-3">
                 <div className="flex items-center space-x-2">
@@ -991,7 +988,7 @@ export default function Dashboard({ etsyConnected }) {
                 </div>
 
                 {/* Materials Editor (Directly in panel for single item) */}
-                {activeTab !== 'local' && !isDigitalShop && selectedProduct?.listing_type !== 'download' && (
+                {activeTab !== 'local' && (
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">

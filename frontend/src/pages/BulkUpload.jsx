@@ -279,9 +279,6 @@ export default function BulkUpload({ etsyConnected }) {
     listing_state: 'draft'
   });
 
-  const [isDigitalShop, setIsDigitalShop] = useState(false);
-  const [digitalFile, setDigitalFile] = useState(null);
-  const [digitalFileName, setDigitalFileName] = useState('');
 
   const [shippingProfiles, setShippingProfiles] = useState([]);
   const [returnPolicies, setReturnPolicies] = useState([]);
@@ -378,7 +375,7 @@ export default function BulkUpload({ etsyConnected }) {
       setReadinessStates(readinessRes.data || []);
       
       if (settingsRes.data) {
-        setIsDigitalShop(settingsRes.data.default_is_digital || false);
+
         setOverrides({
           shipping_profile_id: settingsRes.data.default_shipping_profile_id || '',
           return_policy_id: settingsRes.data.default_return_policy_id || '',
@@ -835,7 +832,7 @@ export default function BulkUpload({ etsyConnected }) {
   };
 
   const handlePublishAllReady = () => {
-    const readyProducts = products.filter(p => p.status !== 'live' && p.title && p.description && p.tags && p.tags.length > 0);
+    const readyProducts = products.filter(p => p.status !== 'live' && isProductReady(p));
     const targets = selectedDraftIds.length > 0 
       ? readyProducts.filter(p => selectedDraftIds.includes(p.id)) 
       : readyProducts;
@@ -911,8 +908,7 @@ export default function BulkUpload({ etsyConnected }) {
     setEditTags(p.tags || []);
     setEditProfileId(p.variation_profile_id || '');
     setEditSectionId(p.shop_section_id || '');
-    setDigitalFileName(p.digital_file_path ? p.digital_file_path.split('/').pop() : '');
-    setDigitalFile(null);
+
     fetchProductMockups(p.id);
   };
 
@@ -921,13 +917,7 @@ export default function BulkUpload({ etsyConnected }) {
     if (!selectedProduct) return;
     setLoading(true);
     try {
-      if (digitalFile) {
-        const formData = new FormData();
-        formData.append('digitalFile', digitalFile);
-        await axios.post(`${API_BASE}/products/${selectedProduct.id}/digital-file`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
+
 
       await axios.put(`${API_BASE}/products/${selectedProduct.id}`, {
         title: editTitle,
@@ -991,7 +981,7 @@ export default function BulkUpload({ etsyConnected }) {
 
   // Verify readiness status
   const isProductReady = (p) => {
-    return p.title && p.description && p.tags && p.tags.length > 0;
+    return p.title && p.description && p.tags && p.tags.length > 0 && p.mockup_count > 0;
   };
 
   return (
@@ -1138,63 +1128,6 @@ export default function BulkUpload({ etsyConnected }) {
                 </div>
               </div>
 
-              {/* Digital File Card (Only if digital shop) */}
-              {isDigitalShop && (
-                <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 space-y-4 text-xs">
-                  <div className="border-b border-[#1e293b] pb-3">
-                    <h4 className="text-sm font-bold text-white">Dijital İndirme Dosyası (Etsy File)</h4>
-                    <p className="text-[10px] text-slate-400 mt-1">Etsy listelemesine yüklenecek olan yüksek çözünürlüklü asıl dosyayı (.zip, .pdf, .jpg) seçin. Maksimum dosya boyutu 20 MB'tır.</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-[#151f32] border border-[#1e293b] rounded-xl p-3.5">
-                      <div className="text-xs">
-                        <span className="text-slate-400 block font-semibold">Dosya Durumu:</span>
-                        <span className={digitalFileName ? "text-emerald-400 font-bold" : "text-amber-500 italic"}>
-                          {digitalFileName ? `Yüklü: ${digitalFileName}` : 'Dosya Yüklenmemiş'}
-                        </span>
-                      </div>
-                      {digitalFileName && (
-                        <span className="bg-emerald-500/10 text-emerald-400 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">
-                          Hazır
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="file"
-                        id="digital-file-upload"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            if (file.size > 20 * 1024 * 1024) {
-                              alert("Hata: Etsy en fazla 20 MB boyutunda dosya kabul etmektedir.");
-                              e.target.value = null;
-                              return;
-                            }
-                            setDigitalFile(file);
-                            setDigitalFileName(file.name);
-                          }
-                        }}
-                        className="hidden"
-                        accept=".zip,.pdf,.jpg,.jpeg,.png,.doc,.mp3"
-                      />
-                      <label
-                        htmlFor="digital-file-upload"
-                        className="bg-[#151f32] hover:bg-[#1a263c] border border-[#1e293b] text-slate-300 hover:text-white font-bold py-2 px-4 rounded-xl text-xs cursor-pointer transition-colors inline-block"
-                      >
-                        {digitalFileName ? 'Dosyayı Değiştir' : 'Dosya Seç'}
-                      </label>
-                      {digitalFile && (
-                        <span className="text-[10px] text-slate-400 italic font-medium">
-                          Yeni dosya seçildi ({formatBytes(digitalFile.size)})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Variations Card */}
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 space-y-4">

@@ -4,7 +4,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import db, { getActiveShop } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -13,7 +13,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const activeShop = getActiveShop();
-    const destDir = join(__dirname, '../..', 'storage/uploads', activeShop.shop_id);
+    const shopName = getShopStorageName(activeShop.shop_id);
+    const destDir = join(__dirname, '../..', 'storage', shopName, 'uploads');
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true });
     }
@@ -27,27 +28,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Configure multer for digital file uploads (max 20MB)
-const digitalStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const activeShop = getActiveShop();
-    const productId = req.params.id;
-    const destDir = join(__dirname, '../..', 'storage/digital_files', activeShop.shop_id, productId);
-    if (!fs.existsSync(destDir)) {
-      fs.mkdirSync(destDir, { recursive: true });
-    }
-    cb(null, destDir);
-  },
-  filename: (req, file, cb) => {
-    const cleanName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    cb(null, cleanName);
-  }
-});
-const uploadDigital = multer({ 
-  storage: digitalStorage,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20 MB limit
-});
-
 // Get all products
 router.get('/', (req, res, next) => {
   try {
@@ -56,7 +36,8 @@ router.get('/', (req, res, next) => {
     const products = stmt.all(activeShop.shop_id);
     
     const parsed = products.map(p => {
-      let mockupsDir = join(__dirname, '../..', 'storage/mockups', p.shop_id || activeShop.shop_id, p.id);
+      const shopName = getShopStorageName(p.shop_id || activeShop.shop_id);
+      let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', p.id);
       if (!fs.existsSync(mockupsDir)) {
         mockupsDir = join(__dirname, '../..', 'storage/mockups', p.id);
       }
@@ -101,7 +82,8 @@ router.post('/upload', upload.array('images'), (req, res, next) => {
     try {
       for (const file of req.files) {
         const id = uuidv4();
-        const imagePath = `storage/uploads/${activeShop.shop_id}/${file.filename}`;
+        const shopName = getShopStorageName(activeShop.shop_id);
+        const imagePath = `storage/${shopName}/uploads/${file.filename}`;
         
         // Base title is filename without extension
         const title = file.originalname.replace(/\.[^/.]+$/, "").substring(0, 140);
@@ -217,7 +199,8 @@ router.delete('/:id', (req, res, next) => {
       }
       
       // Delete generated mockups directory if it exists
-      const shopMockupsDir = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, id);
+      const shopName = getShopStorageName(product.shop_id || activeShop.shop_id);
+      const shopMockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', id);
       if (fs.existsSync(shopMockupsDir)) {
         fs.rmSync(shopMockupsDir, { recursive: true, force: true });
       }

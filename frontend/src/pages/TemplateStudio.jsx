@@ -235,6 +235,7 @@ export default function TemplateStudio() {
   // Library sharing states
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [libraryTemplates, setLibraryTemplates] = useState([]);
+  const [selectedLibraryIds, setSelectedLibraryIds] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   
   // Static templates tab state
@@ -442,20 +443,23 @@ export default function TemplateStudio() {
     }
   };
 
-  const handleCopyTemplate = async (templateId) => {
+  const handleCopyTemplates = async (ids) => {
+    if (!ids || ids.length === 0) return;
     try {
-      await axios.post(`${API_BASE}/templates/copy`, { templateId });
-      alert('Şablon başarıyla kütüphaneden dükkanınıza kopyalandı!');
+      await axios.post(`${API_BASE}/templates/copy`, { templateIds: ids });
+      alert('Şablon(lar) başarıyla kütüphaneden dükkanınıza kopyalandı!');
+      setSelectedLibraryIds([]);
       setShowLibraryModal(false);
       fetchTemplates();
     } catch (err) {
-      console.error('Şablon kopyalanamadı:', err);
+      console.error('Şablonlar kopyalanamadı:', err);
       alert('Kopyalama işlemi başarısız oldu.');
     }
   };
 
   useEffect(() => {
     if (showLibraryModal) {
+      setSelectedLibraryIds([]);
       fetchLibraryTemplates();
     }
   }, [showLibraryModal]);
@@ -1667,45 +1671,106 @@ export default function TemplateStudio() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {libraryTemplates.map(tpl => (
-                    <div 
-                      key={tpl.id} 
-                      className="bg-[#151f32]/60 border border-[#1e293b] rounded-2xl overflow-hidden p-4 flex space-x-4 hover:border-amber-500/20 transition-all"
-                    >
-                      <div className="w-24 h-24 bg-slate-950 rounded-xl overflow-hidden flex-shrink-0 relative">
-                        <img 
-                          src={`http://localhost:3001/${tpl.background_path}`} 
-                          alt={tpl.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 flex flex-col justify-between min-w-0">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-bold text-white text-sm truncate pr-2">{tpl.name}</h4>
-                            <span className="text-[9px] bg-slate-800 text-slate-400 border border-[#1e293b] px-2 py-0.5 rounded-full flex-shrink-0">
-                              {tpl.shop_name}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-400">Tip: {tpl.type === 'flat' ? 'Düz' : 'Perspektif'}</p>
-                          <p className="text-[10px] text-slate-500 truncate">
-                            Uyumlu Oranlar: {tpl.config.compatible_ratios ? tpl.config.compatible_ratios.join(', ') : ''}
-                          </p>
-                        </div>
-                        <div className="flex justify-end pt-2">
-                          <button
-                            onClick={() => handleCopyTemplate(tpl.id)}
-                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Dükkanıma Ekle</span>
-                          </button>
-                        </div>
-                      </div>
+                <>
+                  {/* Selection Action Bar */}
+                  <div className="flex items-center justify-between pb-4 border-b border-[#1e293b] mb-6">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => {
+                          if (selectedLibraryIds.length === libraryTemplates.length) {
+                            setSelectedLibraryIds([]);
+                          } else {
+                            setSelectedLibraryIds(libraryTemplates.map(t => t.id));
+                          }
+                        }}
+                        className="text-xs bg-[#1e293b] hover:bg-[#2e3b4e] text-slate-300 px-3 py-1.5 rounded-lg border border-[#334155] transition-colors font-medium"
+                      >
+                        {selectedLibraryIds.length === libraryTemplates.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                      </button>
+                      {selectedLibraryIds.length > 0 && (
+                        <span className="text-xs text-amber-500 font-semibold animate-pulse">
+                          {selectedLibraryIds.length} şablon seçildi
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    {selectedLibraryIds.length > 0 && (
+                      <button
+                        onClick={() => handleCopyTemplates(selectedLibraryIds)}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transform hover:scale-[1.02]"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Seçilenleri Dükkanıma Ekle ({selectedLibraryIds.length})</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {libraryTemplates.map(tpl => {
+                      const isSelected = selectedLibraryIds.includes(tpl.id);
+                      return (
+                        <div 
+                          key={tpl.id} 
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedLibraryIds(selectedLibraryIds.filter(id => id !== tpl.id));
+                            } else {
+                              setSelectedLibraryIds([...selectedLibraryIds, tpl.id]);
+                            }
+                          }}
+                          className={`group relative rounded-2xl overflow-hidden p-4 flex space-x-4 cursor-pointer transition-all border ${
+                            isSelected 
+                              ? 'border-amber-500 bg-amber-500/5' 
+                              : 'bg-[#151f32]/60 border-[#1e293b] hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="w-24 h-24 bg-slate-950 rounded-xl overflow-hidden flex-shrink-0 relative border border-[#1e293b]">
+                            <img 
+                              src={`http://localhost:3001/${tpl.background_path}`} 
+                              alt={tpl.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {/* Checkbox overlay indicator */}
+                            <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'bg-amber-500 border-amber-500 text-slate-950' 
+                                : 'bg-black/40 border-slate-500 text-transparent'
+                            }`}>
+                              <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="3">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between min-w-0">
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="font-bold text-white text-sm truncate pr-2">{tpl.name}</h4>
+                                <span className="text-[9px] bg-slate-800 text-slate-400 border border-[#1e293b] px-2 py-0.5 rounded-full flex-shrink-0">
+                                  {tpl.shop_name}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-400">Tip: {tpl.type === 'flat' ? 'Düz' : 'Perspektif'}</p>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                Uyumlu Oranlar: {tpl.config.compatible_ratios ? tpl.config.compatible_ratios.join(', ') : ''}
+                              </p>
+                            </div>
+                            <div className="flex justify-end pt-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyTemplates([tpl.id]);
+                                }}
+                                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Dükkanıma Ekle</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           </div>

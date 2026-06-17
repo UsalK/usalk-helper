@@ -74,7 +74,7 @@ function sanitizeText(text) {
   return sanitized;
 }
 
-export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", isDigital = false) {
+export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco") {
   let apiKey = process.env.NVIDIA_API_KEY || DEFAULT_API_KEY;
   let url = DEFAULT_URL;
 
@@ -101,29 +101,7 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
   const mimeType = isPng ? 'image/png' : (isWebp ? 'image/webp' : 'image/jpeg');
   const dataUrl = await image.getBase64(mimeType);
 
-  const systemPrompt = isDigital
-    ? `You are an Etsy SEO expert for instant digital download art and printable wall art listing optimization.
-Analyze the provided artwork image and generate highly optimized, high-converting Etsy listing metadata focusing on search engine optimization (SEO) and search visibility for printable digital downloads.
-
-Your primary goal is to interpret and comment on the uploaded artwork thumbnail, describing its visual elements, style, subject matter, colors, and mood. This visual analysis will form the basis of a detailed long description.
-
-CRITICAL ETSY POLICY & COPYRIGHT RULES:
-- STRICTLY FORBIDDEN: Do not mention any specific artist names (e.g. Alphonse Mucha, Gustav Klimt, Vincent van Gogh, Claude Monet, William Morris, Pablo Picasso, Henri Matisse, Salvador Dali, Andy Warhol, Rembrandt, da Vinci, Michelangelo, etc.). Instead, describe the style generically (e.g., use "Art Nouveau Style", "Impressionist Style", "Arts & Crafts Style", "Modernism", "Surrealism", "Pop Art", "Baroque", "Renaissance Style", etc.).
-- STRICTLY FORBIDDEN: Do not include trademarked brand names (e.g., Disney, Marvel, Harry Potter, Nike, Gucci, etc.) or celebrity names/pop culture figures.
-- Only describe the visual elements, style, and mood using generic descriptions. Never use copyrighted characters or brands.
-
-OUTPUT FORMAT:
-You must output a single JSON object. Do not include any markdown wrappers (like \`\`\`json), prefix, or suffix. Your output must start with '{' and end with '}'.
-
-CRITICAL CONSTRAINTS:
-1. "title" must be a string and MUST NOT exceed 140 characters. It must contain high-search-volume SEO keywords separated by commas, specifically tailored to printable/digital download art (e.g., 'Printable Wall Art', 'Digital Download Art', 'Instant Download', 'Printable Poster', etc.) combined with keywords describing the image content. Do not include specific artist or brand names.
-2. "tags" MUST be an array of EXACTLY 13 strings. Each tag MUST NOT exceed 20 characters. The tags must be high-traffic Etsy SEO keywords/phrases. At least 5 tags must be digital-specific (e.g. 'printable wall art', 'digital download', 'instant download', 'digital print', 'printable poster', 'printable art', etc.). Do not repeat tags. Each tag must be safe and not contain specific artist names or brand names.
-3. "description" must be a string. It must be a clean, readable, and structured description (avoiding long, overwhelming walls of text). First, write a short and concise introduction describing the visual subject, style, and colors (1 paragraph, max 3-4 sentences). Second, explain the digital download delivery clearly (instant access, no physical shipment). Third, provide standard printing size guidelines (e.g., 2:3, 3:4, 4:5, 11x14, ISO ratios) using clear formatting.
-4. "visual_style" must be an array of 1 to 3 strings.
-5. "occasion" must be an array of strings (leave empty if not applicable).
-6. "holiday" must be an array of strings (leave empty if not applicable).
-7. "room" must be an array of room tags.`
-    : `You are an Etsy SEO expert for print-on-demand wall art listing optimization.
+  const systemPrompt = `You are an Etsy SEO expert for print-on-demand wall art listing optimization.
 Analyze the provided artwork image and generate highly optimized, high-converting Etsy listing metadata focusing on search engine optimization (SEO) and search visibility.
 
 CRITICAL ETSY POLICY & COPYRIGHT RULES:
@@ -143,39 +121,22 @@ CRITICAL CONSTRAINTS:
 6. "holiday" must be an array of strings (leave empty if not applicable).
 7. "room" must be an array of room tags.`;
 
-  const userPrompt = isDigital
-    ? {
-        task: "etsy_digital_seo_optimization",
-        shop_style: shopStyle,
-        target_market: targetMarket,
-        product_type: "digital download / printable wall art",
-        instructions: "Generate Etsy listing details specifically for a digital download product. Analyze the uploaded thumbnail image to describe the visual content in a short, concise paragraph (max 3-4 sentences). The description should be clean, structured, and easy to read, avoiding long walls of text. Include digital download details and printing size guidelines. Return EXACTLY 13 tags of maximum 20 characters each. Absolutely no artist or brand names.",
-        output_schema: {
-          title: "string (max 140 chars, high-search-volume keywords separated by commas, containing digital art phrases)",
-          tags: ["array of EXACTLY 13 strings, each string max 20 chars, containing digital keywords like digital download, printable art, etc."],
-          description: "string (long description, detailed visual analysis of the artwork followed by instant download printing instructions)",
-          visual_style: ["array of 1-3 strings representing visual style tags"],
-          occasion: ["array of occasion tags if applicable"],
-          holiday: ["array of holiday tags if applicable"],
-          room: ["array of room tags where this art fits best"]
-        }
-      }
-    : {
-        task: "etsy_seo_optimization",
-        shop_style: shopStyle,
-        target_market: targetMarket,
-        product_type: "canvas print / poster print",
-        instructions: "Generate Etsy SEO listing details focusing on search rankings. Ensure character limits and count restrictions are strictly followed. Do not exceed 140 characters for title, and return EXACTLY 13 tags of maximum 20 characters each. Ensure absolute compliance with copyright rules: do not use artist names or brand names. Use generic style descriptors.",
-        output_schema: {
-          title: "string (max 140 chars, high-search-volume keywords separated by commas)",
-          tags: ["array of EXACTLY 13 strings, each string must be maximum 20 characters, mix of long-tail and broad keywords for Etsy SEO"],
-          description_hook: "string (first 160 characters, highly descriptive and appealing search snippet)",
-          visual_style: ["array of 1-3 strings representing visual style tags"],
-          occasion: ["array of occasion tags if applicable"],
-          holiday: ["array of holiday tags if applicable"],
-          room: ["array of room tags where this art fits best (e.g. living room, bedroom)"]
-        }
-      };
+  const userPrompt = {
+    task: "etsy_seo_optimization",
+    shop_style: shopStyle,
+    target_market: targetMarket,
+    product_type: "canvas print / poster print",
+    instructions: "Generate Etsy SEO listing details focusing on search rankings. Ensure character limits and count restrictions are strictly followed. Do not exceed 140 characters for title, and return EXACTLY 13 tags of maximum 20 characters each. Ensure absolute compliance with copyright rules: do not use artist names or brand names. Use generic style descriptors.",
+    output_schema: {
+      title: "string (max 140 chars, high-search-volume keywords separated by commas)",
+      tags: ["array of EXACTLY 13 strings, each string must be maximum 20 characters, mix of long-tail and broad keywords for Etsy SEO"],
+      description_hook: "string (first 160 characters, highly descriptive and appealing search snippet)",
+      visual_style: ["array of 1-3 strings representing visual style tags"],
+      occasion: ["array of occasion tags if applicable"],
+      holiday: ["array of holiday tags if applicable"],
+      room: ["array of room tags where this art fits best (e.g. living room, bedroom)"]
+    }
+  };
 
   const payload = {
     model: MODEL,
@@ -244,17 +205,11 @@ CRITICAL CONSTRAINTS:
       title = title.replace(/,\s*$/, '').trim(); // Remove trailing commas or partial commas
     }
 
-    // 2. Sanitize and validate description (long or hook depending on isDigital)
-    let description = parsed.description || parsed.description_hook || parsed.description_hook || '';
+    // 2. Sanitize and validate description hook
+    let description = parsed.description_hook || parsed.description || '';
     description = sanitizeText(String(description));
-    if (isDigital) {
-      if (description.length > 3000) {
-        description = description.substring(0, 3000).trim();
-      }
-    } else {
-      if (description.length > 160) {
-        description = description.substring(0, 160).trim();
-      }
+    if (description.length > 160) {
+      description = description.substring(0, 160).trim();
     }
 
     // 3. Sanitize and validate tags (max 20 chars per tag, exactly 13 tags, no repeats)
@@ -277,37 +232,21 @@ CRITICAL CONSTRAINTS:
     }
 
     // Default safe Etsy tags to backfill if we have fewer than 13 tags
-    const fallbackTags = isDigital
-      ? [
-          "digital download",
-          "printable wall art",
-          "instant download",
-          "digital print",
-          "printable poster",
-          "printable art",
-          "wall art",
-          "home decor",
-          "digital poster",
-          "room decor",
-          "printable decor",
-          "boho digital art",
-          "modern printable"
-        ]
-      : [
-          "wall art",
-          "home decor",
-          "poster print",
-          "art print",
-          "room decor",
-          "gift idea",
-          "interior design",
-          "wall decor",
-          "vintage wall art",
-          "modern wall art",
-          "chic wall decor",
-          "living room art",
-          "bedroom wall art"
-        ];
+    const fallbackTags = [
+      "wall art",
+      "home decor",
+      "poster print",
+      "art print",
+      "room decor",
+      "gift idea",
+      "interior design",
+      "wall decor",
+      "vintage wall art",
+      "modern wall art",
+      "chic wall decor",
+      "living room art",
+      "bedroom wall art"
+    ];
 
     for (const fbTag of fallbackTags) {
       if (processedTags.length >= 13) break;
@@ -338,7 +277,7 @@ CRITICAL CONSTRAINTS:
       title,
       tags: processedTags,
       description,
-      description_hook: isDigital ? description.substring(0, 160) : description,
+      description_hook: description,
       visual_style: visualStyle,
       occasion,
       holiday,

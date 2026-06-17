@@ -4,7 +4,7 @@ import axios from 'axios';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import db, { getActiveShop } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 import * as EtsyService from '../services/EtsyService.js';
 
 const router = express.Router();
@@ -546,17 +546,13 @@ router.post('/upload-listing', async (req, res, next) => {
     // Prioritize request overrides, then fallback to global settings
     const shipping_profile_id = overrideShipping || settings.default_shipping_profile_id;
     const return_policy_id = overrideReturn || settings.default_return_policy_id;
-    const is_digital = false; // Forced to false until further notice (digital downloads deactivated)
     const state = overrideState || settings.default_listing_state || 'draft';
     const readiness_state_id = req.body.readiness_state_id || settings.default_readiness_state_id;
-    
-    // Etsy instant downloads must be already made (e.g. '2020_2026'), not 'made_to_order'
-    const finalWhenMade = (is_digital && when_made === 'made_to_order') ? '2020_2026' : when_made;
     
     // Prioritize product-specific section, then request override, then global settings
     const shop_section_id = product.shop_section_id || overrideSection || settings.default_shop_section_id;
     
-    if (!is_digital && !shipping_profile_id) {
+    if (!shipping_profile_id) {
       return res.status(400).json({ error: 'Kargo şablonu (shipping profile) seçilmedi. Lütfen genel ayarlardan veya toplu yükleme sihirbazından bir kargo şablonu belirtin.' });
     }
     
@@ -602,45 +598,41 @@ router.post('/upload-listing', async (req, res, next) => {
       price: fallbackPrice,
       quantity: 100,
       who_made,
-      when_made: finalWhenMade,
+      when_made,
       taxonomy_id: Number(taxonomy_id),
       state,
-      type: is_digital ? 'download' : 'physical',
+      type: 'physical',
       should_auto_renew: settings.auto_renew !== undefined ? settings.auto_renew : true
     };
 
-    if (!is_digital) {
-      if (shipping_profile_id) listingData.shipping_profile_id = Number(shipping_profile_id);
-      if (return_policy_id) listingData.return_policy_id = Number(return_policy_id);
-    }
+    if (shipping_profile_id) listingData.shipping_profile_id = Number(shipping_profile_id);
+    if (return_policy_id) listingData.return_policy_id = Number(return_policy_id);
 
     // Add Materials if enabled (default to true and ['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'] if not saved in settings)
     const materialsEnabled = settings.attribute_materials_enabled !== undefined ? settings.attribute_materials_enabled : true;
     const materialsList = settings.attribute_materials !== undefined ? settings.attribute_materials : ['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'];
 
-    if (!is_digital && materialsEnabled && materialsList && materialsList.length > 0) {
+    if (materialsEnabled && materialsList && materialsList.length > 0) {
       listingData.materials = materialsList
         .map(m => m.replace(/[^\p{L}\p{N}\p{Zs}]/gu, '').trim())
         .filter(m => m.length > 0)
         .slice(0, 13);
     }
 
-    // Add Width & Height if enabled (for physical only)
-    if (!is_digital && settings.attribute_width_enabled && settings.attribute_width) {
+    // Add Width & Height if enabled
+    if (settings.attribute_width_enabled && settings.attribute_width) {
       listingData.item_width = Number(settings.attribute_width);
       listingData.item_dimensions_unit = settings.attribute_width_unit === 'Inches' ? 'in' : 'cm';
     }
-    if (!is_digital && settings.attribute_height_enabled && settings.attribute_height) {
+    if (settings.attribute_height_enabled && settings.attribute_height) {
       listingData.item_height = Number(settings.attribute_height);
       listingData.item_dimensions_unit = settings.attribute_height_unit === 'Inches' ? 'in' : 'cm';
     }
 
-    if (listingData.type === 'physical') {
-      if (!readiness_state_id) {
-        return res.status(400).json({ error: 'Fiziksel ürünler için hazırlık profili (readiness state) seçilmelidir. Lütfen genel ayarlardan veya kargo tabından varsayılan bir hazırlık profili belirtin.' });
-      }
-      listingData.readiness_state_id = Number(readiness_state_id);
+    if (!readiness_state_id) {
+      return res.status(400).json({ error: 'Fiziksel ürünler için hazırlık profili (readiness state) seçilmelidir. Lütfen genel ayarlardan veya kargo tabından varsayılan bir hazırlık profili belirtin.' });
     }
+    listingData.readiness_state_id = Number(readiness_state_id);
     
     if (shop_section_id) {
       listingData.shop_section_id = shop_section_id;
@@ -711,8 +703,8 @@ router.post('/upload-listing', async (req, res, next) => {
         }
       }
 
-      // 5. Materials (ID: 148789511893 - for physical only)
-      if (!is_digital && settings.attribute_materials_enabled && settings.attribute_materials && settings.attribute_materials.length > 0) {
+      // 5. Materials (ID: 148789511893)
+      if (settings.attribute_materials_enabled && settings.attribute_materials && settings.attribute_materials.length > 0) {
         const valIds = settings.attribute_materials
           .map(m => MATERIALS_MAPPING[m])
           .filter(id => id !== undefined);
@@ -732,7 +724,9 @@ router.post('/upload-listing', async (req, res, next) => {
     }
     
     // 5. Upload generated mockups
-    let mockupsDir = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, productId);
+    const shopId = product ? product.shop_id : activeShop.shop_id;
+    const shopName = getShopStorageName(shopId);
+    let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', productId);
     if (!fs.existsSync(mockupsDir)) {
       mockupsDir = join(__dirname, '../..', 'storage/mockups', productId);
     }
@@ -828,24 +822,6 @@ router.post('/upload-listing', async (req, res, next) => {
         }
       }
     }
-    
-    // 6.5. Upload digital file if it is a digital product and has a digital file path
-    if (is_digital && product.digital_file_path) {
-      const fullFilePath = join(__dirname, '../..', product.digital_file_path);
-      if (fs.existsSync(fullFilePath)) {
-        console.log(`Uploading digital file ${product.digital_file_path} to Etsy for listing ${listing_id}...`);
-        try {
-          await EtsyService.uploadListingFile(listing_id, fullFilePath);
-          console.log(`Successfully uploaded digital file for listing ${listing_id}!`);
-        } catch (fileUploadErr) {
-          console.error(`Failed to upload digital file to Etsy for listing ${listing_id}:`, fileUploadErr.response?.data || fileUploadErr.message);
-          return res.status(400).json({ error: `Etsy ürünü oluşturuldu (ID: ${listing_id}) fakat asıl dijital dosya yüklenemedi: ${fileUploadErr.response?.data?.error || fileUploadErr.message}` });
-        }
-      } else {
-        console.warn(`Digital file path ${product.digital_file_path} does not exist on disk.`);
-      }
-    }
-    
     // 7. Update status to live in DB
     const updateSuccess = db.prepare(
       'UPDATE products SET status = ?, etsy_listing_id = ? WHERE id = ? AND shop_id = ?'
@@ -911,18 +887,20 @@ router.get('/listings/:listingId/details', async (req, res, next) => {
     
     let mockups = [];
     if (product) {
-      let mockupsDir = join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, product.id);
+      const shopId = product.shop_id || activeShop.shop_id;
+      const shopName = getShopStorageName(shopId);
+      let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', product.id);
       if (!fs.existsSync(mockupsDir)) {
         mockupsDir = join(__dirname, '../..', 'storage/mockups', product.id);
       }
       
       if (fs.existsSync(mockupsDir)) {
         const files = fs.readdirSync(mockupsDir).filter(f => f.toLowerCase().endsWith('.jpg') || f.toLowerCase().endsWith('.jpeg') || f.toLowerCase().endsWith('.png'));
-        const hasShopDir = fs.existsSync(join(__dirname, '../..', 'storage/mockups', activeShop.shop_id, product.id));
+        const hasShopDir = fs.existsSync(join(__dirname, '../..', 'storage', shopName, 'mockups', product.id));
         mockups = files.map(file => ({
           filename: file,
           url: hasShopDir 
-            ? `http://localhost:3001/storage/mockups/${activeShop.shop_id}/${product.id}/${file}`
+            ? `http://localhost:3001/storage/${shopName}/mockups/${product.id}/${file}`
             : `http://localhost:3001/storage/mockups/${product.id}/${file}`
         }));
       }
@@ -950,15 +928,6 @@ router.post('/listings/batch-materials', async (req, res, next) => {
     }
 
     const activeShop = getActiveShop();
-    const settingsStmt = db.prepare('SELECT * FROM settings WHERE shop_id = ?');
-    const settingsRows = settingsStmt.all(activeShop.shop_id);
-    const settings = {};
-    settingsRows.forEach(s => {
-      settings[s.key] = JSON.parse(s.value);
-    });
-    
-    const shop_is_digital = false; // Forced to false until further notice (digital downloads deactivated)
-    const checkProduct = db.prepare('SELECT id, digital_file_path FROM products WHERE etsy_listing_id = ? OR etsy_listing_id = ? OR etsy_listing_id = ?');
 
     const cleanMaterials = materials
       .map(m => m.replace(/[^\p{L}\p{N}\p{Zs}]/gu, '').trim())
@@ -970,15 +939,6 @@ router.post('/listings/batch-materials', async (req, res, next) => {
     const results = [];
     for (const listingId of listingIds) {
       try {
-        const product = checkProduct.get(listingId, listingId + '.0', Number(listingId).toString());
-        const isProductDigital = shop_is_digital || (product && product.digital_file_path ? true : false);
-        
-        if (isProductDigital) {
-          console.log(`Skipping materials update for digital listing ${listingId}`);
-          results.push({ listingId, success: true, skipped: true });
-          continue;
-        }
-
         await EtsyService.updateListing(listingId, { materials: cleanMaterials });
         results.push({ listingId, success: true });
       } catch (err) {
@@ -999,19 +959,9 @@ router.post('/listings/:listingId/update', async (req, res, next) => {
     const { listingId } = req.params;
     const { title, description, tags, materials, shop_section_id } = req.body;
     
-    // Check if the product or shop is digital to prevent sending materials
     const activeShop = getActiveShop();
-    const checkProduct = db.prepare('SELECT id, title, tags, description, shop_section_id, digital_file_path FROM products WHERE etsy_listing_id = ? OR etsy_listing_id = ? OR etsy_listing_id = ?');
+    const checkProduct = db.prepare('SELECT id, title, tags, description, shop_section_id FROM products WHERE etsy_listing_id = ? OR etsy_listing_id = ? OR etsy_listing_id = ?');
     const product = checkProduct.get(listingId, listingId + '.0', Number(listingId).toString());
-
-    const settingsStmt = db.prepare('SELECT * FROM settings WHERE shop_id = ?');
-    const settingsRows = settingsStmt.all(activeShop.shop_id);
-    const settings = {};
-    settingsRows.forEach(s => {
-      settings[s.key] = JSON.parse(s.value);
-    });
-    
-    const is_digital = false; // Forced to false until further notice (digital downloads deactivated)
 
     const updateData = {};
     if (title !== undefined) updateData.title = title.substring(0, 140);
@@ -1019,7 +969,7 @@ router.post('/listings/:listingId/update', async (req, res, next) => {
     if (tags !== undefined && Array.isArray(tags)) {
       updateData.tags = tags.map(t => t.trim().substring(0, 20)).filter(t => t.length > 0).slice(0, 13);
     }
-    if (!is_digital && materials !== undefined && Array.isArray(materials)) {
+    if (materials !== undefined && Array.isArray(materials)) {
       updateData.materials = materials.map(m => m.replace(/[^\p{L}\p{N}\p{Zs}]/gu, '').trim()).filter(m => m.length > 0).slice(0, 13);
     }
     if (shop_section_id !== undefined) {

@@ -366,13 +366,10 @@ export default function DefaultSettings({ etsyConnected }) {
                   name="default_processing_days"
                   value={settings.default_processing_days}
                   onChange={handleChange}
-                  disabled={settings.default_is_digital}
-                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500 ${settings.default_is_digital ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                 />
                 <p className="text-[10px] text-slate-500">
-                  {settings.default_is_digital 
-                    ? 'Dijital ürünler için kargo hazırlık süresi devre dışıdır.' 
-                    : 'Siparişleri işlemek ve göndermek için gereken varsayılan gün sayısı.'}
+                  Siparişleri işlemek ve göndermek için gereken varsayılan gün sayısı.
                 </p>
               </div>
 
@@ -449,25 +446,6 @@ export default function DefaultSettings({ etsyConnected }) {
                   <p className="text-[10px] text-slate-500">Yeni ürün listelemeleri için varsayılan durumu seçin.</p>
                 </div>
 
-                {/* Dijital Ürün Modu (Geçici olarak pasifleştirildi) */}
-                {false && (
-                  <div className="flex items-center justify-between p-4 bg-[#151f32] border border-[#1e293b] rounded-2xl md:col-span-2">
-                    <div className="space-y-1">
-                      <span className="text-sm font-semibold text-white">Varsayılan Dijital Ürün (Digital Download)</span>
-                      <p className="text-xs text-slate-500">Ürünleri varsayılan olarak dijital indirme ürünü olarak listele (Kargo profilleri ve iade politikaları pasifleşir).</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        name="default_is_digital"
-                        checked={settings.default_is_digital} 
-                        onChange={handleChange} 
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
-                    </label>
-                  </div>
-                )}
 
                 {/* Listeleri Otomatik Yenile */}
                 <div className="flex items-center justify-between p-4 bg-[#151f32] border border-[#1e293b] rounded-2xl md:col-span-2">
@@ -590,15 +568,7 @@ export default function DefaultSettings({ etsyConnected }) {
               <p className="text-xs text-slate-400">Etsy üzerinde tanımlı gönderim profilleriniz (Ready to ship) ve iade politikalarınız.</p>
             </div>
 
-            {settings.default_is_digital ? (
-              <div className="flex items-start space-x-3 bg-[#1e293b] border border-blue-500/20 text-blue-300 rounded-2xl p-6 text-sm">
-                <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-white block mb-1">Dijital Mağaza Modu Aktif</strong>
-                  Dijital indirme türündeki ürünler için kargo şablonu, hazırlık süresi veya iade politikası gerekmemektedir. Bu ayarlar pasif duruma getirilmiştir. Ürünlerinizi Etsy'ye yüklediğinizde kargo ücreti ve profili aranmayacaktır.
-                </div>
-              </div>
-            ) : !etsyConnected ? (
+            {!etsyConnected ? (
               <div className="flex items-start space-x-3 bg-amber-500/5 border border-amber-500/10 rounded-xl p-4 text-xs text-slate-400">
                 <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <span>Kargo ve iade profillerini görüntülemek için öncelikle Etsy hesabınızı bağlamalısınız.</span>
@@ -1012,16 +982,7 @@ export default function DefaultSettings({ etsyConnected }) {
             <div className="space-y-4 pt-6 border-t border-[#1e293b]">
               <h4 className="text-sm font-bold text-white tracking-wide">Product Specs</h4>
               
-              {settings.default_is_digital ? (
-                <div className="flex items-start space-x-3 bg-[#1e293b] border border-blue-500/20 text-blue-300 rounded-2xl p-6 text-xs leading-relaxed">
-                  <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="text-white block mb-1">Dijital Mağaza Modu Aktif</strong>
-                    Dijital indirme ürünleri için fiziksel boyutlar (Genişlik, Yükseklik) ve malzeme bilgisi (Canvas, Paper vb.) gerekmemektedir. Bu bölümdeki özellikler devre dışı bırakılmıştır.
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
+              <div className="space-y-4">
                   {/* Width */}
                   <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -1201,10 +1162,9 @@ export default function DefaultSettings({ etsyConnected }) {
                     )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* TAB 5: AÇIKLAMA (Description Boilerplate) */}
         {activeTab === 'aciklama' && (

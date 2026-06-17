@@ -25,19 +25,13 @@ router.post('/generate', async (req, res, next) => {
     
     const imagePath = join(__dirname, '../..', product.image_path);
     
-    // Determine if active shop has digital download enabled
-    const activeShop = getActiveShop();
-    const settingsStmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
-    const isDigitalRow = settingsStmt.get(activeShop.shop_id, 'default_is_digital');
-    const isDigital = isDigitalRow ? JSON.parse(isDigitalRow.value) : false;
-
-    // Call Kimi service with digital mode parameter
-    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, isDigital);
+    // Call Kimi service for physical wall art SEO
+    const seoData = await generateSEO(imagePath, targetMarket, shopStyle);
     
-    // Extract info (prioritize long description if digital)
+    // Extract info
     const title = seoData.title || '';
     const tags = JSON.stringify(seoData.tags || []);
-    const description = seoData.description || seoData.description_hook || '';
+    const description = seoData.description_hook || seoData.description || '';
     const ai_attributes = JSON.stringify({
       visual_style: seoData.visual_style || [],
       occasion: seoData.occasion || [],

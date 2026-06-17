@@ -191,6 +191,13 @@ export function getActiveShop() {
   };
 }
 
+// Global helper: Get storage-safe folder name for a shop ID
+export function getShopStorageName(shopId) {
+  const row = db.prepare('SELECT shop_name FROM etsy_auth WHERE shop_id = ?').get(shopId);
+  const rawName = row ? row.shop_name : (shopId === 'default_shop' ? 'Bagli Magaza Yok' : 'Bagli Magaza Yok');
+  return rawName.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
 // Global helper: Seed variation profiles for a specific shop
 export function seedDefaultProfilesForShop(shopId) {
   const checkStmt = db.prepare('SELECT COUNT(*) as count FROM variation_profiles WHERE shop_id = ?');
