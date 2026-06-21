@@ -33,6 +33,8 @@ export default function DefaultSettings({ etsyConnected }) {
     default_is_digital: false,
     shop_style: 'vintage poster, art deco',
     target_market: 'US/UK',
+    nvidia_api_key: '',
+    nvidia_model: 'moonshotai/kimi-k2.6',
     
     // New tab settings
     timezone: 'UTC - Coordinated Universal Time',
@@ -370,6 +372,39 @@ export default function DefaultSettings({ etsyConnected }) {
                 />
                 <p className="text-[10px] text-slate-500">
                   Siparişleri işlemek ve göndermek için gereken varsayılan gün sayısı.
+                </p>
+              </div>
+
+              {/* NVIDIA API Anahtarı */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">NVIDIA API Anahtarı</label>
+                <input
+                  type="text"
+                  name="nvidia_api_key"
+                  value={settings.nvidia_api_key || ''}
+                  onChange={handleChange}
+                  placeholder="nvapi-..."
+                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                />
+                <p className="text-[10px] text-slate-500">
+                  Sihirli içerik oluştururken kullanılan NVIDIA API anahtarı. Boş bırakılırsa varsayılan anahtar kullanılır.
+                </p>
+              </div>
+
+              {/* NVIDIA Model Seçimi */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">NVIDIA AI Modeli</label>
+                <select
+                  name="nvidia_model"
+                  value={settings.nvidia_model || 'moonshotai/kimi-k2.6'}
+                  onChange={handleChange}
+                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                >
+                  <option value="moonshotai/kimi-k2.6">Kimi K2.6 (Önerilen - Güçlü SEO)</option>
+                  <option value="meta/llama-3.2-90b-vision-instruct">Llama 3.2 90B Vision (Kota Dostu/Hızlı)</option>
+                </select>
+                <p className="text-[10px] text-slate-500">
+                  Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin. Boş bırakılırsa veya kota biterse otomatik diğeri denenir.
                 </p>
               </div>
 

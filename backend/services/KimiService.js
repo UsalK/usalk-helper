@@ -1,12 +1,12 @@
 import axios from 'axios';
 import fs from 'fs';
-import db from '../db/db.js';
+import db, { getActiveShop } from '../db/db.js';
 import { Jimp } from 'jimp';
 
 const metaAPI = "meta/llama-3.2-90b-vision-instruct";
 const kimiAPI = "moonshotai/kimi-k2.6";
 
-const DEFAULT_API_KEY = "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";
+const DEFAULT_API_KEY = "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";
 const DEFAULT_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const MODEL = "moonshotai/kimi-k2.6"; // Set to moonshotai/kimi-k2.6 as requested
 
@@ -74,20 +74,23 @@ function sanitizeText(text) {
   return sanitized;
 }
 
-export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco") {
-  let apiKey = process.env.NVIDIA_API_KEY || DEFAULT_API_KEY;
+export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null) {
+  let apiKey = null;
   let url = DEFAULT_URL;
 
-  if (!process.env.NVIDIA_API_KEY) {
-    try {
-      const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
-      const setting = stmt.get('nvidia_api_key');
-      if (setting) {
-        apiKey = JSON.parse(setting.value);
-      }
-    } catch (err) {
-      console.error("Error reading api key from db, using default:", err);
+  try {
+    const targetShopId = shopId || getActiveShop().shop_id;
+    const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
+    const setting = stmt.get(targetShopId, 'nvidia_api_key');
+    if (setting) {
+      apiKey = JSON.parse(setting.value);
     }
+  } catch (err) {
+    console.error("Error reading api key from db:", err);
+  }
+
+  if (!apiKey) {
+    apiKey = process.env.NVIDIA_API_KEY || DEFAULT_API_KEY;
   }
 
   // Load and resize the image file using Jimp to avoid payload size errors (400 Bad Request)
@@ -121,25 +124,38 @@ CRITICAL CONSTRAINTS:
 6. "holiday" must be an array of strings (leave empty if not applicable).
 7. "room" must be an array of room tags.`;
 
-  const userPrompt = {
-    task: "etsy_seo_optimization",
-    shop_style: shopStyle,
-    target_market: targetMarket,
-    product_type: "canvas print / poster print",
-    instructions: "Generate Etsy SEO listing details focusing on search rankings. Ensure character limits and count restrictions are strictly followed. Do not exceed 140 characters for title, and return EXACTLY 13 tags of maximum 20 characters each. Ensure absolute compliance with copyright rules: do not use artist names or brand names. Use generic style descriptors.",
-    output_schema: {
-      title: "string (max 140 chars, high-search-volume keywords separated by commas)",
-      tags: ["array of EXACTLY 13 strings, each string must be maximum 20 characters, mix of long-tail and broad keywords for Etsy SEO"],
-      description_hook: "string (first 160 characters, highly descriptive and appealing search snippet)",
-      visual_style: ["array of 1-3 strings representing visual style tags"],
-      occasion: ["array of occasion tags if applicable"],
-      holiday: ["array of holiday tags if applicable"],
-      room: ["array of room tags where this art fits best (e.g. living room, bedroom)"]
+  let selectedModel = "moonshotai/kimi-k2.6";
+  try {
+    const targetShopId = shopId || getActiveShop().shop_id;
+    const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
+    const settingModel = stmt.get(targetShopId, 'nvidia_model');
+    if (settingModel) {
+      selectedModel = JSON.parse(settingModel.value);
     }
-  };
+  } catch (err) {
+    console.error("Error reading model from db:", err);
+  }
+
+  const promptText = `Please analyze the attached image and generate Etsy SEO metadata.
+Shop Style: ${shopStyle}
+Target Market: ${targetMarket}
+Product Type: canvas print / poster print
+
+Format your response as a single, valid JSON object matching this schema:
+{
+  "title": "string (comma-separated SEO keywords, max 140 characters)",
+  "tags": ["exactly 13 strings, max 20 characters each"],
+  "description_hook": "string (engaging search snippet, max 160 characters)",
+  "visual_style": ["1 to 3 style tags"],
+  "occasion": ["occasion tags if applicable"],
+  "holiday": ["holiday tags if applicable"],
+  "room": ["room tags where this art fits best"]
+}
+CRITICAL: Ensure absolute compliance with copyright rules: do not use artist names or brand names. Use generic style descriptors.
+Return ONLY the JSON object. Do not include markdown code block formatting (like \`\`\`json).`;
 
   const payload = {
-    model: MODEL,
+    model: selectedModel,
     messages: [
       {
         role: "system",
@@ -150,7 +166,7 @@ CRITICAL CONSTRAINTS:
         content: [
           {
             type: "text",
-            text: JSON.stringify(userPrompt)
+            text: promptText
           },
           {
             type: "image_url",
@@ -173,10 +189,27 @@ CRITICAL CONSTRAINTS:
     "Accept": "application/json"
   };
 
-  const response = await axios.post(url, payload, { headers });
+  let response;
+  try {
+    response = await axios.post(url, payload, { headers });
+  } catch (err) {
+    console.warn(`API call failed with model ${selectedModel}, attempting fallback...`, err.message);
+    const fallbackModel = selectedModel === "moonshotai/kimi-k2.6"
+      ? "meta/llama-3.2-90b-vision-instruct"
+      : "moonshotai/kimi-k2.6";
+
+    payload.model = fallbackModel;
+    try {
+      response = await axios.post(url, payload, { headers });
+      console.log(`Fallback to ${fallbackModel} succeeded.`);
+    } catch (fallbackErr) {
+      console.error(`Fallback model ${fallbackModel} also failed:`, fallbackErr.message);
+      throw err; // throw the original error if both failed
+    }
+  }
 
   if (!response.data || !response.data.choices || response.data.choices.length === 0) {
-    throw new Error("Invalid response from Nvidia Kimi API");
+    throw new Error("Invalid response from Nvidia API");
   }
 
   let textResponse = response.data.choices[0].message.content.trim();

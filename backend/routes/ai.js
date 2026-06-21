@@ -26,7 +26,7 @@ router.post('/generate', async (req, res, next) => {
     const imagePath = join(__dirname, '../..', product.image_path);
     
     // Call Kimi service for physical wall art SEO
-    const seoData = await generateSEO(imagePath, targetMarket, shopStyle);
+    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id);
     
     // Extract info
     const title = seoData.title || '';
