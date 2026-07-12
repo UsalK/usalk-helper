@@ -847,20 +847,81 @@ router.post('/upload-listing', async (req, res, next) => {
   }
 });
 
+const listingsCache = {
+  data: {}
+};
+
+async function getFullListingsForShopState(shop_id, state, access_token, client_id, client_secret) {
+  const cacheKey = `${shop_id}_${state || 'active'}`;
+  const now = Date.now();
+  if (listingsCache.data[cacheKey] && (now - listingsCache.data[cacheKey].timestamp < 3 * 60 * 1000)) {
+    return listingsCache.data[cacheKey].listings;
+  }
+
+  const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings`;
+  const headers = {
+    'x-api-key': `${client_id}:${client_secret}`,
+    'Authorization': `Bearer ${access_token}`
+  };
+
+  const firstRes = await axios.get(url, {
+    params: { state: state || 'active', limit: 100, offset: 0, includes: 'images' },
+    headers
+  });
+
+  const totalCount = firstRes.data.count || 0;
+  const allListings = [...(firstRes.data.results || [])];
+
+  if (totalCount > 100) {
+    const promises = [];
+    for (let offset = 100; offset < totalCount; offset += 100) {
+      promises.push(
+        axios.get(url, {
+          params: { state: state || 'active', limit: 100, offset, includes: 'images' },
+          headers
+        })
+      );
+    }
+    const pageResponses = await Promise.all(promises);
+    pageResponses.forEach(r => {
+      if (r.data?.results) {
+        allListings.push(...r.data.results);
+      }
+    });
+  }
+
+  listingsCache.data[cacheKey] = {
+    timestamp: now,
+    listings: allListings
+  };
+
+  return allListings;
+}
+
 // Get listings from Etsy for the active shop
 router.get('/listings', async (req, res, next) => {
   try {
-    const { state, limit, offset } = req.query;
+    const { state, limit, offset, shop_section_ids } = req.query;
     const { access_token, client_id, client_secret, shop_id } = await EtsyService.getValidToken();
-    
+    const limitNum = Number(limit) || 50;
+    const offsetNum = Number(offset) || 0;
+
+    if (shop_section_ids) {
+      const allListings = await getFullListingsForShopState(shop_id, state, access_token, client_id, client_secret);
+      const filtered = allListings.filter(l => l.shop_section_id && l.shop_section_id.toString() === shop_section_ids.toString());
+      return res.json({
+        count: filtered.length,
+        results: filtered.slice(offsetNum, offsetNum + limitNum)
+      });
+    }
+
     const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings`;
-    
     const response = await axios.get(url, {
       params: {
         state: state || 'active',
-        limit: limit || 100,
-        offset: offset || 0,
-        includes: 'Images'
+        limit: limitNum,
+        offset: offsetNum,
+        includes: 'images'
       },
       headers: {
         'x-api-key': `${client_id}:${client_secret}`,
@@ -997,6 +1058,166 @@ router.post('/listings/:listingId/update', async (req, res, next) => {
     res.json({ success: true, updated });
   } catch (err) {
     console.error("Etsy Update Error:", err.response?.data || err.message);
+    next(err);
+  }
+});
+
+// Batch update variation profile for multiple listings on Etsy and update SQLite
+router.post('/listings/batch-variation-profile', async (req, res, next) => {
+  try {
+    const { listingIds, variation_profile_id } = req.body;
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return res.status(400).json({ error: 'listingIds dizisi gereklidir.' });
+    }
+    if (!variation_profile_id) {
+      return res.status(400).json({ error: 'variation_profile_id gereklidir.' });
+    }
+
+    const activeShop = getActiveShop();
+    
+    // Fetch variation profile from DB
+    const profileStmt = db.prepare('SELECT * FROM variation_profiles WHERE id = ? AND shop_id = ?');
+    let profileRow = profileStmt.get(variation_profile_id, activeShop.shop_id);
+    if (!profileRow) {
+      // Fallback check default shop
+      profileRow = profileStmt.get(variation_profile_id, 'default_shop');
+    }
+    if (!profileRow) {
+      return res.status(404).json({ error: 'Seçilen varyasyon profili bulunamadı.' });
+    }
+
+    const variationProfile = {
+      ...profileRow,
+      sizes: profileRow.sizes ? JSON.parse(profileRow.sizes) : [],
+      frames: profileRow.frames ? JSON.parse(profileRow.frames) : [],
+      combinations: profileRow.combinations ? JSON.parse(profileRow.combinations) : []
+    };
+
+    const hasFrames = variationProfile.frames && variationProfile.frames.length > 0;
+    const validCombs = variationProfile.combinations.filter(c => 
+      c.size && !isNaN(Number(c.price)) && (hasFrames ? c.frame : true)
+    );
+
+    if (validCombs.length === 0) {
+      return res.status(400).json({ error: 'Seçilen profil geçerli varyasyon kombinasyonları içermiyor.' });
+    }
+
+    // Retrieve readiness state ID
+    let readiness_state_id = null;
+    const settingsStmt = db.prepare('SELECT * FROM settings WHERE shop_id = ?');
+    const settingsRows = settingsStmt.all(activeShop.shop_id);
+    const settings = {};
+    settingsRows.forEach(s => {
+      try { settings[s.key] = JSON.parse(s.value); } catch (e) { settings[s.key] = s.value; }
+    });
+
+    if (settings.default_readiness_state_id) {
+      readiness_state_id = Number(settings.default_readiness_state_id);
+    } else {
+      try {
+        const states = await EtsyService.getReadinessStates();
+        if (states && states.length > 0) {
+          readiness_state_id = Number(states[0].readiness_state_id);
+        }
+      } catch (rErr) {
+        console.error("Failed to fetch default readiness states:", rErr.message);
+      }
+    }
+
+    // 1. Update local DB for all items
+    const updateStmt = db.prepare('UPDATE products SET variation_profile_id = ? WHERE (id = ? OR etsy_listing_id = ?) AND shop_id = ?');
+    const insertStmt = db.prepare(`
+      INSERT INTO products (id, shop_id, etsy_listing_id, variation_profile_id, status)
+      VALUES (?, ?, ?, ?, 'live')
+    `);
+    const checkStmt = db.prepare('SELECT id FROM products WHERE (id = ? OR etsy_listing_id = ?) AND shop_id = ?');
+
+    const { v4: uuidv4 } = await import('uuid');
+
+    for (const id of listingIds) {
+      const idStr = id.toString();
+      const existing = checkStmt.get(idStr, idStr, activeShop.shop_id);
+      if (existing) {
+        updateStmt.run(variation_profile_id, idStr, idStr, activeShop.shop_id);
+      } else {
+        insertStmt.run(uuidv4(), activeShop.shop_id, idStr, variation_profile_id);
+      }
+    }
+
+    // 2. Push variation inventory to Etsy for each listing
+    console.log(`Pushing variation profile ${variation_profile_id} to ${listingIds.length} Etsy listings (readiness_state_id: ${readiness_state_id})...`);
+    const results = [];
+
+    for (const listingId of listingIds) {
+      const listingIdStr = listingId.toString();
+      const productsList = validCombs.map((comb) => {
+        const property_values = [
+          {
+            property_id: 513, // Custom1 (Dimensions)
+            property_name: "Dimensions",
+            value_ids: [],
+            values: [comb.size]
+          }
+        ];
+        
+        if (hasFrames && comb.frame) {
+          property_values.push({
+            property_id: 514, // Custom2 (Frame)
+            property_name: "Frame",
+            value_ids: [],
+            values: [comb.frame]
+          });
+        }
+        
+        const cleanSize = comb.size.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+        const cleanFrame = comb.frame ? comb.frame.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8) : 'NONE';
+        const prodPrefix = listingIdStr.substring(0, 6).toUpperCase();
+        const sku = `ART-${prodPrefix}-${cleanSize}-${cleanFrame}`.toUpperCase();
+        
+        const offeringObj = {
+          price: Number(comb.price),
+          quantity: 100,
+          is_enabled: true
+        };
+        if (readiness_state_id) {
+          offeringObj.readiness_state_id = readiness_state_id;
+        }
+
+        return {
+          sku,
+          property_values,
+          offerings: [offeringObj]
+        };
+      });
+      
+      const price_on_property = [513];
+      const sku_on_property = [513];
+      if (hasFrames) {
+        price_on_property.push(514);
+        sku_on_property.push(514);
+      }
+      
+      const inventoryData = {
+        products: productsList,
+        price_on_property,
+        quantity_on_property: [],
+        sku_on_property
+      };
+
+      try {
+        await EtsyService.updateListingInventory(listingIdStr, inventoryData);
+        console.log(`Successfully updated variations on Etsy for listing ${listingIdStr}!`);
+        results.push({ listingId: listingIdStr, success: true });
+      } catch (invErr) {
+        const errMsg = invErr.response?.data?.error || invErr.response?.data || invErr.message;
+        console.error(`Failed to update variations on Etsy for listing ${listingIdStr}:`, errMsg);
+        results.push({ listingId: listingIdStr, success: false, error: errMsg });
+      }
+    }
+
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error("Batch variation profile error:", err);
     next(err);
   }
 });

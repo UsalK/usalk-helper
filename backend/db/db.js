@@ -176,6 +176,31 @@ try {
   // Column already exists, ignore
 }
 
+// Ensure ai_usage logging table exists
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_usage (
+      id TEXT PRIMARY KEY,
+      shop_id TEXT,
+      model TEXT,
+      prompt_tokens INTEGER,
+      completion_tokens INTEGER,
+      total_tokens INTEGER,
+      cost REAL DEFAULT 0.0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (err) {
+  console.error("Failed to ensure ai_usage table:", err);
+}
+
+// Ensure cost column exists in ai_usage
+try {
+  db.exec("ALTER TABLE ai_usage ADD COLUMN cost REAL DEFAULT 0.0");
+} catch (err) {
+  // Column already exists, ignore
+}
+
 // Global helper: Get current active shop
 export function getActiveShop() {
   const row = db.prepare('SELECT * FROM etsy_auth WHERE is_active = 1').get();
@@ -200,34 +225,32 @@ export function getShopStorageName(shopId) {
 
 // Global helper: Seed variation profiles for a specific shop
 export function seedDefaultProfilesForShop(shopId) {
-  const checkStmt = db.prepare('SELECT COUNT(*) as count FROM variation_profiles WHERE shop_id = ?');
-  const checkRow = checkStmt.get(shopId);
-  if (checkRow && checkRow.count === 0) {
-    const seedStmt = db.prepare(`
-      INSERT INTO variation_profiles (id, shop_id, name, ratio, sizes, frames, combinations, template_ids)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const defaults = [
-      { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
-      { id: 'ratio_3_2', name: '3:2 Oranı (Yatay)', ratio: '3:2' },
-      { id: 'ratio_1_1', name: '1:1 Oranı (Kare)', ratio: '1:1' },
-      { id: 'ratio_12_7', name: '12:7 Oranı (Geniş)', ratio: '12:7' },
-      { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' }
-    ];
-    defaults.forEach(d => {
-      seedStmt.run(
-        d.id,
-        shopId,
-        d.name,
-        d.ratio,
-        JSON.stringify([]),
-        JSON.stringify([]),
-        JSON.stringify([]),
-        JSON.stringify([])
-      );
-    });
-    console.log(`Default variation profiles seeded for shop: ${shopId}`);
-  }
+  const seedStmt = db.prepare(`
+    INSERT INTO variation_profiles (id, shop_id, name, ratio, sizes, frames, combinations, template_ids)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(shop_id, id) DO NOTHING
+  `);
+  const defaults = [
+    { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
+    { id: 'ratio_3_2', name: '3:2 Oranı (Yatay)', ratio: '3:2' },
+    { id: 'ratio_1_1', name: '1:1 Oranı (Kare)', ratio: '1:1' },
+    { id: 'ratio_12_7', name: '12:7 Oranı (Geniş)', ratio: '12:7' },
+    { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' },
+    { id: 'ratio_12_5', name: '12:5 Oranı (Panoramik)', ratio: '12:5' },
+    { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' }
+  ];
+  defaults.forEach(d => {
+    seedStmt.run(
+      d.id,
+      shopId,
+      d.name,
+      d.ratio,
+      JSON.stringify([]),
+      JSON.stringify([]),
+      JSON.stringify([]),
+      JSON.stringify([])
+    );
+  });
 }
 
 // Global helper: Copy general settings template to a new shop
@@ -268,8 +291,14 @@ export function copySettingsTemplateToShop(fromShopId, toShopId) {
   }
 }
 
-// Seed default shop profiles if empty on launch
-const activeShop = getActiveShop();
-seedDefaultProfilesForShop(activeShop.shop_id);
+// Seed default shop profiles for all shops on launch
+try {
+  const allShops = db.prepare('SELECT shop_id FROM etsy_auth').all();
+  allShops.forEach(s => seedDefaultProfilesForShop(s.shop_id));
+  seedDefaultProfilesForShop('default_shop');
+} catch (err) {
+  const activeShop = getActiveShop();
+  seedDefaultProfilesForShop(activeShop.shop_id);
+}
 
 export default db;

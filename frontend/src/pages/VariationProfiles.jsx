@@ -8,7 +8,7 @@ import RECOMMENDED_DATA from './recommended_data.json';
 
 const API_BASE = 'http://localhost:3001/api';
 
-const DEFAULT_RATIOS = ['2:3', '3:2', '1:1', '12:7', '7:12'];
+const DEFAULT_RATIOS = ['2:3', '3:2', '1:1', '12:7', '7:12', '12:5', '1:2'];
 
 export default function VariationProfiles() {
   const [profiles, setProfiles] = useState([]);

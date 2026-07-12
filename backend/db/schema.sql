@@ -58,3 +58,15 @@ CREATE TABLE IF NOT EXISTS etsy_auth (
   expires_at TEXT,      -- Store ISO date string
   is_active INTEGER DEFAULT 0
 );
+
+-- AI usage logging table
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id TEXT PRIMARY KEY,
+  shop_id TEXT,
+  model TEXT,
+  prompt_tokens INTEGER,
+  completion_tokens INTEGER,
+  total_tokens INTEGER,
+  cost REAL DEFAULT 0.0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

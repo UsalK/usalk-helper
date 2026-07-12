@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Save, AlertTriangle, Sliders, CheckCircle, RefreshCw, 
+import {
+  Save, AlertTriangle, Sliders, CheckCircle, RefreshCw,
   Settings, FolderKanban, Truck, Tag, FileText, Info, Check, Clock
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
 
 const ROOM_OPTIONS = [
-  'Bathroom', 'Bedroom', 'Dorm', 'Entryway', 'Game room', 
+  'Bathroom', 'Bedroom', 'Dorm', 'Entryway', 'Game room',
   'Kids', 'Kitchen & dining', 'Laundry', 'Living room', 'Nursery', 'Office'
 ];
 
@@ -18,7 +18,7 @@ export default function DefaultSettings({ etsyConnected }) {
   const [metaLoading, setMetaLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  
+
   // Settings state
   const [settings, setSettings] = useState({
     default_price: 35.00,
@@ -35,7 +35,7 @@ export default function DefaultSettings({ etsyConnected }) {
     target_market: 'US/UK',
     nvidia_api_key: '',
     nvidia_model: 'moonshotai/kimi-k2.6',
-    
+
     // New tab settings
     timezone: 'UTC - Coordinated Universal Time',
     currency: 'US Dollar ($)',
@@ -43,7 +43,7 @@ export default function DefaultSettings({ etsyConnected }) {
     default_processing_days: 6,
     auto_sync: false,
     auto_renew: true,
-    
+
     // Attributes tab settings
     attribute_materials_enabled: true,
     attribute_materials: ['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'],
@@ -61,7 +61,7 @@ export default function DefaultSettings({ etsyConnected }) {
     attribute_height_enabled: true,
     attribute_height: 60,
     attribute_height_unit: 'Inches',
-    
+
     // Description tab settings
     description_boilerplate: ''
   });
@@ -107,7 +107,7 @@ export default function DefaultSettings({ etsyConnected }) {
     setMetaLoading(true);
     try {
       if (force) {
-        await axios.post(`${API_BASE}/etsy/clear-cache`).catch(() => {});
+        await axios.post(`${API_BASE}/etsy/clear-cache`).catch(() => { });
       }
       const [shipRes, returnRes, sectionRes, readinessRes] = await Promise.all([
         axios.get(`${API_BASE}/etsy/shipping-profiles`).catch(() => ({ data: [] })),
@@ -237,7 +237,7 @@ export default function DefaultSettings({ etsyConnected }) {
           <h2 className="text-2xl font-bold text-white tracking-tight">Genel Ayarlar</h2>
           <p className="text-slate-400 text-sm">Mağazanızın temel ayarlarını ve tercihlerini yapılandırın.</p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           {successMsg && (
             <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg text-sm">
@@ -292,11 +292,10 @@ export default function DefaultSettings({ etsyConnected }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
-                isActive 
-                  ? 'border-amber-500 text-amber-500 bg-amber-500/5' 
+              className={`flex items-center space-x-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${isActive
+                  ? 'border-amber-500 text-amber-500 bg-amber-500/5'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/10'
-              }`}
+                }`}
             >
               <Icon className="w-4.5 h-4.5" />
               <span>{tab.label}</span>
@@ -391,20 +390,23 @@ export default function DefaultSettings({ etsyConnected }) {
                 </p>
               </div>
 
-              {/* NVIDIA Model Seçimi */}
+              {/* AI Model Seçimi */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">NVIDIA AI Modeli</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktif AI Modeli</label>
                 <select
                   name="nvidia_model"
-                  value={settings.nvidia_model || 'moonshotai/kimi-k2.6'}
+                  value={settings.nvidia_model || 'qwen/qwen3.7-plus'}
                   onChange={handleChange}
                   className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                 >
-                  <option value="moonshotai/kimi-k2.6">Kimi K2.6 (Önerilen - Güçlü SEO)</option>
-                  <option value="meta/llama-3.2-90b-vision-instruct">Llama 3.2 90B Vision (Kota Dostu/Hızlı)</option>
+                  <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen - Qwen Düşünme Modeli)</option>
+                  <option value="moonshotai/kimi-k2.6" disabled>Kimi K2.6 (Pasif)</option>
+                  <option value="minimaxai/minimax-m3" disabled>MiniMax M3 (Pasif)</option>
+                  <option value="nvidia/nemotron-nano-12b-v2-vl" disabled>Nemotron Nano 12B V2 VL (Pasif)</option>
+                  <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning" disabled>Nemotron 3 Nano Omni (Pasif)</option>
                 </select>
                 <p className="text-[10px] text-slate-500">
-                  Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin. Boş bırakılırsa veya kota biterse otomatik diğeri denenir.
+                  Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin.
                 </p>
               </div>
 
@@ -418,11 +420,11 @@ export default function DefaultSettings({ etsyConnected }) {
                   <p className="text-xs text-slate-500">Ürünlerinizi Etsy ile günlük olarak otomatik senkronize edin.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     name="auto_sync"
-                    checked={settings.auto_sync} 
-                    onChange={handleChange} 
+                    checked={settings.auto_sync}
+                    onChange={handleChange}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
@@ -489,11 +491,11 @@ export default function DefaultSettings({ etsyConnected }) {
                     <p className="text-xs text-slate-500">Süresi dolan listeleri otomatik olarak yenile.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       name="auto_renew"
-                      checked={settings.auto_renew} 
-                      onChange={handleChange} 
+                      checked={settings.auto_renew}
+                      onChange={handleChange}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
@@ -767,11 +769,10 @@ export default function DefaultSettings({ etsyConnected }) {
                                 <strong className="text-white text-md block font-bold">{policy.name || 'İade Politikası'}</strong>
                                 <span className="text-xs text-slate-400 font-semibold">ID: {policy.return_policy_id}</span>
                               </div>
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-                                policy.accepts_returns 
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${policy.accepts_returns
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                   : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                              }`}>
+                                }`}>
                                 {policy.accepts_returns ? 'İade Alınır' : 'İade Alınmaz'}
                               </span>
                             </div>
@@ -852,17 +853,17 @@ export default function DefaultSettings({ etsyConnected }) {
             {/* Visual Style */}
             <div className="space-y-4 pt-6 border-t border-[#1e293b]">
               <h4 className="text-sm font-bold text-white tracking-wide">Visual Style</h4>
-              
+
               <div className="space-y-4">
                 {/* Home style */}
                 <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-300">Home style</span>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         name="attribute_home_style_enabled"
-                        checked={settings.attribute_home_style_enabled} 
+                        checked={settings.attribute_home_style_enabled}
                         onChange={handleChange}
                         className="sr-only peer"
                       />
@@ -908,17 +909,17 @@ export default function DefaultSettings({ etsyConnected }) {
             {/* Usage Context */}
             <div className="space-y-4 pt-6 border-t border-[#1e293b]">
               <h4 className="text-sm font-bold text-white tracking-wide">Usage Context</h4>
-              
+
               <div className="space-y-4">
                 {/* Occasion */}
                 <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-300">Occasion</span>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         name="attribute_occasion_enabled"
-                        checked={settings.attribute_occasion_enabled} 
+                        checked={settings.attribute_occasion_enabled}
                         onChange={handleChange}
                         className="sr-only peer"
                       />
@@ -945,10 +946,10 @@ export default function DefaultSettings({ etsyConnected }) {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-300">Holiday</span>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         name="attribute_holiday_enabled"
-                        checked={settings.attribute_holiday_enabled} 
+                        checked={settings.attribute_holiday_enabled}
                         onChange={handleChange}
                         className="sr-only peer"
                       />
@@ -975,17 +976,17 @@ export default function DefaultSettings({ etsyConnected }) {
                   <div className="flex items-center justify-between border-b border-[#1e293b] pb-2">
                     <span className="text-xs font-semibold text-slate-300">Room</span>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         name="attribute_room_enabled"
-                        checked={settings.attribute_room_enabled} 
+                        checked={settings.attribute_room_enabled}
                         onChange={handleChange}
                         className="sr-only peer"
                       />
                       <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
                     </label>
                   </div>
-                  
+
                   {settings.attribute_room_enabled && (
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1016,190 +1017,190 @@ export default function DefaultSettings({ etsyConnected }) {
             {/* Product Specs */}
             <div className="space-y-4 pt-6 border-t border-[#1e293b]">
               <h4 className="text-sm font-bold text-white tracking-wide">Product Specs</h4>
-              
+
               <div className="space-y-4">
-                  {/* Width */}
-                  <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-300">Width</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          name="attribute_width_enabled"
-                          checked={settings.attribute_width_enabled} 
-                          onChange={handleChange}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
-                      </label>
-                    </div>
-                    {settings.attribute_width_enabled && (
-                      <div className="flex space-x-2">
-                        <input
-                          type="number"
-                          name="attribute_width"
-                          value={settings.attribute_width}
-                          onChange={handleChange}
-                          className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                        />
-                        <select
-                          name="attribute_width_unit"
-                          value={settings.attribute_width_unit}
-                          onChange={handleChange}
-                          className="bg-[#0e1726] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
-                        >
-                          <option value="Inches">İnç</option>
-                          <option value="Centimeters">Cm</option>
-                        </select>
-                      </div>
-                    )}
+                {/* Width */}
+                <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-300">Width</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="attribute_width_enabled"
+                        checked={settings.attribute_width_enabled}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
+                    </label>
                   </div>
-
-                  {/* Height */}
-                  <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-300">Height</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          name="attribute_height_enabled"
-                          checked={settings.attribute_height_enabled} 
-                          onChange={handleChange}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
-                      </label>
+                  {settings.attribute_width_enabled && (
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        name="attribute_width"
+                        value={settings.attribute_width}
+                        onChange={handleChange}
+                        className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      />
+                      <select
+                        name="attribute_width_unit"
+                        value={settings.attribute_width_unit}
+                        onChange={handleChange}
+                        className="bg-[#0e1726] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                      >
+                        <option value="Inches">İnç</option>
+                        <option value="Centimeters">Cm</option>
+                      </select>
                     </div>
-                    {settings.attribute_height_enabled && (
-                      <div className="flex space-x-2">
-                        <input
-                          type="number"
-                          name="attribute_height"
-                          value={settings.attribute_height}
-                          onChange={handleChange}
-                          className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                        />
-                        <select
-                          name="attribute_height_unit"
-                          value={settings.attribute_height_unit}
-                          onChange={handleChange}
-                          className="bg-[#0e1726] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
-                        >
-                          <option value="Inches">İnç</option>
-                          <option value="Centimeters">Cm</option>
-                        </select>
-                      </div>
-                    )}
+                  )}
+                </div>
+
+                {/* Height */}
+                <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-300">Height</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="attribute_height_enabled"
+                        checked={settings.attribute_height_enabled}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
+                    </label>
                   </div>
-
-                  {/* Materials */}
-                  <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-semibold text-slate-300 block">Materials</span>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          {(settings.attribute_materials || []).length === 5 ? 'All 5 selected' : `${(settings.attribute_materials || []).length} selected`}
-                        </span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          name="attribute_materials_enabled"
-                          checked={settings.attribute_materials_enabled} 
-                          onChange={handleChange}
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
-                      </label>
+                  {settings.attribute_height_enabled && (
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        name="attribute_height"
+                        value={settings.attribute_height}
+                        onChange={handleChange}
+                        className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      />
+                      <select
+                        name="attribute_height_unit"
+                        value={settings.attribute_height_unit}
+                        onChange={handleChange}
+                        className="bg-[#0e1726] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                      >
+                        <option value="Inches">İnç</option>
+                        <option value="Centimeters">Cm</option>
+                      </select>
                     </div>
-                    {settings.attribute_materials_enabled && (
-                      <div className="space-y-3 relative">
-                        {/* Searchable Dropdown */}
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Type to search..."
-                            value={materialSearch}
-                            onFocus={() => setShowMaterialDropdown(true)}
-                            onChange={(e) => setMaterialSearch(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const val = materialSearch.trim();
-                                if (val) {
-                                  handleMaterialAdd(val);
-                                  setMaterialSearch('');
-                                }
+                  )}
+                </div>
+
+                {/* Materials */}
+                <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-300 block">Materials</span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {(settings.attribute_materials || []).length === 5 ? 'All 5 selected' : `${(settings.attribute_materials || []).length} selected`}
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="attribute_materials_enabled"
+                        checked={settings.attribute_materials_enabled}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:bg-slate-950"></div>
+                    </label>
+                  </div>
+                  {settings.attribute_materials_enabled && (
+                    <div className="space-y-3 relative">
+                      {/* Searchable Dropdown */}
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Type to search..."
+                          value={materialSearch}
+                          onFocus={() => setShowMaterialDropdown(true)}
+                          onChange={(e) => setMaterialSearch(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = materialSearch.trim();
+                              if (val) {
+                                handleMaterialAdd(val);
+                                setMaterialSearch('');
                               }
-                            }}
-                            className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 pr-10"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-
-                          {showMaterialDropdown && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setShowMaterialDropdown(false)} 
-                              />
-                              <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#0e1726] border border-[#1e293b] rounded-xl shadow-xl divide-y divide-[#151f32]">
-                                {/* Filter standard materials */}
-                                {['Canvas', 'Cotton', 'Fabric', 'Paper', 'Wood', 'Glass', 'Metal', 'Leather', 'Ceramic', 'Plastic', 'Stone', 'Ink', 'Cardstock', 'Polyester', 'Bamboo', 'Acrylic', 'Parchment']
-                                  .filter(mat => !(settings.attribute_materials || []).includes(mat))
-                                  .filter(mat => mat.toLowerCase().includes(materialSearch.toLowerCase()))
-                                  .map(mat => (
-                                    <div
-                                      key={mat}
-                                      onClick={() => {
-                                        handleMaterialAdd(mat);
-                                        setShowMaterialDropdown(false);
-                                      }}
-                                      className="px-4 py-2.5 text-xs text-slate-300 hover:bg-[#151f32] hover:text-white cursor-pointer"
-                                    >
-                                      {mat}
-                                    </div>
-                                  ))}
-                              </div>
-                            </>
-                          )}
+                            }
+                          }}
+                          className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500 pr-10"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                          </svg>
                         </div>
 
-                        {/* Selected Materials Chips */}
-                        {(settings.attribute_materials || []).length > 0 && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {(settings.attribute_materials || []).map(mat => (
-                              <span 
-                                key={mat} 
-                                className="inline-flex items-center space-x-1 bg-slate-200 text-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:bg-slate-300 transition-colors"
-                              >
-                                <span>{mat}</span>
-                                <button 
-                                  type="button" 
-                                  onClick={() => handleMaterialToggle(mat)}
-                                  className="text-slate-500 hover:text-rose-600 font-bold ml-1.5 focus:outline-none flex items-center justify-center"
-                                  style={{ fontSize: '13px', lineHeight: '10px' }}
-                                >
-                                  &times;
-                                </button>
-                              </span>
-                            ))}
-                          </div>
+                        {showMaterialDropdown && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setShowMaterialDropdown(false)}
+                            />
+                            <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[#0e1726] border border-[#1e293b] rounded-xl shadow-xl divide-y divide-[#151f32]">
+                              {/* Filter standard materials */}
+                              {['Canvas', 'Cotton', 'Fabric', 'Paper', 'Wood', 'Glass', 'Metal', 'Leather', 'Ceramic', 'Plastic', 'Stone', 'Ink', 'Cardstock', 'Polyester', 'Bamboo', 'Acrylic', 'Parchment']
+                                .filter(mat => !(settings.attribute_materials || []).includes(mat))
+                                .filter(mat => mat.toLowerCase().includes(materialSearch.toLowerCase()))
+                                .map(mat => (
+                                  <div
+                                    key={mat}
+                                    onClick={() => {
+                                      handleMaterialAdd(mat);
+                                      setShowMaterialDropdown(false);
+                                    }}
+                                    className="px-4 py-2.5 text-xs text-slate-300 hover:bg-[#151f32] hover:text-white cursor-pointer"
+                                  >
+                                    {mat}
+                                  </div>
+                                ))}
+                            </div>
+                          </>
                         )}
-
-                        <p className="text-[10px] text-slate-500">
-                          En fazla 13 malzeme ekleyebilirsiniz (Seçilen: {(settings.attribute_materials || []).length}/13)
-                        </p>
                       </div>
-                    )}
-                  </div>
+
+                      {/* Selected Materials Chips */}
+                      {(settings.attribute_materials || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {(settings.attribute_materials || []).map(mat => (
+                            <span
+                              key={mat}
+                              className="inline-flex items-center space-x-1 bg-slate-200 text-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:bg-slate-300 transition-colors"
+                            >
+                              <span>{mat}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleMaterialToggle(mat)}
+                                className="text-slate-500 hover:text-rose-600 font-bold ml-1.5 focus:outline-none flex items-center justify-center"
+                                style={{ fontSize: '13px', lineHeight: '10px' }}
+                              >
+                                &times;
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-[10px] text-slate-500">
+                        En fazla 13 malzeme ekleyebilirsiniz (Seçilen: {(settings.attribute_materials || []).length}/13)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
         {/* TAB 5: AÇIKLAMA (Description Boilerplate) */}
         {activeTab === 'aciklama' && (

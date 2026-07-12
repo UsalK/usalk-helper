@@ -7,8 +7,6 @@ import {
 
 const API_BASE = 'http://localhost:3001/api';
 
-const RATIO_PRESETS = ['2:3', '3:2', '1:1', '12:7', '7:12'];
-
 const FRAME_OPTIONS = [
   { id: 'stretched', name: 'Stretched Wood (Çerçevesiz)' },
   { id: 'black_frame', name: 'Black Frame (Siyah)' },
@@ -230,6 +228,7 @@ const drawRealisticFrame = (ctx, x, y, w, h, style, thickness) => {
 
 export default function TemplateStudio() {
   const [templates, setTemplates] = useState([]);
+  const [variationProfiles, setVariationProfiles] = useState([]);
   const [view, setView] = useState('list'); // 'list' | 'editor'
   
   // Library sharing states
@@ -334,6 +333,7 @@ export default function TemplateStudio() {
 
   useEffect(() => {
     fetchTemplates();
+    fetchVariationProfiles();
   }, []);
 
   // Keyboard navigation for selected handle (fine-tuning)
@@ -431,6 +431,19 @@ export default function TemplateStudio() {
       setLoading(false);
     }
   };
+
+  const fetchVariationProfiles = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/variations`);
+      setVariationProfiles(res.data || []);
+    } catch (err) {
+      console.error('Varyasyon profilleri yüklenemedi:', err);
+    }
+  };
+
+  const ratioPresets = variationProfiles.length > 0
+    ? Array.from(new Set(variationProfiles.map(p => p.ratio)))
+    : ['2:3', '3:2', '1:1', '12:7', '7:12', '12:5'];
 
   const fetchLibraryTemplates = async () => {
     setLibraryLoading(true);
@@ -1010,7 +1023,7 @@ export default function TemplateStudio() {
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Uyumlu Oranlar</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {RATIO_PRESETS.map(ratio => {
+                    {ratioPresets.map(ratio => {
                       const isSelected = staticRatios.includes(ratio);
                       return (
                         <button
@@ -1075,7 +1088,7 @@ export default function TemplateStudio() {
 
         {/* Profiles Sections list */}
         <div className="space-y-6">
-          {RATIO_PRESETS.map(ratio => {
+          {ratioPresets.map(ratio => {
             const matchedImages = staticTemplates.filter(t => t.type === 'static');
             const filteredMatched = matchedImages.filter(t => t.config?.compatible_ratios?.includes(ratio));
 
@@ -1185,8 +1198,8 @@ export default function TemplateStudio() {
           ) : (
             <>
               {templates.filter(t => t.type !== 'static').length > 0 && (
-                <div className="flex space-x-1 bg-[#0e1726] border border-[#1e293b] p-1 rounded-xl w-fit mb-6">
-                  {['All', '2:3', '3:2', '1:1', '12:7', '7:12'].map(ratio => (
+                <div className="flex flex-wrap gap-1 bg-[#0e1726] border border-[#1e293b] p-1 rounded-xl w-fit mb-6">
+                  {['All', ...ratioPresets].map(ratio => (
                     <button
                       key={ratio}
                       onClick={() => setFilterRatio(ratio)}
@@ -1460,7 +1473,7 @@ export default function TemplateStudio() {
                     Uyumlu Oranlar
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {RATIO_PRESETS.map(ratio => (
+                    {ratioPresets.map(ratio => (
                       <button
                         key={ratio}
                         type="button"
@@ -1504,7 +1517,7 @@ export default function TemplateStudio() {
                       }}
                       className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                     >
-                      {RATIO_PRESETS.map(r => (
+                      {ratioPresets.map(r => (
                         <option key={r} value={r}>{r} Oranı</option>
                       ))}
                     </select>

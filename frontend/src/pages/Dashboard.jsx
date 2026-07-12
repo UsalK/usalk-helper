@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Sparkles, Trash2, Edit3, ShoppingBag, Eye, UploadCloud, 
   X, Check, AlertCircle, RefreshCw, PlusCircle, ExternalLink,
-  ChevronLeft, ChevronRight, CheckSquare, Square, Layers, Save, Tag
+  ChevronLeft, ChevronRight, CheckSquare, Square, Layers, Save, Tag, Grid
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -14,6 +14,11 @@ export default function Dashboard({ etsyConnected }) {
   const [etsyListings, setEtsyListings] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedListingIds, setSelectedListingIds] = useState([]);
+  const [selectedLocalIds, setSelectedLocalIds] = useState([]);
+  const [filterSectionId, setFilterSectionId] = useState('');
+  const [showVariationModal, setShowVariationModal] = useState(false);
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [batchVariationProfileId, setBatchVariationProfileId] = useState('');
   const [batchMaterials, setBatchMaterials] = useState(['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric']);
   const [newBatchMaterial, setNewBatchMaterial] = useState('');
   
@@ -60,15 +65,17 @@ export default function Dashboard({ etsyConnected }) {
   useEffect(() => {
     setSelectedProduct(null);
     setSelectedListingIds([]);
+    setSelectedLocalIds([]);
     setEtsyListings([]);
     setProducts([]);
+    setOffset(0);
     
     if (activeTab === 'local') {
-      fetchProducts();
+      fetchProducts(filterSectionId);
     } else {
-      fetchEtsyListings(activeTab, 0);
+      fetchEtsyListings(activeTab, 0, filterSectionId);
     }
-  }, [activeTab, etsyConnected]);
+  }, [activeTab, etsyConnected, filterSectionId]);
 
   const fetchShopSections = async () => {
     if (!etsyConnected) return;
@@ -80,10 +87,12 @@ export default function Dashboard({ etsyConnected }) {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (secId = filterSectionId) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/products`);
+      const params = {};
+      if (secId) params.shop_section_id = secId;
+      const res = await axios.get(`${API_BASE}/products`, { params });
       // Filter out products that are already live on Etsy (they will be managed in Etsy tabs)
       setProducts(res.data.filter(p => p.status !== 'live'));
     } catch (err) {
@@ -93,17 +102,19 @@ export default function Dashboard({ etsyConnected }) {
     }
   };
 
-  const fetchEtsyListings = async (tabState, currentOffset = 0) => {
+  const fetchEtsyListings = async (tabState, currentOffset = 0, secId = filterSectionId) => {
     if (!etsyConnected) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/etsy/listings`, {
-        params: {
-          state: tabState,
-          limit: LIMIT,
-          offset: currentOffset
-        }
-      });
+      const params = {
+        state: tabState,
+        limit: LIMIT,
+        offset: currentOffset
+      };
+      if (secId) {
+        params.shop_section_ids = secId;
+      }
+      const res = await axios.get(`${API_BASE}/etsy/listings`, { params });
       if (res.data && res.data.results) {
         setEtsyListings(res.data.results);
         setTotalCount(res.data.count || 0);
@@ -430,18 +441,85 @@ export default function Dashboard({ etsyConnected }) {
     );
   };
 
+  const handleSelectLocalToggle = (id) => {
+    setSelectedLocalIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(i => i !== id) 
+        : [...prev, id]
+    );
+  };
+
   const handleSelectAllListings = () => {
-    const listIds = etsyListings.map(l => l.listing_id.toString());
-    const allSelected = listIds.every(id => selectedListingIds.includes(id));
+    const listIds = filteredListings.map(l => l.listing_id.toString());
+    const allSelected = listIds.length > 0 && listIds.every(id => selectedListingIds.includes(id));
     if (allSelected) {
-      // Unselect all of this page
       setSelectedListingIds(prev => prev.filter(id => !listIds.includes(id)));
     } else {
-      // Select all of this page
-      setSelectedListingIds(prev => {
-        const union = new Set([...prev, ...listIds]);
-        return Array.from(union);
-      });
+      setSelectedListingIds(prev => Array.from(new Set([...prev, ...listIds])));
+    }
+  };
+
+  const handleSelectAllLocal = () => {
+    const allIds = filteredProducts.map(p => p.id);
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedLocalIds.includes(id));
+    if (allSelected) {
+      setSelectedLocalIds(prev => prev.filter(id => !allIds.includes(id)));
+    } else {
+      setSelectedLocalIds(prev => Array.from(new Set([...prev, ...allIds])));
+    }
+  };
+
+  const handleBatchUpdateVariationProfile = async () => {
+    const activeIds = activeTab === 'local' ? selectedLocalIds : selectedListingIds;
+    if (activeIds.length === 0) return;
+    if (!batchVariationProfileId) {
+      alert('Lütfen güncellenecek varyasyon profilini seçin.');
+      return;
+    }
+
+    const targetProfile = variationProfiles.find(p => p.id === batchVariationProfileId);
+    const profileName = targetProfile ? targetProfile.name : batchVariationProfileId;
+
+    if (!confirm(`${activeIds.length} adet ürünün varyasyon profilini [ ${profileName} ] olarak ${activeTab === 'local' ? 'yerelde' : 'Etsy mağazanızda'} güncellemek istediğinize emin misiniz?`)) return;
+
+    setBatchLoading(true);
+    try {
+      if (activeTab === 'local') {
+        const res = await axios.post(`${API_BASE}/products/batch-variation-profile`, {
+          productIds: activeIds,
+          variation_profile_id: batchVariationProfileId
+        });
+        alert(`Tebrikler! ${res.data.updatedCount || activeIds.length} adet yerel ürünün varyasyon profili [${profileName}] olarak başarıyla güncellendi.`);
+        fetchProducts();
+        setSelectedLocalIds([]);
+      } else {
+        const res = await axios.post(`${API_BASE}/etsy/listings/batch-variation-profile`, {
+          listingIds: activeIds,
+          variation_profile_id: batchVariationProfileId
+        });
+        
+        const failed = res.data.results ? res.data.results.filter(r => !r.success) : [];
+        if (failed.length > 0) {
+          alert(`${res.data.results.length} Etsy ürününden ${failed.length} adedinin varyasyonu güncellenemedi. Detaylar konsolda.`);
+          console.error('Etsy batch variation failures:', failed);
+        } else {
+          alert(`Tebrikler! ${res.data.results?.length || activeIds.length} adet Etsy ürününün varyasyon profili [${profileName}] olarak Etsy üzerinde başarıyla güncellendi!`);
+        }
+        
+        fetchEtsyListings(activeTab, offset);
+        setSelectedListingIds([]);
+      }
+      
+      setShowVariationModal(false);
+
+      if (selectedProduct && activeIds.includes(selectedProduct.id)) {
+        setSelectedProfileId(batchVariationProfileId);
+      }
+    } catch (err) {
+      console.error('Batch variation update error:', err.response?.data || err.message);
+      alert('Toplu varyasyon güncelleme hatası: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -491,6 +569,7 @@ export default function Dashboard({ etsyConnected }) {
       // Refresh current listings
       fetchEtsyListings(activeTab, offset);
       setSelectedListingIds([]);
+      setShowMaterialModal(false);
       
       // Refresh selected product if it was updated
       if (selectedProduct && selectedListingIds.includes(selectedProduct.id)) {
@@ -517,8 +596,15 @@ export default function Dashboard({ etsyConnected }) {
 
   const isAllPageSelected = etsyListings.length > 0 && etsyListings.every(l => selectedListingIds.includes(l.listing_id.toString()));
 
+  const filteredProducts = products;
+  const filteredListings = etsyListings;
+
+  const isAllFilteredPageSelected = filteredListings.length > 0 && filteredListings.every(l => selectedListingIds.includes(l.listing_id.toString()));
+  const isAllFilteredLocalSelected = filteredProducts.length > 0 && filteredProducts.every(p => selectedLocalIds.includes(p.id));
+
   return (
-    <div className="py-6 px-4 max-w-7xl mx-auto animate-fade-in">
+    <>
+      <div className="py-6 px-4 max-w-7xl mx-auto animate-fade-in">
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -577,29 +663,86 @@ export default function Dashboard({ etsyConnected }) {
         })}
       </div>
 
+      {/* Shop Section Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between bg-[#0e1726] border border-[#1e293b] rounded-2xl p-4 mb-6 gap-4">
+        <div className="flex items-center space-x-3">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+            <Layers className="w-4 h-4 text-amber-500" />
+            <span>Mağaza Bölümü Filtresi:</span>
+          </span>
+          <select
+            value={filterSectionId}
+            onChange={(e) => setFilterSectionId(e.target.value)}
+            className="bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 min-w-[220px]"
+          >
+            <option value="">Tüm Bölümler ({activeTab === 'local' ? products.length : totalCount})</option>
+            {shopSections.map(sec => (
+              <option key={sec.shop_section_id} value={sec.shop_section_id.toString()}>
+                {sec.title} ({sec.active_listing_count || 0} ürün)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {filterSectionId && (
+          <button
+            onClick={() => setFilterSectionId('')}
+            className="text-xs text-amber-500 hover:text-amber-400 font-semibold transition-colors flex items-center space-x-1"
+          >
+            <X className="w-3.5 h-3.5" />
+            <span>Filtreyi Temizle</span>
+          </button>
+        )}
+      </div>
+
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column: Listings Grid */}
         <div className="lg:col-span-2 space-y-4">
           
-          {/* Select All Bar (Etsy Tabs Only) */}
-          {activeTab !== 'local' && etsyListings.length > 0 && (
+          {/* Select All Bar */}
+          {((activeTab !== 'local' && filteredListings.length > 0) || (activeTab === 'local' && filteredProducts.length > 0)) && (
             <div className="flex items-center justify-between bg-[#0e1726]/60 border border-[#1e293b] rounded-2xl p-4">
               <button 
-                onClick={handleSelectAllListings}
+                onClick={activeTab === 'local' ? handleSelectAllLocal : handleSelectAllListings}
                 className="flex items-center space-x-2 text-xs text-slate-300 hover:text-white transition-colors"
               >
-                {isAllPageSelected ? (
+                {(activeTab === 'local' ? isAllFilteredLocalSelected : isAllFilteredPageSelected) ? (
                   <CheckSquare className="w-4 h-4 text-amber-500" />
                 ) : (
                   <Square className="w-4 h-4" />
                 )}
                 <span>Bu Sayfadaki Tümünü Seç</span>
               </button>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                {selectedListingIds.length} Seçili Ürün
-              </span>
+
+              <div className="flex items-center space-x-3">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  {(activeTab === 'local' ? selectedLocalIds.length : selectedListingIds.length)} Seçili Ürün
+                </span>
+                {(activeTab === 'local' ? selectedLocalIds.length > 0 : selectedListingIds.length > 0) && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        setBatchVariationProfileId(selectedProfileId || (variationProfiles[0]?.id || ''));
+                        setShowVariationModal(true);
+                      }}
+                      className="flex items-center space-x-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-1.5 rounded-xl transition-colors"
+                    >
+                      <Grid className="w-3.5 h-3.5" />
+                      <span>Varyasyon Güncelle</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowMaterialModal(true)}
+                      className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] text-xs font-bold px-3 py-1.5 rounded-xl transition-colors"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Malzeme Güncelle</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -610,7 +753,7 @@ export default function Dashboard({ etsyConnected }) {
             </div>
           ) : activeTab === 'local' ? (
             // Local Draft Grid
-            products.length === 0 ? (
+            filteredProducts.length === 0 ? (
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-16 text-center text-slate-500">
                 <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-slate-600" />
                 <p className="font-medium mb-1 text-white">Yerel taslak ürün bulunmamaktadır</p>
@@ -618,16 +761,30 @@ export default function Dashboard({ etsyConnected }) {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map(product => {
+                {filteredProducts.map(product => {
                   const isSelected = selectedProduct && selectedProduct.id === product.id;
+                  const isChecked = selectedLocalIds.includes(product.id);
                   return (
                     <div 
                       key={product.id}
                       onClick={() => handleSelectProduct(product)}
-                      className={`bg-[#0e1726] border rounded-3xl p-4 flex flex-col justify-between cursor-pointer transition-all hover:border-amber-500/20 ${
+                      className={`bg-[#0e1726] border rounded-3xl p-4 flex flex-col justify-between cursor-pointer transition-all relative group hover:border-amber-500/20 ${
                         isSelected ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-[#1e293b]'
                       }`}
                     >
+                      {/* Checkbox Overlay */}
+                      <div 
+                        className="absolute top-3 left-3 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectLocalToggle(product.id);
+                        }}
+                      >
+                        <button className="w-5 h-5 rounded-lg border border-[#1e293b] bg-slate-900/80 hover:bg-slate-900 flex items-center justify-center transition-colors">
+                          {isChecked && <Check className="w-3.5 h-3.5 text-amber-500 font-bold" />}
+                        </button>
+                      </div>
+
                       <div>
                         <div className="aspect-[4/3] w-full bg-slate-950 rounded-2xl overflow-hidden mb-3 relative">
                           <img 
@@ -683,7 +840,7 @@ export default function Dashboard({ etsyConnected }) {
             )
           ) : (
             // Etsy Listings Grid (fetched from Etsy API)
-            etsyListings.length === 0 ? (
+            filteredListings.length === 0 ? (
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-16 text-center text-slate-500">
                 <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-slate-600" />
                 <p className="font-medium mb-1 text-white">Bu kategoride Etsy ürünü bulunamadı</p>
@@ -692,11 +849,14 @@ export default function Dashboard({ etsyConnected }) {
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {etsyListings.map(listing => {
+                  {filteredListings.map(listing => {
                     const listingIdStr = listing.listing_id.toString();
                     const isSelected = selectedProduct && selectedProduct.id === listingIdStr;
                     const isChecked = selectedListingIds.includes(listingIdStr);
-                    const thumbnail = listing.Images && listing.Images[0] ? listing.Images[0].url_170x135 : null;
+                    
+                    const imagesArr = listing.images || listing.Images || [];
+                    const firstImg = imagesArr[0];
+                    const thumbnail = firstImg ? (firstImg.url_170x135 || firstImg.url_75x75 || firstImg.url_570xN || firstImg.url_fullxfull) : null;
 
                     return (
                       <div 
@@ -792,98 +952,6 @@ export default function Dashboard({ etsyConnected }) {
               </div>
             )
           )}
-          
-          {/* Floating Batch Materials Update Bar (Sleek bottom toolbar) */}
-          {activeTab !== 'local' && selectedListingIds.length > 0 && (
-            <div className="sticky bottom-6 left-0 right-0 bg-[#0b0f19] border border-amber-500/20 rounded-3xl p-5 shadow-2xl z-30 space-y-4 animate-fade-in-up">
-              <div className="flex items-center justify-between border-b border-[#1e293b] pb-3">
-                <div className="flex items-center space-x-2">
-                  <CheckSquare className="w-5 h-5 text-amber-500 animate-pulse" />
-                  <span className="text-sm font-bold text-white">Toplu Malzeme Güncelleme ({selectedListingIds.length} Ürün Seçildi)</span>
-                </div>
-                <button 
-                  onClick={() => setSelectedListingIds([])}
-                  className="p-1 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Toggle-able Predefined Materials */}
-              <div className="space-y-3">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Malzemeleri Seçin</span>
-                  <div className="flex flex-wrap gap-2">
-                    {['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].map(mat => {
-                      const isSel = batchMaterials.includes(mat);
-                      return (
-                        <button
-                          key={mat}
-                          onClick={() => handleBatchMaterialToggle(mat)}
-                          className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
-                            isSel 
-                              ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-md shadow-amber-500/10'
-                              : 'bg-slate-900 text-slate-400 border-[#1e293b] hover:text-white'
-                          }`}
-                        >
-                          {mat}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Batch Custom Materials input */}
-                <form onSubmit={handleAddBatchMaterial} className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newBatchMaterial}
-                    onChange={(e) => setNewBatchMaterial(e.target.value)}
-                    placeholder="Özel malzeme ekle (Örn: Metal, Glass)"
-                    className="flex-1 bg-slate-900 border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 rounded-xl text-xs font-semibold"
-                  >
-                    Ekle
-                  </button>
-                </form>
-
-                {/* Selected Custom Materials Chips */}
-                {batchMaterials.filter(m => !['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].includes(m)).length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {batchMaterials.filter(m => !['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].includes(m)).map(mat => (
-                      <span 
-                        key={mat}
-                        className="inline-flex items-center space-x-1 text-[10px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-[#334155]"
-                      >
-                        <span>{mat}</span>
-                        <button type="button" onClick={() => handleBatchMaterialToggle(mat)} className="text-slate-500 hover:text-rose-400">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Action execute button */}
-              <button
-                onClick={handleBatchUpdateMaterials}
-                disabled={batchLoading}
-                className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-3.5 rounded-2xl text-xs transition-all flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/10"
-              >
-                {batchLoading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                <span>Seçilen {selectedListingIds.length} Ürünün Malzemesini Güncelle</span>
-              </button>
-            </div>
-          )}
-
         </div>
 
         {/* Right Column: Edit Drawer / Details Panel */}
@@ -1190,5 +1258,176 @@ export default function Dashboard({ etsyConnected }) {
         </div>
       </div>
     </div>
+
+      {/* Bulk Variation Update Modal */}
+      {showVariationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 w-full max-w-md shadow-2xl relative space-y-6">
+            <div className="flex items-center justify-between border-b border-[#1e293b] pb-4">
+              <div className="flex items-center space-x-2.5">
+                <Grid className="w-5 h-5 text-amber-500" />
+                <h3 className="text-sm font-bold text-white">Toplu Varyasyon Profili Güncelleme</h3>
+              </div>
+              <button 
+                onClick={() => setShowVariationModal(false)}
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs text-slate-400">
+                Seçilen <span className="font-bold text-amber-400">{activeTab === 'local' ? selectedLocalIds.length : selectedListingIds.length}</span> adet ürünün boyut ve çerçeve varyasyon profili değiştirilecektir.
+              </p>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Yeni Varyasyon Profilini Seçin
+                </label>
+                <select
+                  value={batchVariationProfileId}
+                  onChange={(e) => setBatchVariationProfileId(e.target.value)}
+                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-amber-500 font-medium"
+                >
+                  {variationProfiles.map(prof => (
+                    <option key={prof.id} value={prof.id}>
+                      {prof.name} ({prof.ratio}) - {prof.sizes?.length || 0} Boyut
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowVariationModal(false)}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 rounded-xl text-xs transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleBatchUpdateVariationProfile}
+                disabled={batchLoading}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg shadow-amber-500/10 transition-colors flex items-center justify-center space-x-2"
+              >
+                {batchLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>Varyasyonu Uygula</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Material Update Modal */}
+      {showMaterialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 w-full max-w-md shadow-2xl relative space-y-6">
+            <div className="flex items-center justify-between border-b border-[#1e293b] pb-4">
+              <div className="flex items-center space-x-2.5">
+                <Tag className="w-5 h-5 text-amber-500" />
+                <h3 className="text-sm font-bold text-white">Toplu Malzeme Güncelleme</h3>
+              </div>
+              <button 
+                onClick={() => setShowMaterialModal(false)}
+                className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs text-slate-400">
+                Seçilen <span className="font-bold text-amber-400">{selectedListingIds.length}</span> adet Etsy ürününün malzemeleri güncellenecektir.
+              </p>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Malzemeleri Seçin</span>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].map(mat => {
+                    const isSel = batchMaterials.includes(mat);
+                    return (
+                      <button
+                        key={mat}
+                        type="button"
+                        onClick={() => handleBatchMaterialToggle(mat)}
+                        className={`text-xs px-3.5 py-1.5 rounded-full border transition-all ${
+                          isSel 
+                            ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-md shadow-amber-500/10'
+                            : 'bg-slate-900 text-slate-400 border-[#1e293b] hover:text-white'
+                        }`}
+                      >
+                        {mat}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <form onSubmit={handleAddBatchMaterial} className="flex space-x-2 mb-3">
+                  <input
+                    type="text"
+                    value={newBatchMaterial}
+                    onChange={(e) => setNewBatchMaterial(e.target.value)}
+                    placeholder="Özel malzeme ekle (Örn: Metal, Glass)"
+                    className="flex-1 bg-slate-900 border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 rounded-xl text-xs font-semibold"
+                  >
+                    Ekle
+                  </button>
+                </form>
+
+                {batchMaterials.filter(m => !['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].includes(m)).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {batchMaterials.filter(m => !['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'].includes(m)).map(mat => (
+                      <span 
+                        key={mat}
+                        className="inline-flex items-center space-x-1 text-[10px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full border border-[#334155]"
+                      >
+                        <span>{mat}</span>
+                        <button type="button" onClick={() => handleBatchMaterialToggle(mat)} className="text-slate-500 hover:text-rose-400">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowMaterialModal(false)}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 rounded-xl text-xs transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleBatchUpdateMaterials}
+                disabled={batchLoading}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg shadow-amber-500/10 transition-colors flex items-center justify-center space-x-2"
+              >
+                {batchLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>Malzemeleri Uygula</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -55,7 +55,8 @@ router.post('/generate', async (req, res, next) => {
         occasion: seoData.occasion || [],
         holiday: seoData.holiday || [],
         room: seoData.room || []
-      }
+      },
+      _meta: seoData._meta || null
     });
   } catch (err) {
     console.error("SEO Generation Error:", err);

@@ -2,3 +2,5 @@ storage
 plan.md
 start.bat
 kimik26_api.txt
+backend/.env
+.env

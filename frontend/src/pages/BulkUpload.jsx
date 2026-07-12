@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   Upload, Sparkles, Layers, Tag, Sliders, ShoppingBag, 
   ChevronRight, ChevronLeft, Check, Play, RefreshCw, X, AlertTriangle,
-  Wand2, Plus, ArrowLeft, Trash2, Eye, CheckCircle, Trash
+  Wand2, Plus, ArrowLeft, Trash2, Eye, CheckCircle, Trash, Folder
 } from 'lucide-react';
 import { warpImage } from '../utils/homography';
 
@@ -705,66 +705,70 @@ export default function BulkUpload({ etsyConnected }) {
 
   // Queue Worker useEffect
   useEffect(() => {
-    const processQueue = async () => {
-      const nextTask = queue.find(t => t.status === 'pending');
-      if (!nextTask) return;
+    const CONCURRENCY_LIMIT = 4;
+    const activeTasks = queue.filter(t => t.status === 'processing');
+    const pendingTasks = queue.filter(t => t.status === 'pending');
 
+    if (activeTasks.length < CONCURRENCY_LIMIT && pendingTasks.length > 0) {
+      const nextTask = pendingTasks[0];
+
+      // Mark the task as processing immediately in state
       setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'processing' } : t));
 
-      try {
-        if (nextTask.type === 'seo') {
-          const res = await axios.post(`${API_BASE}/ai/generate`, { productId: nextTask.productId });
-          showToast(`"${nextTask.productTitle}" SEO içerikleri oluşturuldu.`, 'success');
-          if (selectedProduct && selectedProduct.id === nextTask.productId) {
-            setEditTitle(res.data.title);
-            setEditTags(res.data.tags);
-            setEditDescription(res.data.description);
-          }
-        } else if (nextTask.type === 'mockup') {
-          const p = products.find(prod => prod.id === nextTask.productId);
-          if (p) {
-            await generateMockupsForProduct(p);
-            showToast(`"${nextTask.productTitle}" mockupları oluşturuldu.`, 'success');
-            if (selectedProduct && selectedProduct.id === p.id) {
-              fetchProductMockups(p.id);
+      // Asynchronously process the task to allow subsequent tasks to begin
+      (async () => {
+        try {
+          if (nextTask.type === 'seo') {
+            const res = await axios.post(`${API_BASE}/ai/generate`, { productId: nextTask.productId });
+            const modelUsed = res.data._meta?.model || 'Bilinmeyen Model';
+            const isFallback = res.data._meta?.fallbackUsed ? ' (Yedek Model)' : '';
+            showToast(`"${nextTask.productTitle}" SEO içerikleri ${modelUsed}${isFallback} ile oluşturuldu.`, 'success');
+            if (selectedProduct && selectedProduct.id === nextTask.productId) {
+              setEditTitle(res.data.title);
+              setEditTags(res.data.tags);
+              setEditDescription(res.data.description);
+            }
+          } else if (nextTask.type === 'mockup') {
+            const p = products.find(prod => prod.id === nextTask.productId);
+            if (p) {
+              await generateMockupsForProduct(p);
+              showToast(`"${nextTask.productTitle}" mockupları oluşturuldu.`, 'success');
+              if (selectedProduct && selectedProduct.id === p.id) {
+                fetchProductMockups(p.id);
+              }
+            }
+          } else if (nextTask.type === 'publish') {
+            const p = products.find(prod => prod.id === nextTask.productId);
+            if (p) {
+              const res = await axios.post(`${API_BASE}/etsy/upload-listing`, {
+                productId: p.id,
+                shipping_profile_id: overrides.shipping_profile_id || null,
+                return_policy_id: overrides.return_policy_id || null,
+                shop_section_id: overrides.shop_section_id || null,
+                readiness_state_id: overrides.readiness_state_id || null,
+                listing_state: overrides.listing_state || 'draft'
+              });
+              
+              await axios.put(`${API_BASE}/products/${p.id}`, {
+                status: 'live',
+                etsy_listing_id: res.data.listing_id
+              });
+              showToast(`"${nextTask.productTitle}" başarıyla Etsy'de yayınlandı!`, 'success');
+              if (selectedProduct && selectedProduct.id === p.id) {
+                setSelectedProduct(null);
+              }
             }
           }
-        } else if (nextTask.type === 'publish') {
-          const p = products.find(prod => prod.id === nextTask.productId);
-          if (p) {
-            const res = await axios.post(`${API_BASE}/etsy/upload-listing`, {
-              productId: p.id,
-              shipping_profile_id: overrides.shipping_profile_id || null,
-              return_policy_id: overrides.return_policy_id || null,
-              shop_section_id: overrides.shop_section_id || null,
-              readiness_state_id: overrides.readiness_state_id || null,
-              listing_state: overrides.listing_state || 'draft'
-            });
-            
-            await axios.put(`${API_BASE}/products/${p.id}`, {
-              status: 'live',
-              etsy_listing_id: res.data.listing_id
-            });
-            showToast(`"${nextTask.productTitle}" başarıyla Etsy'de yayınlandı!`, 'success');
-            if (selectedProduct && selectedProduct.id === p.id) {
-              setSelectedProduct(null);
-            }
-          }
+
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'completed' } : t));
+        } catch (err) {
+          console.error(`Queue task failed:`, err);
+          showToast(`"${nextTask.productTitle}" işlemi başarısız oldu.`, 'error');
+          setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'failed' } : t));
+        } finally {
+          await fetchProducts();
         }
-
-        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'completed' } : t));
-      } catch (err) {
-        console.error(`Queue task failed:`, err);
-        showToast(`"${nextTask.productTitle}" işlemi başarısız oldu.`, 'error');
-        setQueue(prev => prev.map(t => t.id === nextTask.id ? { ...t, status: 'failed' } : t));
-      } finally {
-        await fetchProducts();
-      }
-    };
-
-    const isProcessing = queue.some(t => t.status === 'processing');
-    if (!isProcessing) {
-      processQueue();
+      })();
     }
   }, [queue, products, selectedProduct, overrides]);
 
@@ -1469,7 +1473,26 @@ export default function BulkUpload({ etsyConnected }) {
                             </div>
                             <div>
                               <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bölüm</span>
-                              <span className="font-semibold text-slate-300 truncate block">{section ? section.title : 'Bölüm Yok'}</span>
+                              <div className="flex items-center space-x-1 mt-0.5">
+                                <span className="font-semibold text-slate-300 truncate block flex-grow">{section ? section.title : 'Bölüm Yok'}</span>
+                                {p.mockup_count > 0 && (
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        await axios.post(`${API_BASE}/products/${p.id}/open-folder`);
+                                      } catch (err) {
+                                        console.error(err);
+                                        alert(err.response?.data?.error || 'Klasör açılamadı.');
+                                      }
+                                    }}
+                                    className="p-1 hover:bg-slate-800 text-amber-500 hover:text-amber-400 rounded-lg transition-colors flex-shrink-0"
+                                    title="Mockup Klasörünü Aç"
+                                  >
+                                    <Folder className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

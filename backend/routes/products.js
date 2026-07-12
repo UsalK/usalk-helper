@@ -4,6 +4,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { exec } from 'child_process';
 import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 
 const router = express.Router();
@@ -31,9 +32,19 @@ const upload = multer({ storage });
 // Get all products
 router.get('/', (req, res, next) => {
   try {
+    const { shop_section_id } = req.query;
     const activeShop = getActiveShop();
-    const stmt = db.prepare('SELECT * FROM products WHERE shop_id = ? ORDER BY created_at DESC');
-    const products = stmt.all(activeShop.shop_id);
+    
+    let sql = 'SELECT * FROM products WHERE shop_id = ?';
+    const params = [activeShop.shop_id];
+    if (shop_section_id) {
+      sql += ' AND shop_section_id = ?';
+      params.push(shop_section_id);
+    }
+    sql += ' ORDER BY created_at DESC';
+    
+    const stmt = db.prepare(sql);
+    const products = stmt.all(...params);
     
     const parsed = products.map(p => {
       const shopName = getShopStorageName(p.shop_id || activeShop.shop_id);
@@ -229,6 +240,74 @@ router.delete('/:id', (req, res, next) => {
 // Upload digital file for a product (max 20MB)
 router.post('/:id/digital-file', (req, res, next) => {
   return res.status(403).json({ error: 'Dijital ürün desteği geçici olarak devre dışı bırakılmıştır.' });
+});
+
+// Batch update variation profile for multiple products
+router.post('/batch-variation-profile', (req, res, next) => {
+  try {
+    const { productIds, variation_profile_id } = req.body;
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ error: 'productIds (array) is required' });
+    }
+    
+    const activeShop = getActiveShop();
+    const profileId = variation_profile_id || null;
+    
+    db.exec('BEGIN');
+    try {
+      const updateStmt = db.prepare('UPDATE products SET variation_profile_id = ? WHERE (id = ? OR etsy_listing_id = ?) AND shop_id = ?');
+      const insertStmt = db.prepare(`
+        INSERT INTO products (id, shop_id, etsy_listing_id, variation_profile_id, status)
+        VALUES (?, ?, ?, ?, 'live')
+      `);
+      const checkStmt = db.prepare('SELECT id FROM products WHERE (id = ? OR etsy_listing_id = ?) AND shop_id = ?');
+      
+      let updatedCount = 0;
+      for (const id of productIds) {
+        const idStr = id.toString();
+        const existing = checkStmt.get(idStr, idStr, activeShop.shop_id);
+        if (existing) {
+          const info = updateStmt.run(profileId, idStr, idStr, activeShop.shop_id);
+          updatedCount += info.changes;
+        } else {
+          // Create linked record for Etsy listing if not existing in products table
+          const newId = uuidv4();
+          insertStmt.run(newId, activeShop.shop_id, idStr, profileId);
+          updatedCount += 1;
+        }
+      }
+      db.exec('COMMIT');
+      res.json({ success: true, updatedCount });
+    } catch (txErr) {
+      db.exec('ROLLBACK');
+      throw txErr;
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Open mockups folder in file explorer
+router.post('/:id/open-folder', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const activeShop = getActiveShop();
+    const shopName = getShopStorageName(activeShop.shop_id);
+    
+    let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', id);
+    if (!fs.existsSync(mockupsDir)) {
+      mockupsDir = join(__dirname, '../..', 'storage/mockups', id);
+    }
+
+    if (!fs.existsSync(mockupsDir)) {
+      return res.status(404).json({ error: 'Mockup klasörü henüz oluşturulmamış.' });
+    }
+
+    exec(`explorer "${mockupsDir}"`);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
