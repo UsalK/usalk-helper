@@ -8,9 +8,15 @@ import VariationProfiles from './pages/VariationProfiles';
 import DefaultSettings from './pages/DefaultSettings';
 import EtsyConnect from './pages/EtsyConnect';
 
+// Shopify Pages
+import ShopifyConnect from './pages/ShopifyConnect';
+import ThemeStudio from './pages/ThemeStudio';
+import ShopifyBulkUpload from './pages/ShopifyBulkUpload';
+
 const API_BASE = 'http://localhost:3001/api';
 
 export default function App() {
+  const [appMode, setAppMode] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [etsyConnected, setEtsyConnected] = useState(false);
   const [activeShop, setActiveShop] = useState(null);
@@ -18,8 +24,12 @@ export default function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    checkEtsyAuth();
-  }, []);
+    if (appMode === 'etsy') {
+      checkEtsyAuth();
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [appMode]);
 
   const checkEtsyAuth = async () => {
     try {
@@ -52,19 +62,31 @@ export default function App() {
     }
   };
 
+  const selectMode = (mode) => {
+    localStorage.setItem('appMode', mode);
+    setAppMode(mode);
+    setCurrentPage('dashboard');
+  };
+
   const renderPage = () => {
     const shopKey = activeShop?.shop_id || 'default';
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
+        return <Dashboard key={shopKey} appMode={appMode} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={appMode === 'etsy' ? activeShop : null} />;
       case 'bulk-upload':
         return <BulkUpload key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
+      case 'shopify-upload':
+        return <ShopifyBulkUpload />;
       case 'templates':
         return <TemplateStudio key={shopKey} activeShop={activeShop} />;
       case 'variations':
         return <VariationProfiles key={shopKey} activeShop={activeShop} />;
+      case 'theme-studio':
+        return <ThemeStudio />;
+      case 'shopify-connect':
+        return <ShopifyConnect />;
       case 'settings':
-        return <DefaultSettings key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
+        return <DefaultSettings key={shopKey} appMode={appMode} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={activeShop} />;
       case 'etsy-connect':
         return (
           <EtsyConnect 
@@ -77,11 +99,12 @@ export default function App() {
           />
         );
       default:
-        return <Dashboard key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
+        return <Dashboard key={shopKey} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={activeShop} />;
     }
   };
 
-  if (checkingAuth) {
+  // If checking authentication for Etsy
+  if (appMode === 'etsy' && checkingAuth) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#0b0f19] text-amber-500 font-semibold text-sm">
         <div className="flex flex-col items-center space-y-4">
@@ -92,6 +115,77 @@ export default function App() {
     );
   }
 
+  // 1. Landing Mode Selection Page
+  if (!appMode) {
+    return (
+      <div className="relative min-h-screen bg-[#0b0f19] flex items-center justify-center p-6 text-slate-100 overflow-hidden select-none">
+        {/* Background glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-4xl w-full text-center space-y-12">
+          {/* Logo / Header */}
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-white to-emerald-400 bg-clip-text text-transparent font-outfit uppercase">
+              USALK HELPER
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto font-medium">
+              Mağaza yönetim ve SEO otomasyon aracı. Devam etmek istediğiniz satış platformunu seçin.
+            </p>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            
+            {/* Etsy Card */}
+            <div 
+              onClick={() => selectMode('etsy')}
+              className="bg-[#0f172a] rounded-3xl border border-slate-800 hover:border-amber-500/30 p-8 text-left transition-all duration-300 transform hover:scale-[1.02] cursor-pointer group shadow-xl hover:shadow-amber-500/5 flex flex-col justify-between h-[320px]"
+            >
+              <div>
+                <div className="w-12 h-12 bg-gradient-to-tr from-amber-500 to-rose-500 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg shadow-amber-500/20 text-lg group-hover:scale-110 transition-transform mb-6">
+                  E
+                </div>
+                <h3 className="text-xl font-bold text-white group-hover:text-amber-400 transition-colors font-outfit mb-2">Etsy Entegrasyonu</h3>
+                <p className="text-slate-400 text-xs leading-relaxed font-normal">
+                  Etsy API entegrasyonu, mockup şablon stüdyosu, varyasyon profilleri, AI SEO açıklaması ve toplu ürün yükleme aracı.
+                </p>
+              </div>
+              <div className="text-amber-500 font-bold text-xs flex items-center space-x-1.5 pt-4">
+                <span>Etsy Modunu Aç</span>
+                <span>→</span>
+              </div>
+            </div>
+
+            {/* Shopify Card */}
+            <div 
+              onClick={() => selectMode('shopify')}
+              className="bg-[#0f172a] rounded-3xl border border-slate-800 hover:border-emerald-500/30 p-8 text-left transition-all duration-300 transform hover:scale-[1.02] cursor-pointer group shadow-xl hover:shadow-emerald-500/5 flex flex-col justify-between h-[320px]"
+            >
+              <div>
+                <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 text-lg group-hover:scale-110 transition-transform mb-6">
+                  S
+                </div>
+                <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors font-outfit mb-2">Shopify Entegrasyonu</h3>
+                <p className="text-slate-400 text-xs leading-relaxed font-normal">
+                  Shopify Admin API entegrasyonu, Pitch tema yönetimi ve visual özelleştirici stüdyo, indirimli fiyat hesaplama ve bulk variant uploader.
+                </p>
+              </div>
+              <div className="text-emerald-500 font-bold text-xs flex items-center space-x-1.5 pt-4">
+                <span>Shopify Modunu Aç</span>
+                <span>→</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Active Platform Main Screen Layout
+  const accentColorClass = appMode === 'etsy' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
+  
   return (
     <div className="flex h-screen bg-[#0b0f19] overflow-hidden text-slate-100">
       <Sidebar 
@@ -101,11 +195,13 @@ export default function App() {
         activeShop={activeShop}
         shops={shops}
         onSwitchShop={handleSwitchShop}
+        appMode={appMode}
+        setAppMode={setAppMode}
       />
       
       <main className="flex-1 overflow-y-auto bg-[#0b0f19]">
         {/* Decorative background glows */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
+        <div className={`absolute top-0 right-0 w-[500px] h-[500px] ${accentColorClass} rounded-full blur-[120px] pointer-events-none z-0`}></div>
         <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] bg-rose-500/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
         
         <div className="relative z-10">

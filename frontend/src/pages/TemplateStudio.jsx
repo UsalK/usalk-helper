@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
   Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle, 
-  Trash2, Crop, Move, HelpCircle, RefreshCw 
+  Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -261,7 +261,8 @@ export default function TemplateStudio() {
     }
 
     const config = {
-      compatible_ratios: staticRatios
+      compatible_ratios: staticRatios,
+      is_thumbnail: isStaticThumbnail
     };
 
     const formData = new FormData();
@@ -279,6 +280,7 @@ export default function TemplateStudio() {
       setStaticName('');
       setStaticFile(null);
       setStaticRatios(['2:3']);
+      setIsStaticThumbnail(false);
       fetchTemplates();
     } catch (err) {
       console.error(err);
@@ -298,6 +300,8 @@ export default function TemplateStudio() {
   const [type, setType] = useState('flat'); // 'flat' | 'perspective'
   const [compatibleRatios, setCompatibleRatios] = useState(['2:3']);
   const [activeRatio, setActiveRatio] = useState('2:3');
+  const [isThumbnail, setIsThumbnail] = useState(false);
+  const [isStaticThumbnail, setIsStaticThumbnail] = useState(false);
   
   // Flat Mode coordinates (normalized 0-1)
   const [flatPlacement, setFlatPlacement] = useState({
@@ -515,6 +519,7 @@ export default function TemplateStudio() {
     setShadowOpacity(3.0);
     setShadowDistance(5.0);
     setShadowBlur(6.0);
+    setIsThumbnail(false);
     setView('editor');
   };
 
@@ -926,7 +931,8 @@ export default function TemplateStudio() {
 
     const config = {
       compatible_ratios: compatibleRatios,
-      editorWidth: canvasRef.current?.width || 800
+      editorWidth: canvasRef.current?.width || 800,
+      is_thumbnail: isThumbnail
     };
 
     if (type === 'flat') {
@@ -960,6 +966,7 @@ export default function TemplateStudio() {
       await axios.post(`${API_BASE}/templates`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      setIsThumbnail(false);
       setView('list');
       fetchTemplates();
     } catch (err) {
@@ -977,6 +984,20 @@ export default function TemplateStudio() {
       fetchTemplates();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleToggleThumbnail = async (id, currentConfig) => {
+    try {
+      const updatedConfig = {
+        ...currentConfig,
+        is_thumbnail: !currentConfig?.is_thumbnail
+      };
+      await axios.patch(`${API_BASE}/templates/${id}`, { config: updatedConfig });
+      fetchTemplates();
+    } catch (err) {
+      console.error(err);
+      alert('Thumbnail durumu güncellenirken hata oluştu.');
     }
   };
 
@@ -1046,6 +1067,23 @@ export default function TemplateStudio() {
                     })}
                   </div>
                 </div>
+
+                {/* Thumbnail Seçeneği */}
+                <div className="flex items-center justify-between p-3 bg-[#151f32] border border-[#1e293b] rounded-2xl">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-semibold text-white">Thumbnail Olarak Seç</span>
+                    <p className="text-[9px] text-slate-500">Ürünün merkezde olduğu 1:1 mockup seçmeniz önerilir.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isStaticThumbnail}
+                      onChange={(e) => setIsStaticThumbnail(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -1105,22 +1143,43 @@ export default function TemplateStudio() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {filteredMatched.map(img => (
                     <div key={img.id} className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-3 flex flex-col justify-between group hover:border-slate-800 transition-colors">
-                      <div className="aspect-[4/3] rounded-xl bg-slate-950 border border-[#1e293b] overflow-hidden mb-3">
+                      <div className="aspect-[4/3] rounded-xl bg-slate-950 border border-[#1e293b] overflow-hidden mb-3 relative">
                         <img
                           src={`http://localhost:3001/${img.background_path}`}
                           alt=""
                           className="w-full h-full object-cover"
                         />
+                        {img.config?.is_thumbnail && (
+                          <div className="absolute top-2 right-2">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border shadow-lg bg-emerald-500/80 border-emerald-500/30 text-white">
+                              Thumbnail
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <span className="text-xs font-semibold text-white block truncate">{img.name}</span>
-                        <button
-                          onClick={() => handleDeleteTemplate(img.id)}
-                          className="text-[10px] font-bold text-rose-500 hover:text-rose-400 flex items-center space-x-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Sil</span>
-                        </button>
+                        <div className="flex items-center justify-between pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleThumbnail(img.id, img.config)}
+                            className={`text-[10px] font-bold transition-colors ${
+                              img.config?.is_thumbnail 
+                                ? 'text-emerald-500 hover:text-emerald-400' 
+                                : 'text-slate-500 hover:text-slate-400'
+                            }`}
+                          >
+                            {img.config?.is_thumbnail ? '✓ Thumbnail' : 'Thumbnail Yap'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTemplate(img.id)}
+                            className="text-[10px] font-bold text-rose-500 hover:text-rose-400 flex items-center space-x-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Sil</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1258,7 +1317,7 @@ export default function TemplateStudio() {
                           alt={tpl.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute top-3 right-3 flex space-x-1">
+                        <div className="absolute top-3 right-3 flex flex-col items-end space-y-1">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-lg ${
                             tpl.type === 'flat' 
                               ? 'bg-amber-500/15 border-amber-500/20 text-amber-500' 
@@ -1266,6 +1325,11 @@ export default function TemplateStudio() {
                           }`}>
                             {tpl.type === 'flat' ? 'Düz (Flat)' : 'Perspektif'}
                           </span>
+                          {tpl.config?.is_thumbnail && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-lg bg-emerald-500/15 border-emerald-500/20 text-emerald-400">
+                              Thumbnail
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -1277,8 +1341,31 @@ export default function TemplateStudio() {
                           </p>
                         </div>
 
-                        <div className="flex justify-end mt-4 pt-4 border-t border-[#1e293b]">
+                        <div className="flex justify-between items-center mt-4 pt-4 border-t border-[#1e293b]">
                           <button
+                            type="button"
+                            onClick={() => handleToggleThumbnail(tpl.id, tpl.config)}
+                            className={`flex items-center space-x-1.5 text-xs font-semibold transition-colors ${
+                              tpl.config?.is_thumbnail 
+                                ? 'text-emerald-500 hover:text-emerald-400' 
+                                : 'text-slate-400 hover:text-slate-300'
+                            }`}
+                          >
+                            {tpl.config?.is_thumbnail ? (
+                              <>
+                                <CheckSquare className="w-4 h-4" />
+                                <span>Thumbnail (Aktif)</span>
+                              </>
+                            ) : (
+                              <>
+                                <Square className="w-4 h-4" />
+                                <span>Thumbnail Yap</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => handleDeleteTemplate(tpl.id)}
                             className="flex items-center space-x-1.5 text-xs text-rose-500 hover:text-rose-400 font-semibold transition-colors"
                           >
@@ -1488,6 +1575,23 @@ export default function TemplateStudio() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Thumbnail Seçeneği */}
+                <div className="flex items-center justify-between p-3 bg-[#151f32] border border-[#1e293b] rounded-xl pt-2">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-semibold text-white">Thumbnail Olarak Seç</span>
+                    <p className="text-[10px] text-slate-500">Ürünün merkezde olduğu 1:1 mockup seçmeniz önerilir.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isThumbnail}
+                      onChange={(e) => setIsThumbnail(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+                  </label>
                 </div>
 
                 {type === 'flat' && (

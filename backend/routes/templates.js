@@ -175,4 +175,20 @@ router.post('/copy', (req, res, next) => {
   }
 });
 
+// Update template config
+router.patch('/:id', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { config } = req.body;
+    const activeShop = getActiveShop();
+    
+    const stmt = db.prepare('UPDATE templates SET config = ? WHERE id = ? AND shop_id = ?');
+    stmt.run(JSON.stringify(config), id, activeShop.shop_id);
+    
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

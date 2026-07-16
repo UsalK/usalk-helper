@@ -13,6 +13,7 @@ import aiRouter from './routes/ai.js';
 import etsyRouter from './routes/etsy.js';
 import productsRouter from './routes/products.js';
 import mockupRouter from './routes/mockup.js';
+import shopifyRouter from './routes/shopify.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -58,6 +59,8 @@ app.use('/api/ai', aiRouter);
 app.use('/api/etsy', etsyRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/mockup', mockupRouter);
+app.use('/api/shopify', shopifyRouter);
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

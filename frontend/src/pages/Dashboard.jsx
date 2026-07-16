@@ -8,7 +8,7 @@ import {
 
 const API_BASE = 'http://localhost:3001/api';
 
-export default function Dashboard({ etsyConnected }) {
+export default function Dashboard({ etsyConnected, appMode }) {
   const [activeTab, setActiveTab] = useState('local'); // local, active, draft, inactive, sold_out, expired
   const [products, setProducts] = useState([]);
   const [etsyListings, setEtsyListings] = useState([]);
@@ -90,7 +90,7 @@ export default function Dashboard({ etsyConnected }) {
   const fetchProducts = async (secId = filterSectionId) => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { platform: appMode || 'etsy' };
       if (secId) params.shop_section_id = secId;
       const res = await axios.get(`${API_BASE}/products`, { params });
       // Filter out products that are already live on Etsy (they will be managed in Etsy tabs)
@@ -222,7 +222,7 @@ export default function Dashboard({ etsyConnected }) {
     });
 
     try {
-      const res = await axios.post(`${API_BASE}/products/upload`, formData, {
+      const res = await axios.post(`${API_BASE}/products/upload?platform=${appMode || 'etsy'}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       // Filter out live ones
@@ -608,13 +608,21 @@ export default function Dashboard({ etsyConnected }) {
       {/* Header Panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Etsy Ürün Yönetim Paneli</h2>
-          <p className="text-slate-400 text-sm">Etsy envanterinizi inceleyin, kategorize edin ve malzemeleri toplu olarak güncelleyin.</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">
+            {appMode === 'shopify' ? 'Shopify Ürün Yönetim Paneli' : 'Etsy Ürün Yönetim Paneli'}
+          </h2>
+          <p className="text-slate-400 text-sm">
+            {appMode === 'shopify' 
+              ? 'Shopify yerel taslaklarınızı inceleyin, düzenleyin ve varyasyonları yönetin.' 
+              : 'Etsy envanterinizi inceleyin, kategorize edin ve malzemeleri toplu olarak güncelleyin.'}
+          </p>
         </div>
 
         {/* Local upload shown only on local tab */}
         {activeTab === 'local' && (
-          <label className="flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-slate-950 font-bold py-3 px-6 rounded-xl shadow-lg shadow-amber-500/10 transition-all cursor-pointer text-sm">
+          <label className={`flex items-center justify-center space-x-2 bg-gradient-to-r ${
+            appMode === 'shopify' ? 'from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white' : 'from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-slate-950'
+          } font-bold py-3 px-6 rounded-xl shadow-lg transition-all cursor-pointer text-sm`}>
             <UploadCloud className="w-5 h-5" />
             <span>{uploading ? 'Yükleniyor...' : 'Yeni Sanat Eseri Yükle'}</span>
             <input 
@@ -635,13 +643,13 @@ export default function Dashboard({ etsyConnected }) {
           onClick={() => setActiveTab('local')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
             activeTab === 'local' 
-              ? 'bg-[#1e293b] text-white border-amber-500/50 shadow-md' 
+              ? `bg-[#1e293b] text-white ${appMode === 'shopify' ? 'border-emerald-500/50 shadow-emerald-500/5' : 'border-amber-500/50 shadow-amber-500/5'} shadow-md` 
               : 'text-slate-400 border-transparent hover:text-white hover:bg-[#151f32]'
           }`}
         >
           Yerel Taslaklar (Yerel)
         </button>
-        {['active', 'draft', 'inactive', 'sold_out', 'expired'].map(state => {
+        {appMode !== 'shopify' && ['active', 'draft', 'inactive', 'sold_out', 'expired'].map(state => {
           const tabLabel = state === 'active' ? 'Aktif (Etsy)' :
                            state === 'draft' ? 'Taslak (Etsy)' :
                            state === 'inactive' ? 'Pasif (Etsy)' :

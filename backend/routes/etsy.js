@@ -4,7 +4,7 @@ import axios from 'axios';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import db, { getActiveShop, getShopStorageName } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
 import * as EtsyService from '../services/EtsyService.js';
 
 const router = express.Router();
@@ -724,20 +724,86 @@ router.post('/upload-listing', async (req, res, next) => {
     }
     
     // 5. Upload generated mockups
-    const shopId = product ? product.shop_id : activeShop.shop_id;
-    const shopName = getShopStorageName(shopId);
-    let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', productId);
+    const subPath = getProductStorageFolder(productId);
+    let mockupsDir = join(__dirname, '../..', 'storage', subPath, 'mockups', productId);
     if (!fs.existsSync(mockupsDir)) {
-      mockupsDir = join(__dirname, '../..', 'storage/mockups', productId);
+      // Fallback check using old directory name
+      const shopId = product ? product.shop_id : activeShop.shop_id;
+      const shopName = getShopStorageName(shopId);
+      mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', productId);
+      if (!fs.existsSync(mockupsDir)) {
+        mockupsDir = join(__dirname, '../..', 'storage/mockups', productId);
+      }
     }
     
     let uploadedMockups = false;
     if (fs.existsSync(mockupsDir)) {
       const files = fs.readdirSync(mockupsDir).filter(f => f.toLowerCase().endsWith('.jpg') || f.toLowerCase().endsWith('.jpeg') || f.toLowerCase().endsWith('.png'));
       if (files.length > 0) {
-        console.log(`Uploading ${files.length} mockup images to Etsy for listing ${listing_id}...`);
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+        const getTemplateInfo = (filename) => {
+          const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
+          const lastUnderscoreIdx = nameWithoutExt.lastIndexOf('_');
+          if (lastUnderscoreIdx === -1) return null;
+          
+          let templateId = nameWithoutExt.substring(0, lastUnderscoreIdx);
+          if (templateId.startsWith('static_')) {
+            templateId = templateId.substring(7);
+          }
+          
+          try {
+            const stmt = db.prepare('SELECT name, config FROM templates WHERE id = ?');
+            const row = stmt.get(templateId);
+            if (row) {
+              return {
+                name: row.name,
+                config: JSON.parse(row.config)
+              };
+            }
+            return null;
+          } catch (err) {
+            console.error("Failed to query template config from DB:", err.message);
+            return null;
+          }
+        };
+
+        // Group files by checking if their template config has is_thumbnail = true OR name starts with 'thumb' (case-insensitive)
+        const thumbFiles = files.filter(f => {
+          const info = getTemplateInfo(f);
+          if (!info) return false;
+          const configIsThumb = info.config && (info.config.is_thumbnail === true || info.config.is_thumbnail === 'true');
+          const nameIsThumb = info.name && info.name.toLowerCase().startsWith('thumb');
+          return configIsThumb || nameIsThumb;
+        });
+        const nonThumbFiles = files.filter(f => {
+          const info = getTemplateInfo(f);
+          if (!info) return true;
+          const configIsThumb = info.config && (info.config.is_thumbnail === true || info.config.is_thumbnail === 'true');
+          const nameIsThumb = info.name && info.name.toLowerCase().startsWith('thumb');
+          return !(configIsThumb || nameIsThumb);
+        });
+        
+        let orderedFiles = [];
+        if (thumbFiles.length > 0) {
+          // Select one random thumb file to be the primary thumbnail (rank = 1)
+          const randomIndex = Math.floor(Math.random() * thumbFiles.length);
+          const primaryThumb = thumbFiles[randomIndex];
+          
+          // The rest of the thumb files
+          const remainingThumbs = thumbFiles.filter((_, idx) => idx !== randomIndex);
+          
+          // Primary goes first, then non-thumb mockups, then remaining thumbs
+          orderedFiles = [primaryThumb, ...nonThumbFiles, ...remainingThumbs];
+          const primaryInfo = getTemplateInfo(primaryThumb);
+          const primaryName = primaryInfo ? primaryInfo.name : 'Unknown';
+          console.log(`[Thumbnail Selector] Selected ${primaryThumb} (Template: ${primaryName}) as primary thumbnail from ${thumbFiles.length} options.`);
+        } else {
+          orderedFiles = [...files];
+          console.log(`[Thumbnail Selector] No templates starting with "thumb" or marked as thumbnail found. Uploading in default order.`);
+        }
+
+        console.log(`Uploading ${orderedFiles.length} mockup images to Etsy for listing ${listing_id}...`);
+        for (let i = 0; i < orderedFiles.length; i++) {
+          const file = orderedFiles[i];
           const filePath = join(mockupsDir, file);
           await EtsyService.uploadListingImage(listing_id, filePath, i + 1, product.title);
         }
@@ -822,6 +888,18 @@ router.post('/upload-listing', async (req, res, next) => {
         }
       }
     }
+    // 6.5. Activate listing if state is active (since createDraftListing only creates drafts)
+    if (state === 'active') {
+      console.log(`Activating listing ${listing_id} on Etsy...`);
+      try {
+        await EtsyService.updateListing(listing_id, { state: 'active' });
+        console.log(`Listing ${listing_id} activated successfully!`);
+      } catch (actErr) {
+        console.error(`Failed to activate listing ${listing_id} on Etsy:`, actErr.response?.data || actErr.message);
+        throw new Error(`Ürün başarıyla yüklendi ancak aktif duruma getirilemedi. Hata: ${JSON.stringify(actErr.response?.data || actErr.message)}`);
+      }
+    }
+
     // 7. Update status to live in DB
     const updateSuccess = db.prepare(
       'UPDATE products SET status = ?, etsy_listing_id = ? WHERE id = ? AND shop_id = ?'
@@ -950,19 +1028,23 @@ router.get('/listings/:listingId/details', async (req, res, next) => {
     if (product) {
       const shopId = product.shop_id || activeShop.shop_id;
       const shopName = getShopStorageName(shopId);
-      let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', product.id);
+      const subPath = getProductStorageFolder(product.id);
+      let mockupsDir = join(__dirname, '../..', 'storage', subPath, 'mockups', product.id);
       if (!fs.existsSync(mockupsDir)) {
-        mockupsDir = join(__dirname, '../..', 'storage/mockups', product.id);
+        // Fallback check
+        const shopName = getShopStorageName(shopId);
+        mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', product.id);
+        if (!fs.existsSync(mockupsDir)) {
+          mockupsDir = join(__dirname, '../..', 'storage/mockups', product.id);
+        }
       }
       
       if (fs.existsSync(mockupsDir)) {
         const files = fs.readdirSync(mockupsDir).filter(f => f.toLowerCase().endsWith('.jpg') || f.toLowerCase().endsWith('.jpeg') || f.toLowerCase().endsWith('.png'));
-        const hasShopDir = fs.existsSync(join(__dirname, '../..', 'storage', shopName, 'mockups', product.id));
+        const subPathUrl = getProductStorageFolder(product.id).replace(/\\/g, '/');
         mockups = files.map(file => ({
           filename: file,
-          url: hasShopDir 
-            ? `http://localhost:3001/storage/${shopName}/mockups/${product.id}/${file}`
-            : `http://localhost:3001/storage/mockups/${product.id}/${file}`
+          url: `http://localhost:3001/storage/${subPathUrl}/mockups/${product.id}/${file}`
         }));
       }
     }

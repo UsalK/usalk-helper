@@ -333,7 +333,7 @@ export default function BulkUpload({ etsyConnected }) {
 
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/products`);
+      const res = await axios.get(`${API_BASE}/products?platform=etsy`);
       setProducts(res.data);
     } catch (err) {
       console.error(err);
@@ -482,7 +482,7 @@ export default function BulkUpload({ etsyConnected }) {
     });
 
     try {
-      const res = await axios.post(`${API_BASE}/products/upload`, formData, {
+      const res = await axios.post(`${API_BASE}/products/upload?platform=etsy`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -541,22 +541,59 @@ export default function BulkUpload({ etsyConnected }) {
     });
   };
 
+  // High-quality canvas stepping-down scaling to prevent blurriness and aliasing
+  const getStepScaledCanvas = (img, targetW, targetH) => {
+    let srcCanvas = img;
+    let w = img.width;
+    let h = img.height;
+    
+    while (w > targetW * 2 && h > targetH * 2) {
+      w = Math.floor(w / 2);
+      h = Math.floor(h / 2);
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = w;
+      tempCanvas.height = h;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = 'high';
+      tempCtx.drawImage(srcCanvas, 0, 0, w, h);
+      srcCanvas = tempCanvas;
+    }
+    
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = targetW;
+    finalCanvas.height = targetH;
+    const finalCtx = finalCanvas.getContext('2d');
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+    finalCtx.drawImage(srcCanvas, 0, 0, targetW, targetH);
+    return finalCanvas;
+  };
+
   const drawCoverImage = (ctx, img, x, y, w, h) => {
-    const imgRatio = img.width / img.height;
+    let srcImage = img;
+    const targetW = Math.ceil(w);
+    const targetH = Math.ceil(h);
+    
+    if (img.width > targetW * 2 || img.height > targetH * 2) {
+      srcImage = getStepScaledCanvas(img, targetW, targetH);
+    }
+
+    const imgRatio = srcImage.width / srcImage.height;
     const targetRatio = w / h;
     let sx, sy, sw, sh;
     if (imgRatio > targetRatio) {
-      sh = img.height;
+      sh = srcImage.height;
       sw = sh * targetRatio;
-      sx = (img.width - sw) / 2;
+      sx = (srcImage.width - sw) / 2;
       sy = 0;
     } else {
-      sw = img.width;
+      sw = srcImage.width;
       sh = sw / targetRatio;
       sx = 0;
-      sy = (img.height - sh) / 2;
+      sy = (srcImage.height - sh) / 2;
     }
-    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    ctx.drawImage(srcImage, sx, sy, sw, sh, x, y, w, h);
   };
 
   const generateMockupsForProduct = async (p) => {
@@ -602,6 +639,9 @@ export default function BulkUpload({ etsyConnected }) {
           const H = bgImg.height;
           canvas.width = W;
           canvas.height = H;
+          
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           
           ctx.drawImage(bgImg, 0, 0, W, H);
           
@@ -658,10 +698,23 @@ export default function BulkUpload({ etsyConnected }) {
             const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
             const br = { x: corners.br.x * W, y: corners.br.y * H };
             const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
-            warpImage(ctx, productImg, [tl, tr, br, bl], 24);
+            
+            // Calculate destination quad bounding box size
+            const xs = [tl.x, tr.x, br.x, bl.x];
+            const ys = [tl.y, tr.y, br.y, bl.y];
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            const targetW = Math.max(10, Math.ceil(maxX - minX));
+            const targetH = Math.max(10, Math.ceil(maxY - minY));
+            
+            // Pre-scale the high-res product image to target quad dimensions
+            const preScaledImg = getStepScaledCanvas(productImg, targetW, targetH);
+            warpImage(ctx, preScaledImg, [tl, tr, br, bl], 24);
           }
           
-          const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+          const base64Data = canvas.toDataURL('image/jpeg', 0.95);
           await axios.post(`${API_BASE}/mockup/save`, {
             productId: p.id,
             templateId: tpl.id,

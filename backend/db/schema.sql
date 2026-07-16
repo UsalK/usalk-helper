@@ -70,3 +70,13 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   cost REAL DEFAULT 0.0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Shopify auth configurations
+CREATE TABLE IF NOT EXISTS shopify_auth (
+  shop_url TEXT PRIMARY KEY,
+  shop_name TEXT,
+  access_token TEXT,
+  theme_path TEXT,
+  is_active INTEGER DEFAULT 0
+);
+

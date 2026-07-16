@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
-import db, { getActiveShop, getShopStorageName } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName, getPlatformUploadPath, getRawActiveShopify, getProductStorageFolder } from '../db/db.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -13,9 +13,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Configure multer for product uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const activeShop = getActiveShop();
-    const shopName = getShopStorageName(activeShop.shop_id);
-    const destDir = join(__dirname, '../..', 'storage', shopName, 'uploads');
+    const platform = req.query.platform || 'etsy';
+    const subPath = getPlatformUploadPath(platform);
+    const destDir = join(__dirname, '../..', 'storage', subPath, 'uploads');
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true });
     }
@@ -32,11 +32,20 @@ const upload = multer({ storage });
 // Get all products
 router.get('/', (req, res, next) => {
   try {
-    const { shop_section_id } = req.query;
-    const activeShop = getActiveShop();
+    const { shop_section_id, platform } = req.query;
+    
+    // Determine active shop dynamically by platform
+    let shopId = 'default_shop';
+    if (platform === 'shopify') {
+      const activeShopify = getRawActiveShopify();
+      shopId = activeShopify ? activeShopify.shop_url : 'default_shopify';
+    } else {
+      const activeEtsy = getActiveShop();
+      shopId = activeEtsy.shop_id;
+    }
     
     let sql = 'SELECT * FROM products WHERE shop_id = ?';
-    const params = [activeShop.shop_id];
+    const params = [shopId];
     if (shop_section_id) {
       sql += ' AND shop_section_id = ?';
       params.push(shop_section_id);
@@ -47,11 +56,17 @@ router.get('/', (req, res, next) => {
     const products = stmt.all(...params);
     
     const parsed = products.map(p => {
-      const shopName = getShopStorageName(p.shop_id || activeShop.shop_id);
-      let mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', p.id);
+      const subPath = getProductStorageFolder(p.id);
+      let mockupsDir = join(__dirname, '../..', 'storage', subPath, 'mockups', p.id);
       if (!fs.existsSync(mockupsDir)) {
-        mockupsDir = join(__dirname, '../..', 'storage/mockups', p.id);
+        // Fallback checks
+        const shopName = getShopStorageName(p.shop_id);
+        mockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', p.id);
+        if (!fs.existsSync(mockupsDir)) {
+          mockupsDir = join(__dirname, '../..', 'storage/mockups', p.id);
+        }
       }
+      
       let mockupCount = 0;
       if (fs.existsSync(mockupsDir)) {
         mockupCount = fs.readdirSync(mockupsDir).filter(f => {
@@ -82,7 +97,17 @@ router.post('/upload', upload.array('images'), (req, res, next) => {
       return res.status(400).json({ error: 'No files uploaded' });
     }
     
-    const activeShop = getActiveShop();
+    const platform = req.query.platform || 'etsy';
+    let shopId = 'default_shop';
+    if (platform === 'shopify') {
+      const activeShopify = getRawActiveShopify();
+      shopId = activeShopify ? activeShopify.shop_url : 'default_shopify';
+    } else {
+      const activeEtsy = getActiveShop();
+      shopId = activeEtsy.shop_id;
+    }
+
+    const subPath = getPlatformUploadPath(platform);
     const stmt = db.prepare(
       'INSERT INTO products (id, shop_id, image_path, title, tags, description, ai_attributes, template_ids, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
@@ -93,15 +118,14 @@ router.post('/upload', upload.array('images'), (req, res, next) => {
     try {
       for (const file of req.files) {
         const id = uuidv4();
-        const shopName = getShopStorageName(activeShop.shop_id);
-        const imagePath = `storage/${shopName}/uploads/${file.filename}`;
+        const imagePath = `storage/${subPath.replace(/\\/g, '/')}/uploads/${file.filename}`;
         
         // Base title is filename without extension
         const title = file.originalname.replace(/\.[^/.]+$/, "").substring(0, 140);
         
         stmt.run(
           id,
-          activeShop.shop_id,
+          shopId,
           imagePath,
           title,
           JSON.stringify([]),
@@ -118,7 +142,7 @@ router.post('/upload', upload.array('images'), (req, res, next) => {
         
         newProducts.push({
           id,
-          shop_id: activeShop.shop_id,
+          shop_id: shopId,
           image_path: imagePath,
           title,
           tags: [],
@@ -150,10 +174,9 @@ router.put('/:id', (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, tags, description, ai_attributes, variation_profile_id, template_ids, status, etsy_listing_id, shop_section_id } = req.body;
-    const activeShop = getActiveShop();
     
-    const checkStmt = db.prepare('SELECT id FROM products WHERE id = ? AND shop_id = ?');
-    const productExists = checkStmt.get(id, activeShop.shop_id);
+    const checkStmt = db.prepare('SELECT id FROM products WHERE id = ?');
+    const productExists = checkStmt.get(id);
     if (!productExists) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -169,7 +192,7 @@ router.put('/:id', (req, res, next) => {
            status = ?, 
            etsy_listing_id = ?,
            shop_section_id = ?
-       WHERE id = ? AND shop_id = ?`
+       WHERE id = ?`
      );
     
     updateStmt.run(
@@ -182,8 +205,7 @@ router.put('/:id', (req, res, next) => {
       status || 'draft',
       etsy_listing_id || null,
       shop_section_id || null,
-      id,
-      activeShop.shop_id
+      id
     );
     
     res.json({ id, success: true });
@@ -196,10 +218,9 @@ router.put('/:id', (req, res, next) => {
 router.delete('/:id', (req, res, next) => {
   try {
     const { id } = req.params;
-    const activeShop = getActiveShop();
     
-    const getStmt = db.prepare('SELECT image_path FROM products WHERE id = ? AND shop_id = ?');
-    const product = getStmt.get(id, activeShop.shop_id);
+    const getStmt = db.prepare('SELECT * FROM products WHERE id = ?');
+    const product = getStmt.get(id);
     
     if (product) {
       if (product.image_path) {
@@ -210,8 +231,8 @@ router.delete('/:id', (req, res, next) => {
       }
       
       // Delete generated mockups directory if it exists
-      const shopName = getShopStorageName(product.shop_id || activeShop.shop_id);
-      const shopMockupsDir = join(__dirname, '../..', 'storage', shopName, 'mockups', id);
+      const subPath = getProductStorageFolder(id);
+      const shopMockupsDir = join(__dirname, '../..', 'storage', subPath, 'mockups', id);
       if (fs.existsSync(shopMockupsDir)) {
         fs.rmSync(shopMockupsDir, { recursive: true, force: true });
       }
@@ -220,14 +241,18 @@ router.delete('/:id', (req, res, next) => {
         fs.rmSync(oldMockupsDir, { recursive: true, force: true });
       }
       
-      // Delete digital files directory if it exists
-      const digitalDir = join(__dirname, '../..', 'storage/digital_files', activeShop.shop_id, id);
+      // Delete digital files directory if it exists (using subPath as well)
+      const digitalDir = join(__dirname, '../..', 'storage', subPath, 'digital_files', id);
       if (fs.existsSync(digitalDir)) {
         fs.rmSync(digitalDir, { recursive: true, force: true });
       }
+      const oldDigitalDir = join(__dirname, '../..', 'storage/digital_files', product.shop_id, id);
+      if (fs.existsSync(oldDigitalDir)) {
+        fs.rmSync(oldDigitalDir, { recursive: true, force: true });
+      }
       
-      const deleteStmt = db.prepare('DELETE FROM products WHERE id = ? AND shop_id = ?');
-      deleteStmt.run(id, activeShop.shop_id);
+      const deleteStmt = db.prepare('DELETE FROM products WHERE id = ?');
+      deleteStmt.run(id);
       res.json({ success: true });
     } else {
       res.status(404).json({ error: 'Product not found' });

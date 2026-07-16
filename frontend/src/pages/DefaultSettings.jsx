@@ -12,7 +12,7 @@ const ROOM_OPTIONS = [
   'Kids', 'Kitchen & dining', 'Laundry', 'Living room', 'Nursery', 'Office'
 ];
 
-export default function DefaultSettings({ etsyConnected }) {
+export default function DefaultSettings({ etsyConnected, appMode }) {
   const [activeTab, setActiveTab] = useState('ayarlar');
   const [loading, setLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
@@ -74,16 +74,29 @@ export default function DefaultSettings({ etsyConnected }) {
   const [showMaterialDropdown, setShowMaterialDropdown] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState('');
   const [addingSection, setAddingSection] = useState(false);
+  const [collections, setCollections] = useState([]);
 
   useEffect(() => {
     fetchSettings();
-  }, []);
+    if (appMode === 'shopify') {
+      fetchShopifyCollections();
+    }
+  }, [appMode]);
 
   useEffect(() => {
-    if (etsyConnected) {
+    if (etsyConnected && appMode === 'etsy') {
       fetchEtsyMetadata();
     }
-  }, [etsyConnected]);
+  }, [etsyConnected, appMode]);
+
+  const fetchShopifyCollections = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/shopify/collections`);
+      setCollections(res.data);
+    } catch (err) {
+      console.error('Failed to load Shopify collections:', err);
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -268,7 +281,11 @@ export default function DefaultSettings({ etsyConnected }) {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-amber-500/10 transition-colors text-sm"
+            className={`flex items-center space-x-2 ${
+              appMode === 'shopify' 
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/10' 
+                : 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-amber-500/10'
+            } disabled:opacity-50 font-bold py-2.5 px-6 rounded-xl shadow-lg transition-colors text-sm`}
           >
             <Save className="w-4 h-4" />
             <span>{loading ? 'Kaydediliyor...' : 'Kaydet'}</span>
@@ -278,14 +295,19 @@ export default function DefaultSettings({ etsyConnected }) {
 
       {/* Tabs list */}
       <div className="flex space-x-1 border-b border-[#1e293b] mb-6 overflow-x-auto pb-1 scrollbar-thin">
-        {[
+        {(appMode === 'shopify' ? [
+          { id: 'ayarlar', label: 'Ayarlar', icon: Settings },
+          { id: 'bolumler', label: 'Koleksiyonlar', icon: FolderKanban },
+          { id: 'aciklama', label: 'Açıklama', icon: FileText },
+          { id: 'magaza_bilgileri', label: 'Mağaza Bilgileri', icon: Info }
+        ] : [
           { id: 'ayarlar', label: 'Ayarlar', icon: Settings },
           { id: 'bolumler', label: 'Bölümler', icon: FolderKanban },
           { id: 'kargo', label: 'Kargo', icon: Truck },
           { id: 'oznitelikler', label: 'Öznitelikler', icon: Tag },
           { id: 'aciklama', label: 'Açıklama', icon: FileText },
           { id: 'magaza_bilgileri', label: 'Mağaza Bilgileri', icon: Info }
-        ].map(tab => {
+        ]).map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -293,7 +315,7 @@ export default function DefaultSettings({ etsyConnected }) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center space-x-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${isActive
-                  ? 'border-amber-500 text-amber-500 bg-amber-500/5'
+                  ? (appMode === 'shopify' ? 'border-emerald-500 text-emerald-500 bg-emerald-500/5' : 'border-amber-500 text-amber-500 bg-amber-500/5')
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/10'
                 }`}
             >
@@ -342,7 +364,9 @@ export default function DefaultSettings({ etsyConnected }) {
                   readOnly
                   className="w-full bg-[#151f32]/50 border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-400 cursor-not-allowed"
                 />
-                <p className="text-[10px] text-slate-500">Para birimi Etsy mağaza ayarlarından otomatik olarak senkronize edilir.</p>
+                <p className="text-[10px] text-slate-500">
+                  Mağaza para birimi {appMode === 'shopify' ? 'Shopify' : 'Etsy'} ayarlarından otomatik olarak senkronize edilir.
+                </p>
               </div>
 
               {/* Ölçü Birimi */}
@@ -352,7 +376,9 @@ export default function DefaultSettings({ etsyConnected }) {
                   name="measurement_unit"
                   value={settings.measurement_unit}
                   onChange={handleChange}
-                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
+                    appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
+                  }`}
                 >
                   <option value="Inches">Inches</option>
                   <option value="Centimeters">Centimeters</option>
@@ -367,7 +393,9 @@ export default function DefaultSettings({ etsyConnected }) {
                   name="default_processing_days"
                   value={settings.default_processing_days}
                   onChange={handleChange}
-                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
+                    appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
+                  }`}
                 />
                 <p className="text-[10px] text-slate-500">
                   Siparişleri işlemek ve göndermek için gereken varsayılan gün sayısı.
@@ -383,7 +411,9 @@ export default function DefaultSettings({ etsyConnected }) {
                   value={settings.nvidia_api_key || ''}
                   onChange={handleChange}
                   placeholder="nvapi-..."
-                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
+                    appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
+                  }`}
                 />
                 <p className="text-[10px] text-slate-500">
                   Sihirli içerik oluştururken kullanılan NVIDIA API anahtarı. Boş bırakılırsa varsayılan anahtar kullanılır.
@@ -397,7 +427,9 @@ export default function DefaultSettings({ etsyConnected }) {
                   name="nvidia_model"
                   value={settings.nvidia_model || 'qwen/qwen3.7-plus'}
                   onChange={handleChange}
-                  className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
+                    appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
+                  }`}
                 >
                   <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen - Qwen Düşünme Modeli)</option>
                   <option value="moonshotai/kimi-k2.6" disabled>Kimi K2.6 (Pasif)</option>
@@ -415,9 +447,13 @@ export default function DefaultSettings({ etsyConnected }) {
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-semibold text-white">Otomatik Senkronizasyon</span>
-                    <span className="text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full">Enterprise Özellik</span>
+                    <span className={`text-[9px] font-bold ${
+                      appMode === 'shopify' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                    } border px-2 py-0.5 rounded-full`}>Enterprise Özellik</span>
                   </div>
-                  <p className="text-xs text-slate-500">Ürünlerinizi Etsy ile günlük olarak otomatik senkronize edin.</p>
+                  <p className="text-xs text-slate-500">
+                    Ürünlerinizi {appMode === 'shopify' ? 'Shopify' : 'Etsy'} ile günlük olarak otomatik senkronize edin.
+                  </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -427,170 +463,242 @@ export default function DefaultSettings({ etsyConnected }) {
                     onChange={handleChange}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+                  <div className={`w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${
+                    appMode === 'shopify' ? 'peer-checked:bg-emerald-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950' : 'peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950'
+                  }`}></div>
                 </label>
               </div>
             </div>
 
-            <div className="space-y-6 pt-6 border-t border-[#1e293b]">
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider text-slate-400 mb-1">Liste Varsayılanları</h3>
-                <p className="text-xs text-slate-500">Ürün listelemeleri için varsayılan davranışı yapılandırın.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Varsayılan Kategori */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Kategori</label>
-                  <select
-                    name="default_taxonomy_id"
-                    value={settings.default_taxonomy_id}
-                    onChange={handleChange}
-                    className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                  >
-                    <option value={1027}>Wall Decor (ID: 1027)</option>
-                    <option value={1021}>Art Prints (ID: 1021)</option>
-                    <option value={101}>Wall Art (ID: 101)</option>
-                  </select>
-                  <p className="text-[10px] text-slate-500">Yeni ürün listelemeleri için varsayılan kategoriyi seçin.</p>
+            {appMode !== 'shopify' && (
+              <div className="space-y-6 pt-6 border-t border-[#1e293b]">
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider text-slate-400 mb-1">Liste Varsayılanları</h3>
+                  <p className="text-xs text-slate-500">Ürün listelemeleri için varsayılan davranışı yapılandırın.</p>
                 </div>
 
-                {/* Varsayılan Fiyat */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Fiyat (USD)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="default_price"
-                    value={settings.default_price}
-                    onChange={handleChange}
-                    className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                {/* Varsayılan Liste Durumu */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Liste Durumu</label>
-                  <select
-                    name="default_listing_state"
-                    value={settings.default_listing_state}
-                    onChange={handleChange}
-                    className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="draft">Taslak (Draft)</option>
-                    <option value="active">Aktif (Live)</option>
-                  </select>
-                  <p className="text-[10px] text-slate-500">Yeni ürün listelemeleri için varsayılan durumu seçin.</p>
-                </div>
-
-
-                {/* Listeleri Otomatik Yenile */}
-                <div className="flex items-center justify-between p-4 bg-[#151f32] border border-[#1e293b] rounded-2xl md:col-span-2">
-                  <div className="space-y-1">
-                    <span className="text-sm font-semibold text-white">Listeleri Otomatik Yenile</span>
-                    <p className="text-xs text-slate-500">Süresi dolan listeleri otomatik olarak yenile.</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="auto_renew"
-                      checked={settings.auto_renew}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Varsayılan Kategori */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Kategori</label>
+                    <select
+                      name="default_taxonomy_id"
+                      value={settings.default_taxonomy_id}
                       onChange={handleChange}
-                      className="sr-only peer"
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    >
+                      <option value={1027}>Wall Decor (ID: 1027)</option>
+                      <option value={1021}>Art Prints (ID: 1021)</option>
+                      <option value={101}>Wall Art (ID: 101)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-500">Yeni ürün listelemeleri için varsayılan kategoriyi seçin.</p>
+                  </div>
+
+                  {/* Varsayılan Fiyat */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Fiyat (USD)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="default_price"
+                      value={settings.default_price}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                     />
-                    <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
-                  </label>
+                  </div>
+
+                  {/* Varsayılan Liste Durumu */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Varsayılan Liste Durumu</label>
+                    <select
+                      name="default_listing_state"
+                      value={settings.default_listing_state}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="draft">Taslak (Draft)</option>
+                      <option value="active">Aktif (Live)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-500">Yeni ürün listelemeleri için varsayılan durumu seçin.</p>
+                  </div>
+
+
+                  {/* Listeleri Otomatik Yenile */}
+                  <div className="flex items-center justify-between p-4 bg-[#151f32] border border-[#1e293b] rounded-2xl md:col-span-2">
+                    <div className="space-y-1">
+                      <span className="text-sm font-semibold text-white">Listeleri Otomatik Yenile</span>
+                      <p className="text-xs text-slate-500">Süresi dolan listeleri otomatik olarak yenile.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="auto_renew"
+                        checked={settings.auto_renew}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
-        {/* TAB 2: BÖLÜMLER (Shop Sections) */}
+        {/* TAB 2: BÖLÜMLER (Shop Sections / Shopify Collections) */}
         {activeTab === 'bolumler' && (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-white mb-1">Mağaza Bölümleri (Shop Sections)</h3>
-              <p className="text-xs text-slate-400">Etsy mağazanızda bulunan ürün bölümlerini inceleyin ve varsayılan bir bölüm seçin.</p>
-            </div>
-
-            {!etsyConnected ? (
-              <div className="flex items-start space-x-3 bg-amber-500/5 border border-amber-500/10 rounded-xl p-4 text-xs text-slate-400">
-                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                <span>Bölümleri listelemek için öncelikle Etsy hesabınızı bağlamalısınız.</span>
-              </div>
-            ) : (
+            {appMode === 'shopify' ? (
               <>
-                {/* Default settings selector */}
-                <div className="bg-[#151f32] border border-[#1e293b] rounded-3xl p-6 mb-6">
-                  <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Varsayılan Mağaza Bölümü (Default Shop Section)
-                    </label>
-                    {shopSections.length > 0 ? (
-                      <select
-                        name="default_shop_section_id"
-                        value={settings.default_shop_section_id}
-                        onChange={handleChange}
-                        className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                      >
-                        <option value="">Bölüm Seçilmesin (Bölümsüz)</option>
-                        {shopSections.map(s => (
-                          <option key={s.shop_section_id} value={s.shop_section_id.toString()}>
-                            {s.title} ({s.shop_section_id})
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        name="default_shop_section_id"
-                        value={settings.default_shop_section_id}
-                        onChange={handleChange}
-                        placeholder="Bölüm ID değerini girin"
-                        className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                      />
-                    )}
-                  </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Shopify Koleksiyonları</h3>
+                  <p className="text-xs text-slate-400">Shopify mağazanızda bulunan ürün koleksiyonlarını inceleyin ve yeni koleksiyonlar oluşturun.</p>
                 </div>
 
-                {/* Add new shop section */}
-                <form onSubmit={handleAddSection} className="bg-[#151f32] border border-[#1e293b] rounded-3xl p-6 mb-6 space-y-4">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Yeni Bölüm Ekle (Create New Section)</h4>
+                {/* Add new custom collection */}
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!newSectionTitle.trim()) return;
+                  setAddingSection(true);
+                  setSuccessMsg('');
+                  setErrorMsg('');
+                  try {
+                    await axios.post(`${API_BASE}/shopify/collections/create`, { title: newSectionTitle });
+                    setNewSectionTitle('');
+                    setSuccessMsg('Koleksiyon başarıyla oluşturuldu!');
+                    setTimeout(() => setSuccessMsg(''), 3000);
+                    await fetchShopifyCollections();
+                  } catch (err) {
+                    console.error('Koleksiyon oluşturulamadı:', err);
+                    setErrorMsg(err.response?.data?.error || 'Koleksiyon oluşturulurken hata oluştu.');
+                  } finally {
+                    setAddingSection(false);
+                  }
+                }} className="bg-[#151f32] border border-[#1e293b] rounded-3xl p-6 mb-6 space-y-4">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Yeni Koleksiyon Ekle (Create New Collection)</h4>
                   <div className="flex space-x-3">
                     <input
                       type="text"
-                      placeholder="Bölüm başlığı (Örn: Dijital Posterler)"
+                      placeholder="Koleksiyon başlığı (Örn: Minimalist Posterler)"
                       value={newSectionTitle}
                       onChange={(e) => setNewSectionTitle(e.target.value)}
-                      className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
                     />
                     <button
                       type="submit"
                       disabled={addingSection || !newSectionTitle.trim()}
-                      className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-2.5 px-5 rounded-xl transition-colors text-xs flex items-center justify-center whitespace-nowrap"
+                      className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-2.5 px-5 rounded-xl transition-colors text-xs flex items-center justify-center whitespace-nowrap"
                     >
-                      {addingSection ? 'Ekleniyor...' : 'Bölüm Ekle'}
+                      {addingSection ? 'Ekleniyor...' : 'Koleksiyon Ekle'}
                     </button>
                   </div>
                 </form>
 
-                {shopSections.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500 text-sm">Mağazanızda hiç bölüm bulunmuyor.</div>
+                {collections.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 text-sm">Mağazanızda hiç koleksiyon bulunmuyor.</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#1e293b]">
-                    {shopSections.map(sec => (
-                      <div key={sec.shop_section_id} className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 flex items-center justify-between">
+                    {collections.map(c => (
+                      <div key={c.id} className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 flex items-center justify-between">
                         <div>
-                          <strong className="text-white text-sm block">{sec.title}</strong>
-                          <span className="text-[10px] text-slate-500">ID: {sec.shop_section_id}</span>
+                          <strong className="text-white text-sm block">{c.title}</strong>
+                          <span className="text-[10px] text-slate-500">ID: {c.id} ({c.rules ? 'Smart Collection' : 'Custom Collection'})</span>
                         </div>
                         <span className="text-xs font-semibold px-3 py-1 bg-slate-800 rounded-lg text-slate-400">
-                          {sec.active_listing_count} Ürün
+                          {c.published_scope || 'Global'}
                         </span>
                       </div>
                     ))}
                   </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Mağaza Bölümleri (Shop Sections)</h3>
+                  <p className="text-xs text-slate-400">Etsy mağazanızda bulunan ürün bölümlerini inceleyin ve varsayılan bir bölüm seçin.</p>
+                </div>
+
+                {!etsyConnected ? (
+                  <div className="flex items-start space-x-3 bg-amber-500/5 border border-amber-500/10 rounded-xl p-4 text-xs text-slate-400">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <span>Bölümleri listelemek için öncelikle Etsy hesabınızı bağlamalısınız.</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Default settings selector */}
+                    <div className="bg-[#151f32] border border-[#1e293b] rounded-3xl p-6 mb-6">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                          Varsayılan Mağaza Bölümü (Default Shop Section)
+                        </label>
+                        {shopSections.length > 0 ? (
+                          <select
+                            name="default_shop_section_id"
+                            value={settings.default_shop_section_id}
+                            onChange={handleChange}
+                            className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                          >
+                            <option value="">Bölüm Seçilmesin (Bölümsüz)</option>
+                            {shopSections.map(s => (
+                              <option key={s.shop_section_id} value={s.shop_section_id.toString()}>
+                                {s.title} ({s.shop_section_id})
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            name="default_shop_section_id"
+                            value={settings.default_shop_section_id}
+                            onChange={handleChange}
+                            placeholder="Bölüm ID değerini girin"
+                            className="w-full bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Add new shop section */}
+                    <form onSubmit={handleAddSection} className="bg-[#151f32] border border-[#1e293b] rounded-3xl p-6 mb-6 space-y-4">
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">Yeni Bölüm Ekle (Create New Section)</h4>
+                      <div className="flex space-x-3">
+                        <input
+                          type="text"
+                          placeholder="Bölüm başlığı (Örn: Dijital Posterler)"
+                          value={newSectionTitle}
+                          onChange={(e) => setNewSectionTitle(e.target.value)}
+                          className="flex-1 bg-[#0e1726] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={addingSection || !newSectionTitle.trim()}
+                          className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-2.5 px-5 rounded-xl transition-colors text-xs flex items-center justify-center whitespace-nowrap"
+                        >
+                          {addingSection ? 'Ekleniyor...' : 'Bölüm Ekle'}
+                        </button>
+                      </div>
+                    </form>
+
+                    {shopSections.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500 text-sm">Mağazanızda hiç bölüm bulunmuyor.</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#1e293b]">
+                        {shopSections.map(sec => (
+                          <div key={sec.shop_section_id} className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 flex items-center justify-between">
+                            <div>
+                              <strong className="text-white text-sm block">{sec.title}</strong>
+                              <span className="text-[10px] text-slate-500">ID: {sec.shop_section_id}</span>
+                            </div>
+                            <span className="text-xs font-semibold px-3 py-1 bg-slate-800 rounded-lg text-slate-400">
+                              {sec.active_listing_count} Ürün
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

@@ -24,14 +24,15 @@ router.post('/generate', async (req, res, next) => {
     }
     
     const imagePath = join(__dirname, '../..', product.image_path);
+    const platform = product.shop_id.includes('.myshopify.com') ? 'shopify' : 'etsy';
     
     // Call Kimi service for physical wall art SEO
-    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id);
+    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id, platform);
     
     // Extract info
     const title = seoData.title || '';
     const tags = JSON.stringify(seoData.tags || []);
-    const description = seoData.description_hook || seoData.description || '';
+    const description = seoData.description || seoData.description_hook || '';
     const ai_attributes = JSON.stringify({
       visual_style: seoData.visual_style || [],
       occasion: seoData.occasion || [],

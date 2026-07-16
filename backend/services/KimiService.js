@@ -50,7 +50,7 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
   }
 }
 
-export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null) {
+export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy") {
   const targetShopId = shopId || getActiveShop().shop_id;
 
   // 1. Key Resolution: NEVER use hardcoded fallback keys
@@ -81,27 +81,41 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
   const dataUrl = await image.getBase64(mimeType);
 
   // Shortened and token-efficient system prompt
-  const systemPrompt = `You are an Etsy SEO expert. Analyze the artwork image and generate high-converting, search-optimized Etsy listing metadata in JSON format.
-CRITICAL RULES:
-- STRICTLY FORBIDDEN: Do not mention any specific artist or brand names. Use generic style descriptors (e.g. "Art Nouveau Style").
-- Return ONLY a single, valid JSON object. Do not include markdown code blocks.`;
+  const systemPrompt = platform === 'shopify'
+    ? `You are a Shopify E-commerce copywriter. Analyze the artwork image and generate a short, clean, premium product title (max 50 characters, 4-6 words) and search-optimized product metadata in JSON format. Do not use keyword stuffing.`
+    : `You are an Etsy SEO expert. Analyze the artwork image and return a JSON object with optimized listing metadata. Do not mention specific artist/brand names. Return ONLY a single JSON object without markdown formatting.`;
 
-  const promptText = `Please analyze the attached image and generate Etsy SEO metadata.
+  const promptText = platform === 'shopify'
+    ? `Please analyze the attached image and generate Shopify metadata.
 Shop Style: ${shopStyle}
-Target Market: ${targetMarket}
-Product Type: canvas print / poster print
+Product Type: Canvas / Poster
 
 Format your response as a single, valid JSON object matching this schema:
 {
-  "title": "string (comma-separated SEO keywords, max 140 characters)",
-  "tags": ["exactly 13 strings, max 20 characters each"],
-  "description_hook": "string (engaging search snippet, max 160 characters)",
+  "title": "string (clean, premium title, maximum 50 characters, 4 to 6 words, no keyword stuffing)",
+  "tags": ["5 to 10 relevant search tags"],
+  "description_hook": "string (engaging product description snippet, max 160 characters)",
+  "visual_style": ["1 to 3 style tags"],
+  "occasion": [],
+  "holiday": [],
+  "room": ["rooms where this art fits best"]
+}
+CRITICAL: Return ONLY the JSON object. Do not include markdown code block formatting (like \`\`\`json).`
+    : `Analyze the image of this wall art (canvas print / poster print) and return Etsy metadata JSON.
+Shop Style: ${shopStyle}
+Target Market: ${targetMarket}
+
+Schema:
+{
+  "title": "Natural language title, UNDER 70 chars. Template: '[What you sell] – [Key Feature] – [Recipient/Room]'. Most important term at start (first 30-40 chars). NO repetitive words. NO generic gift terms.",
+  "tags": ["Exactly 13 multi-word phrases, max 20 chars each. DO NOT repeat words from the title. Target different search intents."],
+  "description": "2-3 sentences. What is sold, who it's for, why it's special. Primary keyword in first 40 chars. In English.",
   "visual_style": ["1 to 3 style tags"],
   "occasion": ["occasion tags if applicable"],
   "holiday": ["holiday tags if applicable"],
   "room": ["room tags where this art fits best"]
 }
-CRITICAL: Ensure absolute compliance with copyright rules. Do not use artist names or brand names. Return ONLY the JSON object. Do not include markdown code block formatting (like \`\`\`json).`;
+CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
 
   // Define queue list - strictly Qwen 3.7 Plus on OpenRouter
   const queueToTry = [];
@@ -295,10 +309,16 @@ CRITICAL: Ensure absolute compliance with copyright rules. Do not use artist nam
   }
 
   // Sanitize description
-  let description = parsed.description_hook || parsed.description || '';
+  let description = parsed.description || parsed.description_hook || '';
   description = sanitizeText(String(description));
-  if (description.length > 160) {
-    description = description.substring(0, 160).trim();
+  if (description.length > 5000) {
+    description = description.substring(0, 5000).trim();
+  }
+
+  let descriptionHook = parsed.description_hook || parsed.description || '';
+  descriptionHook = sanitizeText(String(descriptionHook));
+  if (descriptionHook.length > 160) {
+    descriptionHook = descriptionHook.substring(0, 160).trim();
   }
 
   // Sanitize tags
@@ -355,7 +375,7 @@ CRITICAL: Ensure absolute compliance with copyright rules. Do not use artist nam
     title,
     tags: processedTags,
     description,
-    description_hook: description,
+    description_hook: descriptionHook,
     visual_style: visualStyle,
     occasion,
     holiday,

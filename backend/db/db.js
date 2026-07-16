@@ -176,6 +176,21 @@ try {
   // Column already exists, ignore
 }
 
+// Ensure shopify columns exist in products table
+try {
+  db.exec("ALTER TABLE products ADD COLUMN shopify_product_id TEXT");
+  console.log("[Schema Upgrade] Added shopify_product_id column to products table.");
+} catch (err) {
+  // Column already exists, ignore
+}
+
+try {
+  db.exec("ALTER TABLE products ADD COLUMN shopify_collection_id TEXT");
+  console.log("[Schema Upgrade] Added shopify_collection_id column to products table.");
+} catch (err) {
+  // Column already exists, ignore
+}
+
 // Ensure ai_usage logging table exists
 try {
   db.exec(`
@@ -216,12 +231,58 @@ export function getActiveShop() {
   };
 }
 
+// Global helper: Get current active Shopify configuration
+export function getRawActiveShopify() {
+  try {
+    const row = db.prepare('SELECT * FROM shopify_auth WHERE is_active = 1').get();
+    return row || null;
+  } catch (err) {
+    console.error("Failed to query active Shopify auth:", err);
+    return null;
+  }
+}
+
 // Global helper: Get storage-safe folder name for a shop ID
 export function getShopStorageName(shopId) {
   const row = db.prepare('SELECT shop_name FROM etsy_auth WHERE shop_id = ?').get(shopId);
   const rawName = row ? row.shop_name : (shopId === 'default_shop' ? 'Bagli Magaza Yok' : 'Bagli Magaza Yok');
   return rawName.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
+
+// Global helper: Get platform-specific upload subpath
+export function getPlatformUploadPath(platform) {
+  if (platform === 'shopify') {
+    const active = getRawActiveShopify();
+    const shopName = active ? active.shop_url.replace('.myshopify.com', '') : 'default_shopify';
+    return join('shopify', shopName);
+  } else {
+    const active = getActiveShop();
+    const shopName = getShopStorageName(active.shop_id);
+    return join('etsy', shopName);
+  }
+}
+
+// Global helper: Get platform-specific storage subpath for a product
+export function getProductStorageFolder(productId) {
+  try {
+    const row = db.prepare('SELECT shop_id FROM products WHERE id = ?').get(productId);
+    if (row && row.shop_id) {
+      const shopId = row.shop_id;
+      if (shopId.includes('.myshopify.com')) {
+        const shopName = shopId.replace('.myshopify.com', '');
+        return join('shopify', shopName);
+      } else {
+        const shopName = getShopStorageName(shopId);
+        return join('etsy', shopName);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to query product storage folder:", err.message);
+  }
+  // Fallback
+  return 'default';
+}
+
 
 // Global helper: Seed variation profiles for a specific shop
 export function seedDefaultProfilesForShop(shopId) {
@@ -300,5 +361,58 @@ try {
   const activeShop = getActiveShop();
   seedDefaultProfilesForShop(activeShop.shop_id);
 }
+
+// Dynamic Shopify credentials auto-seed on startup
+async function seedDefaultShopifyAuth() {
+  const shop = process.env.SHOPIFY_SHOP || 'usalkarthouse.myshopify.com';
+  const clientId = process.env.SHOPIFY_CLIENT_ID || '2d0698ed54587eb48e6aaa59d29f4e3d';
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET || '';
+  const themePath = join(__dirname, '..', 'storage', 'shopify', 'usalkarthouse', 'theme');
+
+  try {
+    console.log('[Shopify Seed] Checking active Shopify connection...');
+    const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'client_credentials'
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const accessToken = data.access_token;
+      
+      // Update database
+      db.exec('BEGIN');
+      try {
+        db.prepare('UPDATE shopify_auth SET is_active = 0').run();
+        const stmt = db.prepare(`
+          INSERT INTO shopify_auth (shop_url, shop_name, access_token, theme_path, is_active)
+          VALUES (?, ?, ?, ?, 1)
+          ON CONFLICT(shop_url) DO UPDATE SET
+            access_token = excluded.access_token,
+            theme_path = excluded.theme_path,
+            is_active = 1
+        `);
+        stmt.run(shop, 'Usalk Art House', accessToken, themePath);
+        db.exec('COMMIT');
+        console.log('[Shopify Seed] Successfully auto-seeded Shopify connection & access token!');
+      } catch (dbErr) {
+        db.exec('ROLLBACK');
+        console.error('[Shopify Seed] Failed to save seeded connection to database:', dbErr.message);
+      }
+    } else {
+      console.warn('[Shopify Seed] OAuth credentials exchange failed with status:', response.status);
+    }
+  } catch (err) {
+    console.warn('[Shopify Seed] Could not auto-seed Shopify credentials:', err.message);
+  }
+}
+
+// Trigger Shopify seeding asynchronously so it doesn't block server start
+seedDefaultShopifyAuth();
 
 export default db;
