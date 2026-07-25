@@ -5,7 +5,7 @@ import 'dotenv/config';
 async function test() {
   try {
     const { access_token, client_id, client_secret, shop_id } = await EtsyService.getValidToken();
-    const listingId = "4521929056";
+    const listingId = "4538254029";
     
     console.log(`Fetching inventory for listing ${listingId}...`);
     const url = `https://openapi.etsy.com/v3/application/listings/${listingId}/inventory`;

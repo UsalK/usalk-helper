@@ -80,3 +80,29 @@ CREATE TABLE IF NOT EXISTS shopify_auth (
   is_active INTEGER DEFAULT 0
 );
 
+-- Etsy analytics cache table
+CREATE TABLE IF NOT EXISTS etsy_analytics_cache (
+  listing_id TEXT PRIMARY KEY,
+  shop_id TEXT DEFAULT 'default_shop',
+  title TEXT,
+  state TEXT,
+  views INTEGER DEFAULT 0,
+  num_favorers INTEGER DEFAULT 0,
+  sales_count INTEGER DEFAULT 0,
+  total_revenue REAL DEFAULT 0.0,
+  price_amount REAL DEFAULT 0.0,
+  currency_code TEXT DEFAULT 'USD',
+  quantity INTEGER DEFAULT 0,
+  creation_timestamp INTEGER DEFAULT 0,
+  original_creation_timestamp INTEGER DEFAULT 0,
+  url TEXT,
+  image_url TEXT,
+  image_width INTEGER DEFAULT 0,
+  image_height INTEGER DEFAULT 0,
+  tags TEXT,
+  shop_section_id TEXT,
+  section_title TEXT,
+  last_synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+

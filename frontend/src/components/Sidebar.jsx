@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   LayoutDashboard, 
   Layers, 
@@ -7,7 +6,9 @@ import {
   Link, 
   UploadCloud,
   Palette,
-  Shuffle
+  Shuffle,
+  Coins,
+  BarChart3
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -24,12 +25,15 @@ export default function Sidebar({
   // Dynamic menu based on platform mode
   const menuItems = appMode === 'etsy' ? [
     { id: 'dashboard', name: 'Ürün Paneli', icon: LayoutDashboard },
+    { id: 'analytics', name: 'Analiz & Optimizasyon', icon: BarChart3 },
+    { id: 'price-update', name: 'LİSTİNG FİYAT GÜNCELLE', icon: Coins },
     { id: 'bulk-upload', name: 'Toplu Yükleme Sihirbazı', icon: UploadCloud },
     { id: 'templates', name: 'Şablon Stüdyosu', icon: Layers },
     { id: 'variations', name: 'Varyasyon Profilleri', icon: Tag },
     { id: 'settings', name: 'Genel Ayarlar', icon: Settings },
     { id: 'etsy-connect', name: 'Etsy Bağlantısı', icon: Link }
   ] : [
+
     { id: 'dashboard', name: 'Ürün Paneli', icon: LayoutDashboard },
     { id: 'shopify-upload', name: 'Shopify Ürün Yükleyici', icon: UploadCloud },
     { id: 'templates', name: 'Şablon Stüdyosu', icon: Layers },

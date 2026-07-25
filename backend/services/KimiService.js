@@ -108,7 +108,7 @@ Target Market: ${targetMarket}
 Schema:
 {
   "title": "Natural language title, UNDER 70 chars. Template: '[What you sell] – [Key Feature] – [Recipient/Room]'. Most important term at start (first 30-40 chars). NO repetitive words. NO generic gift terms.",
-  "tags": ["Exactly 13 multi-word phrases, max 20 chars each. DO NOT repeat words from the title. Target different search intents."],
+  "tags": ["Exactly 13 multi-word phrases. Each tag MUST BE UNDER 20 characters (maximum 19 characters, including spaces). NEVER use the word 'digital' in any tag. DO NOT repeat words from the title. Target different search intents."],
   "description": "2-3 sentences. What is sold, who it's for, why it's special. Primary keyword in first 40 chars. In English.",
   "visual_style": ["1 to 3 style tags"],
   "occasion": ["occasion tags if applicable"],
@@ -330,9 +330,19 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     if (typeof tag !== 'string') continue;
     let cleanTag = sanitizeText(tag).trim();
     if (!cleanTag) continue;
+    
+    // EXCLUDE tags longer than 20 characters (prevent truncation that ruins the keyword)
     if (cleanTag.length > 20) {
-      cleanTag = cleanTag.substring(0, 20).trim();
+      console.log(`[Tags Sanity] Excluding tag "${cleanTag}" because it exceeds 20 characters.`);
+      continue;
     }
+    
+    // EXCLUDE tags containing the forbidden word "digital"
+    if (cleanTag.toLowerCase().includes('digital')) {
+      console.log(`[Tags Sanity] Excluding tag "${cleanTag}" because it contains the forbidden word "digital".`);
+      continue;
+    }
+    
     const lowerKey = cleanTag.toLowerCase();
     if (!seenTags.has(lowerKey)) {
       seenTags.add(lowerKey);
@@ -386,3 +396,159 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     }
   };
 }
+
+export async function evaluateListingAI(listing, memoryBankText = '', shopId = null) {
+  const targetShopId = shopId || getActiveShop().shop_id;
+
+  let userApiKey = null;
+  try {
+    const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
+    const setting = stmt.get(targetShopId, 'nvidia_api_key');
+    if (setting) {
+      userApiKey = JSON.parse(setting.value);
+    }
+  } catch (err) {
+    console.error("Error reading api key from db:", err);
+  }
+
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const nvidiaEnvKey = process.env.NVIDIA_API_KEY;
+  const apiKey = userApiKey || nvidiaEnvKey || openRouterKey;
+
+  const systemPrompt = `You are a concise Etsy SEO & Product Optimization AI. Analyze listing metrics and memory bank history of analyzed listings. Return ONLY a single valid JSON object (no markdown formatting, no text before or after). Schema:
+{
+  "action": "OPTIMIZE" or "REPLACE",
+  "reason": "Short 1-2 sentence reason for decision",
+  "ai_short_note": "Very concise 1-sentence product identifier/summary for memory bank tracking",
+  "suggested_title": "Improved title (max 140 chars) if OPTIMIZE, else empty string",
+  "suggested_tags": ["up to 5 high-converting search tags if OPTIMIZE, else empty array"]
+}`;
+
+  const tagsStr = Array.isArray(listing.tags) ? listing.tags.join(', ') : (listing.tags || 'None');
+  const userPrompt = `Listing ID: ${listing.listing_id}
+Title: ${listing.title}
+Section: ${listing.section_title || 'None'}
+Active Days: ${listing.age_days || 0}
+Views: ${listing.views || 0}, Favorites: ${listing.num_favorers || 0}, Sales: ${listing.sales_count || 0}, Revenue: $${listing.total_revenue || 0}
+Price: $${listing.price_amount || 0}, Stock: ${listing.quantity || 0}
+Tags: ${tagsStr}
+Image Resolution: ${listing.image_width || 0}x${listing.image_height || 0} (${listing.is_high_res ? 'High Res >= 2000px' : 'LOW RES < 2000px'})
+
+Memory Bank Context (Recently analyzed listings):
+${memoryBankText ? memoryBankText.substring(0, 1000) : 'None (Memory bank is empty)'}
+
+Evaluate whether this listing should be OPTIMIZE (improve SEO/title) or REPLACE (retire listing and swap out). If memory bank has very similar redundant listings, recommend REPLACE.`;
+
+  let responseData = null;
+  let successModel = 'moonshotai/kimi-k2.6';
+  let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+
+  const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+  const payload = {
+    model: successModel,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ],
+    max_tokens: 1024,
+    temperature: 0.3
+  };
+
+  try {
+    const res = await withRetry(async () => {
+      return await axios.post(invokeUrl, payload, {
+        headers: {
+          "Authorization": `Bearer ${nvidiaEnvKey || userApiKey || apiKey}`,
+          "Content-Type": "application/json"
+        },
+        timeout: 25000
+      });
+    });
+    responseData = res.data;
+    if (responseData?.usage) {
+      usage = responseData.usage;
+    }
+  } catch (err) {
+    console.warn("[evaluateListingAI] Primary Nvidia API error:", err.response?.data || err.message);
+    if (openRouterKey) {
+      try {
+        const orRes = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+          model: "meta-llama/llama-3.3-70b-instruct",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          max_tokens: 1024
+        }, {
+          headers: {
+            "Authorization": `Bearer ${openRouterKey}`,
+            "Content-Type": "application/json"
+          },
+          timeout: 25000
+        });
+        responseData = orRes.data;
+        successModel = 'openrouter/llama-3.3-70b-instruct';
+        if (responseData?.usage) {
+          usage = responseData.usage;
+        }
+      } catch (orErr) {
+        console.error("[evaluateListingAI] OpenRouter fallback failed:", orErr.response?.data || orErr.message);
+      }
+    }
+  }
+
+
+  // Log usage to database & debug console
+  console.log(`\n=================== [AI DEBUG CONSOLE] ===================`);
+  console.log(`[AI Listing Evaluate] Target Listing: #${listing.listing_id} ("${listing.title.substring(0, 35)}...")`);
+  console.log(`[AI Model Used]: ${successModel}`);
+  console.log(`[Tokens Spent]: Prompt: ${usage.prompt_tokens || 0} | Completion: ${usage.completion_tokens || 0} | Total: ${usage.total_tokens || 0}`);
+  console.log(`===========================================================\n`);
+
+  try {
+    const logStmt = db.prepare(`
+      INSERT INTO ai_usage (id, shop_id, model, prompt_tokens, completion_tokens, total_tokens, cost, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0.0, CURRENT_TIMESTAMP)
+    `);
+    logStmt.run(uuidv4(), targetShopId, successModel, usage.prompt_tokens || 0, usage.completion_tokens || 0, usage.total_tokens || 0);
+  } catch (logErr) {
+    console.error("Failed to log ai_usage to DB:", logErr.message);
+  }
+
+  let parsed = {
+    action: "OPTIMIZE",
+    reason: "Analiz tamamlandı.",
+    ai_short_note: `${listing.title.substring(0, 30)} (Visits: ${listing.views}, Fav: ${listing.num_favorers})`,
+    suggested_title: "",
+    suggested_tags: []
+  };
+
+  if (responseData?.choices?.[0]?.message?.content) {
+    const rawContent = responseData.choices[0].message.content.trim();
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const jsonParsed = JSON.parse(jsonMatch[0]);
+        parsed = { ...parsed, ...jsonParsed };
+      } catch (e) {
+        console.warn("Could not parse AI response JSON:", e.message);
+      }
+    }
+  }
+
+  return {
+    listing_id: listing.listing_id,
+    action: parsed.action?.toUpperCase() === 'REPLACE' ? 'REPLACE' : 'OPTIMIZE',
+    reason: parsed.reason || 'Metrikler ve hafıza bankası değerlendirildi.',
+    ai_short_note: parsed.ai_short_note || `${listing.title.substring(0, 40)}`,
+    suggested_title: parsed.suggested_title || '',
+    suggested_tags: Array.isArray(parsed.suggested_tags) ? parsed.suggested_tags : [],
+    token_usage: {
+      prompt_tokens: usage.prompt_tokens || 0,
+      completion_tokens: usage.completion_tokens || 0,
+      total_tokens: usage.total_tokens || 0,
+      model: successModel
+    }
+  };
+}
+

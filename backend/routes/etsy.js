@@ -4,8 +4,11 @@ import axios from 'axios';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
 import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
 import * as EtsyService from '../services/EtsyService.js';
+import { evaluateListingAI } from '../services/KimiService.js';
+
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -951,21 +954,22 @@ async function getFullListingsForShopState(shop_id, state, access_token, client_
   const allListings = [...(firstRes.data.results || [])];
 
   if (totalCount > 100) {
-    const promises = [];
     for (let offset = 100; offset < totalCount; offset += 100) {
-      promises.push(
-        axios.get(url, {
+      // Sleep to prevent rate limit (429)
+      await new Promise(resolve => setTimeout(resolve, 250));
+      try {
+        const r = await axios.get(url, {
           params: { state: state || 'active', limit: 100, offset, includes: 'images' },
           headers
-        })
-      );
-    }
-    const pageResponses = await Promise.all(promises);
-    pageResponses.forEach(r => {
-      if (r.data?.results) {
-        allListings.push(...r.data.results);
+        });
+        if (r.data?.results) {
+          allListings.push(...r.data.results);
+        }
+      } catch (err) {
+        console.error(`Failed to fetch page offset ${offset}:`, err.message);
+        // Break or continue on individual page error? Continue since we want as many as possible
       }
-    });
+    }
   }
 
   listingsCache.data[cacheKey] = {
@@ -1304,4 +1308,1167 @@ router.post('/listings/batch-variation-profile', async (req, res, next) => {
   }
 });
 
+// Configure multer for custom draft mockups
+const customDraftStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const destDir = join(__dirname, '..', 'uploads');
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    cb(null, destDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'custom-draft-' + uniqueSuffix + '.' + file.originalname.split('.').pop());
+  }
+});
+const uploadCustomDraft = multer({ storage: customDraftStorage });
+
+// POST route to upload custom mockups and create a draft listing on Etsy
+router.post('/upload-custom-draft', uploadCustomDraft.array('mockups'), async (req, res, next) => {
+  const files = req.files || [];
+  const { profileId } = req.body;
+  
+  if (files.length === 0) {
+    return res.status(400).json({ error: 'At least one mockup file is required.' });
+  }
+  
+  try {
+    const activeShop = getActiveShop();
+    
+    // 1. Fetch settings to get shipping, taxonomy, who_made, when_made defaults
+    const settingsStmt = db.prepare('SELECT * FROM settings WHERE shop_id = ?');
+    const settingsRows = settingsStmt.all(activeShop.shop_id);
+    const settings = {};
+    settingsRows.forEach(s => {
+      settings[s.key] = JSON.parse(s.value);
+    });
+    
+    const shipping_profile_id = settings.default_shipping_profile_id;
+    const return_policy_id = settings.default_return_policy_id;
+    const taxonomy_id = settings.default_taxonomy_id || 1027; // wall decor default
+    const who_made = settings.default_who_made || 'i_did';
+    const when_made = settings.default_when_made || 'made_to_order';
+    const readiness_state_id = settings.default_readiness_state_id;
+    
+    if (!shipping_profile_id) {
+      return res.status(400).json({ error: 'Lütfen genel ayarlardan varsayılan bir kargo şablonu belirtin.' });
+    }
+    
+    // 2. Fetch the variation profile combinations to get prices
+    const profileStmt = db.prepare('SELECT * FROM variation_profiles WHERE id = ? AND shop_id = ?');
+    const profileRow = profileStmt.get(profileId, activeShop.shop_id);
+    if (!profileRow) {
+      return res.status(404).json({ error: 'Varyasyon profili bulunamadı.' });
+    }
+    
+    const variationProfile = {
+      ...profileRow,
+      sizes: JSON.parse(profileRow.sizes),
+      frames: JSON.parse(profileRow.frames),
+      combinations: JSON.parse(profileRow.combinations)
+    };
+    
+    let fallbackPrice = settings.default_price || 35.00;
+    if (variationProfile.combinations.length > 0) {
+      const prices = variationProfile.combinations.map(c => Number(c.price)).filter(p => !isNaN(p));
+      if (prices.length > 0) {
+        fallbackPrice = Math.min(...prices);
+      }
+    }
+    
+    // Gather tags and attributes
+    const tags = ['wall art', 'canvas art', 'double set', 'home decor', 'poster set', 'gift for home', 'canvas print', 'handmade art', '12 ratio set'];
+    
+    // 3. Create draft listing on Etsy
+    const listingData = {
+      title: 'Handmade Canvas Wall Art Set (1:2) - Draft',
+      description: settings.description_boilerplate || 'Stunning printed wall art set.',
+      price: fallbackPrice,
+      quantity: 100,
+      who_made,
+      when_made,
+      taxonomy_id: Number(taxonomy_id),
+      state: 'draft',
+      type: 'physical',
+      should_auto_renew: settings.auto_renew !== undefined ? settings.auto_renew : true
+    };
+    
+    if (shipping_profile_id) listingData.shipping_profile_id = Number(shipping_profile_id);
+    if (return_policy_id) listingData.return_policy_id = Number(return_policy_id);
+    if (readiness_state_id) listingData.readiness_state_id = Number(readiness_state_id);
+    
+    // Add Materials if enabled
+    const materialsEnabled = settings.attribute_materials_enabled !== undefined ? settings.attribute_materials_enabled : true;
+    const materialsList = settings.attribute_materials !== undefined ? settings.attribute_materials : ['Canvas', 'Paper', 'Cotton', 'Wood', 'Fabric'];
+    if (materialsEnabled && materialsList && materialsList.length > 0) {
+      listingData.materials = materialsList
+        .map(m => m.replace(/[^\p{L}\p{N}\p{Zs}]/gu, '').trim())
+        .filter(m => m.length > 0)
+        .slice(0, 13);
+    }
+
+    // Add Width & Height if enabled
+    if (settings.attribute_width_enabled && settings.attribute_width) {
+      listingData.item_width = Number(settings.attribute_width);
+      listingData.item_dimensions_unit = settings.attribute_width_unit === 'Inches' ? 'in' : 'cm';
+    }
+    if (settings.attribute_height_enabled && settings.attribute_height) {
+      listingData.item_height = Number(settings.attribute_height);
+      listingData.item_dimensions_unit = settings.attribute_height_unit === 'Inches' ? 'in' : 'cm';
+    }
+    
+    // Add Tags
+    listingData.tags = tags;
+    
+    const createdListing = await EtsyService.createListing(listingData);
+    const listing_id = createdListing.listing_id.toString();
+    
+    // Update taxonomy properties
+    try {
+      // 1. Home Style
+      if (settings.attribute_home_style_enabled && settings.attribute_home_style) {
+        const valId = STYLE_MAPPING[settings.attribute_home_style];
+        if (valId) {
+          await EtsyService.updateListingProperty(listing_id, 145330288652, {
+            value_ids: [valId],
+            values: [settings.attribute_home_style]
+          });
+        }
+      }
+
+      // 2. Occasion
+      if (settings.attribute_occasion_enabled && settings.attribute_occasion) {
+        const valId = OCCASION_MAPPING[settings.attribute_occasion];
+        if (valId) {
+          await EtsyService.updateListingProperty(listing_id, 46803063641, {
+            value_ids: [valId],
+            values: [settings.attribute_occasion]
+          });
+        }
+      }
+
+      // 3. Holiday
+      if (settings.attribute_holiday_enabled && settings.attribute_holiday) {
+        const valId = HOLIDAY_MAPPING[settings.attribute_holiday];
+        if (valId) {
+          await EtsyService.updateListingProperty(listing_id, 46803063659, {
+            value_ids: [valId],
+            values: [settings.attribute_holiday]
+          });
+        }
+      }
+
+      // 4. Room
+      if (settings.attribute_room_enabled && settings.attribute_rooms && settings.attribute_rooms.length > 0) {
+        const valIds = settings.attribute_rooms
+          .map(r => ROOM_MAPPING[r])
+          .filter(id => id !== undefined);
+        const values = settings.attribute_rooms
+          .filter(r => ROOM_MAPPING[r] !== undefined);
+          
+        if (valIds.length > 0) {
+          await EtsyService.updateListingProperty(listing_id, 145330288592, {
+            value_ids: valIds,
+            values: values
+          });
+        }
+      }
+
+      // 5. Materials (ID: 148789511893)
+      if (settings.attribute_materials_enabled && settings.attribute_materials && settings.attribute_materials.length > 0) {
+        const valIds = settings.attribute_materials
+          .map(m => MATERIALS_MAPPING[m])
+          .filter(id => id !== undefined);
+        const values = settings.attribute_materials
+          .filter(m => MATERIALS_MAPPING[m] !== undefined);
+          
+        if (valIds.length > 0) {
+          await EtsyService.updateListingProperty(listing_id, 148789511893, {
+            value_ids: valIds,
+            values: values
+          });
+        }
+      }
+    } catch (attrErr) {
+      console.warn("Failed to set taxonomy properties for custom draft listing:", attrErr.response?.data || attrErr.message);
+    }
+    
+    // 4. Upload mockup images to Etsy listing
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        await EtsyService.uploadListingImage(listing_id, file.path, i + 1, 'İkili Set Mockup');
+      } catch (imgErr) {
+        console.error(`Failed to upload image ${file.filename} to Etsy:`, imgErr.message);
+      } finally {
+        // Clean up file from disk
+        try {
+          fs.unlinkSync(file.path);
+        } catch (unErr) {
+          console.error(`Failed to delete local file ${file.path}:`, unErr.message);
+        }
+      }
+    }
+    
+    // 5. Update SQLite database products table
+    const { v4: uuidv4 } = await import('uuid');
+    const insertStmt = db.prepare(`
+      INSERT INTO products (id, shop_id, etsy_listing_id, variation_profile_id, status, title, tags, description)
+      VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)
+    `);
+    insertStmt.run(uuidv4(), activeShop.shop_id, listing_id, profileId, 'Handmade Canvas Wall Art Set (1:2) - Draft', JSON.stringify(tags), listingData.description);
+    
+    // 6. Push variation inventory if combinations exist
+    if (variationProfile.combinations.length > 0) {
+      console.log(`Pushing variations for custom draft listing ${listing_id}...`);
+      
+      let actualReadinessStateId = readiness_state_id;
+      if (!actualReadinessStateId) {
+        try {
+          const states = await EtsyService.getReadinessStates();
+          if (states && states.length > 0) {
+            actualReadinessStateId = Number(states[0].readiness_state_id);
+          }
+        } catch (rErr) {
+          console.error("Failed to fetch default readiness states:", rErr.message);
+        }
+      }
+      
+      const hasFrames = variationProfile.frames && variationProfile.frames.length > 0;
+      
+      const productsList = variationProfile.combinations.map((comb) => {
+        const property_values = [
+          {
+            property_id: 513, // Dimensions (Custom1)
+            property_name: "Dimensions",
+            value_ids: [],
+            values: [comb.size]
+          }
+        ];
+        
+        if (hasFrames && comb.frame) {
+          property_values.push({
+            property_id: 514, // Frame (Custom2)
+            property_name: "Frame",
+            value_ids: [],
+            values: [comb.frame]
+          });
+        }
+        
+        // Generate SKU (max 32 characters for Etsy)
+        const cleanSize = comb.size.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+        const cleanFrame = comb.frame ? comb.frame.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8) : 'NONE';
+        const sku = `ART-CUSTOM-${cleanSize}-${cleanFrame}`.toUpperCase();
+        
+        return {
+          sku,
+          property_values,
+          offerings: [
+            {
+              price: Number(comb.price),
+              quantity: 100,
+              is_enabled: true,
+              readiness_state_id: Number(actualReadinessStateId)
+            }
+          ]
+        };
+      });
+      
+      const price_on_property = [513];
+      const sku_on_property = [513];
+      if (hasFrames) {
+        price_on_property.push(514);
+        sku_on_property.push(514);
+      }
+      
+      const inventoryData = {
+        products: productsList,
+        price_on_property,
+        quantity_on_property: [],
+        sku_on_property
+      };
+      
+      try {
+        await EtsyService.updateListingInventory(listing_id, inventoryData);
+        console.log(`Successfully pushed variations inventory to custom draft listing ${listing_id}`);
+      } catch (invErr) {
+        console.error(`Failed to push variations inventory for custom draft listing ${listing_id}:`, invErr.response?.data || invErr.message);
+      }
+    }
+    
+    return res.json({ success: true, listing_id });
+  } catch (err) {
+    // Clean up any remaining uploaded files
+    files.forEach(file => {
+      try {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      } catch (unErr) {
+        console.error(`Cleanup failed for file ${file.path}:`, unErr.message);
+      }
+    });
+    console.error("Custom draft upload failed:", err.response?.data || err.message);
+    return res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+// Fetch all active listings from Etsy and map their variation profile IDs from the local database
+router.get('/listings-with-variations', async (req, res, next) => {
+  try {
+    const { access_token, client_id, client_secret, shop_id } = await EtsyService.getValidToken();
+    
+    // Fetch all active listings from Etsy (paginated)
+    const allListings = await getFullListingsForShopState(shop_id, 'active', access_token, client_id, client_secret);
+    
+    // Fetch local products to map their variation profiles
+    const localProducts = db.prepare('SELECT etsy_listing_id, variation_profile_id FROM products WHERE shop_id = ?').all(shop_id);
+    const localMap = new Map();
+    localProducts.forEach(p => {
+      if (p.etsy_listing_id) {
+        // Strip float suffix if any
+        const cleanId = p.etsy_listing_id.toString().split('.')[0];
+        localMap.set(cleanId, p.variation_profile_id);
+      }
+    });
+
+    const listingsWithProfile = allListings.map(l => {
+      const listingIdStr = l.listing_id.toString();
+      const variation_profile_id = localMap.get(listingIdStr) || null;
+      return {
+        listing_id: l.listing_id,
+        title: l.title,
+        price: l.price,
+        state: l.state,
+        shop_section_id: l.shop_section_id,
+        images: l.images || [],
+        variation_profile_id
+      };
+    });
+
+    res.json(listingsWithProfile);
+  } catch (err) {
+    console.error("Failed to get listings with variation profiles:", err.response?.data || err.message);
+    next(err);
+  }
+});
+
+// Update prices of listings (+20% or custom percentage) in batches
+router.post('/listings/bulk-price-update', async (req, res, next) => {
+  try {
+    const { listingIds, percentage, execute } = req.body;
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return res.status(400).json({ error: 'listingIds array is required.' });
+    }
+
+    const pct = percentage !== undefined ? parseFloat(percentage) : 20;
+    const multiplier = 1 + (pct / 100);
+
+    const credentials = await EtsyService.getValidToken();
+    const { access_token, client_id, client_secret, shop_id } = credentials;
+
+    const results = [];
+    
+    for (const listingId of listingIds) {
+      const listingIdStr = listingId.toString();
+      try {
+        // Fetch current inventory
+        const getUrl = `https://openapi.etsy.com/v3/application/listings/${listingIdStr}/inventory`;
+        const getRes = await axios.get(getUrl, {
+          headers: {
+            'x-api-key': `${client_id}:${client_secret}`,
+            'Authorization': `Bearer ${access_token}`
+          }
+        });
+
+        const inventory = getRes.data;
+        if (!inventory || !inventory.products || inventory.products.length === 0) {
+          results.push({
+            listingId: listingIdStr,
+            status: 'skipped',
+            reason: 'No products in inventory'
+          });
+          continue;
+        }
+
+        const hasVariations = inventory.price_on_property && inventory.price_on_property.length > 0;
+        const originalPrices = [];
+        const newPrices = [];
+
+        // Map existing products into updated list
+        const updatedProducts = inventory.products.map(product => {
+          const property_values = (product.property_values || []).map(pv => ({
+            property_id: pv.property_id,
+            property_name: pv.property_name,
+            value_ids: pv.value_ids || [],
+            values: pv.values || []
+          }));
+
+          const offerings = (product.offerings || []).map(offering => {
+            const originalPrice = offering.price.amount / offering.price.divisor;
+            const newPriceVal = Number((originalPrice * multiplier).toFixed(2));
+
+            originalPrices.push(originalPrice);
+            newPrices.push(newPriceVal);
+
+            const newOffering = {
+              price: newPriceVal,
+              quantity: offering.quantity !== undefined ? offering.quantity : 100,
+              is_enabled: offering.is_enabled !== undefined ? offering.is_enabled : true
+            };
+
+            if (offering.readiness_state_id) {
+              newOffering.readiness_state_id = offering.readiness_state_id;
+            } else {
+              newOffering.readiness_state_id = null;
+            }
+
+            return newOffering;
+          });
+
+          return {
+            sku: product.sku || '',
+            property_values,
+            offerings
+          };
+        });
+
+        const minOrig = Math.min(...originalPrices);
+        const maxOrig = Math.max(...originalPrices);
+        const minNew = Math.min(...newPrices);
+        const maxNew = Math.max(...newPrices);
+
+        if (!hasVariations) {
+          // Simple listing PATCH
+          if (execute) {
+            const patchUrl = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings/${listingIdStr}`;
+            const params = new URLSearchParams();
+            params.append('price', newPrices[0].toString());
+
+            await axios.patch(patchUrl, params, {
+              headers: {
+                'x-api-key': `${client_id}:${client_secret}`,
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+              }
+            });
+          }
+          results.push({
+            listingId: listingIdStr,
+            status: execute ? 'updated' : 'dry-run-success',
+            hasVariations: false,
+            originalPrices,
+            newPrices
+          });
+        } else {
+          // Variation listing PUT
+          if (execute) {
+            const putData = {
+              products: updatedProducts,
+              price_on_property: inventory.price_on_property || [],
+              quantity_on_property: inventory.quantity_on_property || [],
+              sku_on_property: inventory.sku_on_property || []
+            };
+
+            await axios.put(
+              `https://openapi.etsy.com/v3/application/listings/${listingIdStr}/inventory`,
+              putData,
+              {
+                headers: {
+                  'x-api-key': `${client_id}:${client_secret}`,
+                  'Authorization': `Bearer ${access_token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+          }
+          results.push({
+            listingId: listingIdStr,
+            status: execute ? 'updated' : 'dry-run-success',
+            hasVariations: true,
+            originalPrices,
+            newPrices
+          });
+        }
+      } catch (err) {
+        const errMsg = err.response?.data?.error || err.response?.data || err.message;
+        results.push({
+          listingId: listingIdStr,
+          status: 'error',
+          error: errMsg
+        });
+      }
+
+      // Small delay between items to prevent rate limits inside the batch
+      await sleep(150);
+    }
+
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error("Bulk price update endpoint error:", err);
+    next(err);
+  }
+});
+
+// Helper: Parse PNG / JPEG buffer to inspect width & height without heavy dependencies
+async function getImageDimensionsFromUrl(imageUrl) {
+  if (!imageUrl) return { width: 0, height: 0 };
+  try {
+    const res = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 8000 });
+    const buffer = Buffer.from(res.data);
+    
+    // PNG Check
+    if (buffer.length > 24 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      return { width, height };
+    }
+    
+    // JPEG Check
+    if (buffer.length > 4 && buffer[0] === 0xFF && buffer[1] === 0xD8) {
+      let offset = 2;
+      while (offset < buffer.length - 8) {
+        if (buffer[offset] !== 0xFF) break;
+        const marker = buffer[offset + 1];
+        if (marker === 0xC0 || marker === 0xC1 || marker === 0xC2 || marker === 0xC3) {
+          const height = buffer.readUInt16BE(offset + 5);
+          const width = buffer.readUInt16BE(offset + 7);
+          return { width, height };
+        }
+        const length = buffer.readUInt16BE(offset + 2);
+        offset += 2 + length;
+      }
+    }
+  } catch (err) {
+    console.warn("[getImageDimensionsFromUrl] Dimension parse warning:", err.message);
+  }
+  return { width: 0, height: 0 };
+}
+
+// ----------------------------------------------------
+// ANALYTICS & LISTING OPTIMIZATION ENDPOINTS
+// ----------------------------------------------------
+
+// 1. Sync Etsy listings to SQLite Cache DB
+router.get('/analytics/sync', async (req, res, next) => {
+  try {
+    const auth = await EtsyService.getValidToken();
+    const shopId = auth.shop_id;
+
+    console.log(`[Analytics Sync] Fetching listings from Etsy API for shop ${shopId}...`);
+
+    let sectionsMap = {};
+    try {
+      const sections = await EtsyService.getShopSections();
+      if (Array.isArray(sections)) {
+        sections.forEach(s => {
+          sectionsMap[s.shop_section_id] = s.title;
+        });
+      }
+    } catch (secErr) {
+      console.warn("[Analytics Sync] Could not fetch shop sections:", secErr.message);
+    }
+
+    let allListings = [];
+    let offset = 0;
+    const limit = 100;
+
+    // Fetch active listings
+    while (true) {
+      const url = `https://openapi.etsy.com/v3/application/shops/${shopId}/listings/active?limit=${limit}&offset=${offset}`;
+      const response = await axios.get(url, {
+        headers: {
+          'x-api-key': `${auth.client_id}:${auth.client_secret}`,
+          'Authorization': `Bearer ${auth.access_token}`
+        }
+      });
+      const results = response.data.results || [];
+      allListings.push(...results);
+      if (allListings.length >= response.data.count || results.length === 0) break;
+      offset += limit;
+    }
+
+    console.log(`[Analytics Sync] Retrieved ${allListings.length} listings from Etsy API. Fetching images in batch...`);
+
+    // Map for image data
+    const imageMap = {};
+    const batchSize = 50;
+    for (let i = 0; i < allListings.length; i += batchSize) {
+      const batchListings = allListings.slice(i, i + batchSize);
+      const batchIds = batchListings.map(l => l.listing_id).join(',');
+      try {
+        const batchUrl = `https://openapi.etsy.com/v3/application/listings/batch?listing_ids=${batchIds}&includes=images`;
+        const batchRes = await axios.get(batchUrl, {
+          headers: {
+            'x-api-key': `${auth.client_id}:${auth.client_secret}`,
+            'Authorization': `Bearer ${auth.access_token}`
+          }
+        });
+        const batchResults = batchRes.data.results || [];
+        batchResults.forEach(item => {
+          if (item.images && item.images.length > 0) {
+            const firstImg = item.images[0];
+            imageMap[item.listing_id] = {
+              url: firstImg.url_570xN || firstImg.url_170x135 || firstImg.url_75x75 || '',
+              width: firstImg.full_width || 0,
+              height: firstImg.full_height || 0
+            };
+          }
+        });
+      } catch (batchErr) {
+        console.warn(`[Analytics Sync] Batch image fetch warning (chunk ${i}):`, batchErr.message);
+      }
+    }
+
+    console.log(`[Analytics Sync] Saving ${allListings.length} listings with images to database...`);
+
+    const upsertStmt = db.prepare(`
+      INSERT INTO etsy_analytics_cache (
+        listing_id, shop_id, title, state, views, num_favorers, sales_count, total_revenue,
+        price_amount, currency_code, quantity, creation_timestamp, original_creation_timestamp,
+        url, image_url, image_width, image_height, tags, shop_section_id, section_title, last_synced_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+      ) ON CONFLICT(listing_id) DO UPDATE SET
+        title = excluded.title,
+        state = excluded.state,
+        views = excluded.views,
+        num_favorers = excluded.num_favorers,
+        sales_count = excluded.sales_count,
+        total_revenue = excluded.total_revenue,
+        price_amount = excluded.price_amount,
+        currency_code = excluded.currency_code,
+        quantity = excluded.quantity,
+        creation_timestamp = excluded.creation_timestamp,
+        original_creation_timestamp = excluded.original_creation_timestamp,
+        url = excluded.url,
+        image_url = CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE etsy_analytics_cache.image_url END,
+        image_width = CASE WHEN excluded.image_width > 0 THEN excluded.image_width ELSE etsy_analytics_cache.image_width END,
+        image_height = CASE WHEN excluded.image_height > 0 THEN excluded.image_height ELSE etsy_analytics_cache.image_height END,
+        tags = excluded.tags,
+        shop_section_id = excluded.shop_section_id,
+        section_title = excluded.section_title,
+        last_synced_at = CURRENT_TIMESTAMP
+    `);
+
+    db.exec('BEGIN');
+    try {
+      allListings.forEach(l => {
+        const priceVal = l.price ? (l.price.amount / l.price.divisor) : 0;
+        const currency = l.price ? l.price.currency_code : 'USD';
+        const sectionTitle = l.shop_section_id ? (sectionsMap[l.shop_section_id] || 'Seksiyon Yok') : 'Seksiyon Yok';
+        const tagsJson = JSON.stringify(l.tags || []);
+        
+        // Image data
+        const imgData = imageMap[l.listing_id] || { url: '', width: 0, height: 0 };
+
+        // Sales / revenue
+        const salesCount = l.transaction_sell_count || 0;
+        const totalRevenue = salesCount * priceVal;
+
+
+        upsertStmt.run(
+          String(l.listing_id),
+          shopId,
+          l.title || '',
+          l.state || 'active',
+          l.views || 0,
+          l.num_favorers || 0,
+          salesCount,
+          totalRevenue,
+          priceVal,
+          currency,
+          l.quantity || 0,
+          l.creation_timestamp || 0,
+          l.original_creation_timestamp || l.creation_timestamp || 0,
+          l.url || '',
+          imgData.url,
+          imgData.width,
+          imgData.height,
+          tagsJson,
+          l.shop_section_id ? String(l.shop_section_id) : '',
+          sectionTitle
+        );
+      });
+      db.exec('COMMIT');
+      console.log(`[Analytics Sync] Successfully cached ${allListings.length} listings in SQLite with thumbnails.`);
+    } catch (dbErr) {
+      db.exec('ROLLBACK');
+      throw dbErr;
+    }
+
+    res.json({
+      success: true,
+      count: allListings.length,
+      last_synced_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("Analytics sync error:", err.response?.data || err.message);
+    next(err);
+  }
+});
+
+
+// 2. Query cached listings with date range, filters, thresholds & sorting
+router.get('/analytics/listings', (req, res, next) => {
+  try {
+    const activeShop = getActiveShop();
+    const shopId = activeShop.shop_id;
+
+    const {
+      range = 'all',
+      startDate,
+      endDate,
+      search = '',
+      minAgeDays = 0,
+      zeroVisitsOnly = 'false',
+      zeroFavsOnly = 'false',
+      sortBy = 'views',
+      sortOrder = 'desc'
+    } = req.query;
+
+    let rows = db.prepare(`SELECT * FROM etsy_analytics_cache WHERE shop_id = ?`).all(shopId);
+
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    let processed = rows.map(r => {
+      let tagsArr = [];
+      try {
+        tagsArr = JSON.parse(r.tags || '[]');
+      } catch (e) {
+        tagsArr = [];
+      }
+
+      const ageDays = r.creation_timestamp > 0 ? Math.floor((nowSec - r.creation_timestamp) / 86400) : 0;
+      const convRate = r.views > 0 ? ((r.sales_count / r.views) * 100).toFixed(2) : '0.00';
+      const clickRate = r.views > 0 ? ((r.num_favorers / r.views) * 100).toFixed(2) : '0.00';
+
+      return {
+        listing_id: r.listing_id,
+        title: r.title,
+        state: r.state,
+        views: r.views,
+        num_favorers: r.num_favorers,
+        sales_count: r.sales_count,
+        total_revenue: r.total_revenue,
+        price_amount: r.price_amount,
+        currency_code: r.currency_code,
+        quantity: r.quantity,
+        creation_timestamp: r.creation_timestamp,
+        age_days: ageDays,
+        conv_rate: parseFloat(convRate),
+        click_rate: parseFloat(clickRate),
+        url: r.url,
+        image_url: r.image_url,
+        image_width: r.image_width,
+        image_height: r.image_height,
+        is_high_res: r.image_width >= 2000 && r.image_height >= 2000,
+        tags: tagsArr,
+        shop_section_id: r.shop_section_id,
+        section_title: r.section_title,
+        last_synced_at: r.last_synced_at
+      };
+    });
+
+    // Date range filter
+    if (range !== 'all') {
+      let cutoffSec = 0;
+      if (range === '7d') cutoffSec = nowSec - 7 * 86400;
+      else if (range === '30d') cutoffSec = nowSec - 30 * 86400;
+      else if (range === '90d') cutoffSec = nowSec - 90 * 86400;
+      else if (range === 'custom' && startDate) {
+        cutoffSec = Math.floor(new Date(startDate).getTime() / 1000);
+      }
+
+      if (cutoffSec > 0) {
+        processed = processed.filter(p => p.creation_timestamp >= cutoffSec);
+      }
+      if (range === 'custom' && endDate) {
+        const endCutoffSec = Math.floor(new Date(endDate).getTime() / 1000) + 86400;
+        processed = processed.filter(p => p.creation_timestamp <= endCutoffSec);
+      }
+    }
+
+    // Search filter
+    if (search && search.trim() !== '') {
+      const q = search.toLowerCase().trim();
+      processed = processed.filter(p => p.title.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q)));
+    }
+
+    // Threshold filters
+    if (parseInt(minAgeDays) > 0) {
+      const minDays = parseInt(minAgeDays);
+      processed = processed.filter(p => p.age_days >= minDays);
+    }
+    if (zeroVisitsOnly === 'true') {
+      processed = processed.filter(p => p.views === 0);
+    }
+    if (zeroFavsOnly === 'true') {
+      processed = processed.filter(p => p.num_favorers === 0);
+    }
+
+    // Sort
+    const isAsc = sortOrder === 'asc';
+    processed.sort((a, b) => {
+      let valA = a[sortBy] !== undefined ? a[sortBy] : 0;
+      let valB = b[sortBy] !== undefined ? b[sortBy] : 0;
+      if (typeof valA === 'string') {
+        return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      return isAsc ? valA - valB : valB - valA;
+    });
+
+    // Compute Summary Stats
+
+    const totalViews = processed.reduce((sum, item) => sum + item.views, 0);
+    const totalFavs = processed.reduce((sum, item) => sum + item.num_favorers, 0);
+    let totalSales = processed.reduce((sum, item) => sum + item.sales_count, 0);
+    let totalRevenue = processed.reduce((sum, item) => sum + item.total_revenue, 0);
+    const avgClickRate = processed.length > 0 ? (processed.reduce((sum, item) => sum + item.click_rate, 0) / processed.length).toFixed(2) : '0.00';
+
+    // Override summary totals if imported CSV totals exist in settings
+    try {
+      const impSalesRow = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?').get(shopId, 'imported_sales_count');
+      const impRevRow = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?').get(shopId, 'imported_total_revenue');
+      if (impSalesRow && impSalesRow.value) {
+        const impSales = JSON.parse(impSalesRow.value);
+        if (impSales > totalSales) totalSales = impSales;
+      }
+      if (impRevRow && impRevRow.value) {
+        const impRev = JSON.parse(impRevRow.value);
+        if (impRev > totalRevenue) totalRevenue = impRev;
+      }
+    } catch (sErr) {
+      console.warn("Could not query imported sales settings:", sErr.message);
+    }
+
+    res.json({
+      success: true,
+      total_count: processed.length,
+      summary: {
+        total_views: totalViews,
+        total_favorites: totalFavs,
+        total_sales: totalSales,
+        total_revenue: totalRevenue,
+        avg_click_rate: parseFloat(avgClickRate)
+      },
+      listings: processed
+    });
+  } catch (err) {
+    console.error("Analytics listing query error:", err);
+    next(err);
+  }
+});
+
+// 3. Inspect listing image dimensions (Algorithm, no AI)
+router.post('/analytics/inspect-image', async (req, res, next) => {
+  try {
+    const { listing_id } = req.body;
+    if (!listing_id) {
+      return res.status(400).json({ error: 'listing_id required' });
+    }
+
+    const auth = await EtsyService.getValidToken();
+    const imagesUrl = `https://openapi.etsy.com/v3/application/shops/${auth.shop_id}/listings/${listing_id}/images`;
+    
+    let mainImageUrl = '';
+    let width = 0;
+    let height = 0;
+
+    try {
+      const imgRes = await axios.get(imagesUrl, {
+        headers: {
+          'x-api-key': `${auth.client_id}:${auth.client_secret}`,
+          'Authorization': `Bearer ${auth.access_token}`
+        }
+      });
+      const results = imgRes.data.results || [];
+      if (results.length > 0) {
+        const first = results[0];
+        mainImageUrl = first.url_fullxfull || first.url_570xN || '';
+        width = first.full_width || 0;
+        height = first.full_height || 0;
+      }
+    } catch (e) {
+      console.warn(`[Inspect Image] Could not fetch images from Etsy for listing ${listing_id}:`, e.message);
+    }
+
+    if ((width === 0 || height === 0) && mainImageUrl) {
+      const dims = await getImageDimensionsFromUrl(mainImageUrl);
+      width = dims.width;
+      height = dims.height;
+    }
+
+    const isHighRes = width >= 2000 && height >= 2000;
+
+    // Update database cache
+    try {
+      db.prepare(`UPDATE etsy_analytics_cache SET image_url = ?, image_width = ?, image_height = ? WHERE listing_id = ?`)
+        .run(mainImageUrl, width, height, String(listing_id));
+    } catch (dbErr) {
+      console.warn("Failed to update cache image dimensions:", dbErr.message);
+    }
+
+    res.json({
+      success: true,
+      listing_id,
+      image_url: mainImageUrl,
+      width,
+      height,
+      is_high_res: isHighRes
+    });
+  } catch (err) {
+    console.error("Inspect image error:", err);
+    next(err);
+  }
+});
+
+// 4. Token-light AI Listing Evaluation with Memory Bank CSV
+router.post('/analytics/ai-evaluate', async (req, res, next) => {
+  try {
+    const { listing_id } = req.body;
+    if (!listing_id) {
+      return res.status(400).json({ error: 'listing_id required' });
+    }
+
+    const row = db.prepare(`SELECT * FROM etsy_analytics_cache WHERE listing_id = ?`).get(String(listing_id));
+    if (!row) {
+      return res.status(404).json({ error: 'Listing not found in analytics cache. Please run Sync first.' });
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ageDays = row.creation_timestamp > 0 ? Math.floor((nowSec - row.creation_timestamp) / 86400) : 0;
+    
+    let tagsArr = [];
+    try { tagsArr = JSON.parse(row.tags || '[]'); } catch(e){}
+
+    const listingObj = {
+      listing_id: row.listing_id,
+      title: row.title,
+      section_title: row.section_title,
+      age_days: ageDays,
+      views: row.views,
+      num_favorers: row.num_favorers,
+      sales_count: row.sales_count,
+      total_revenue: row.total_revenue,
+      price_amount: row.price_amount,
+      quantity: row.quantity,
+      tags: tagsArr,
+      image_width: row.image_width || 0,
+      image_height: row.image_height || 0,
+      is_high_res: row.image_width >= 2000 && row.image_height >= 2000
+    };
+
+    // Read Memory Bank CSV
+    const memoryCsvPath = join(__dirname, '../storage/optimization_memory.csv');
+    let memoryBankText = '';
+    try {
+      if (fs.existsSync(memoryCsvPath)) {
+        memoryBankText = fs.readFileSync(memoryCsvPath, 'utf8');
+      } else {
+        fs.writeFileSync(memoryCsvPath, 'listing_id,title,section,tags_summary,ai_short_note,recommended_action,analyzed_at\n', 'utf8');
+      }
+    } catch (csvErr) {
+      console.warn("Could not read memory CSV:", csvErr.message);
+    }
+
+    // Call Kimi AI Evaluation
+    const evaluation = await evaluateListingAI(listingObj, memoryBankText);
+
+    // Append to Memory Bank CSV
+    try {
+      const sanitizedTitle = (row.title || '').replace(/,/g, ' ');
+      const sanitizedSection = (row.section_title || '').replace(/,/g, ' ');
+      const tagsSummary = tagsArr.slice(0, 5).join(';').replace(/,/g, ' ');
+      const sanitizedNote = (evaluation.ai_short_note || '').replace(/,/g, ' ').replace(/\n/g, ' ');
+      const analyzedAt = new Date().toISOString();
+
+      const csvLine = `"${row.listing_id}","${sanitizedTitle}","${sanitizedSection}","${tagsSummary}","${sanitizedNote}","${evaluation.action}","${analyzedAt}"\n`;
+      fs.appendFileSync(memoryCsvPath, csvLine, 'utf8');
+      console.log(`[Memory Bank] Appended listing #${row.listing_id} evaluation to optimization_memory.csv`);
+    } catch (csvAppErr) {
+      console.error("Failed to append to optimization_memory.csv:", csvAppErr.message);
+    }
+
+    res.json({
+      success: true,
+      ...evaluation
+    });
+  } catch (err) {
+    console.error("AI evaluate listing error:", err);
+    next(err);
+  }
+});
+
+// 5. Replace single listing
+router.post('/analytics/replace-single', multer({ dest: 'uploads/' }).single('file'), async (req, res, next) => {
+  try {
+    const { listing_id, title, tags, description, shop_section_id } = req.body;
+    if (!listing_id) {
+      return res.status(400).json({ error: 'listing_id required' });
+    }
+
+    const updateData = {};
+    if (title) updateData.title = title.trim();
+    if (description) updateData.description = description.trim();
+    if (shop_section_id) updateData.shop_section_id = Number(shop_section_id);
+    if (tags) {
+      let parsedTags = typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(Boolean) : tags;
+      updateData.tags = parsedTags.slice(0, 13);
+    }
+
+    console.log(`[Replace Single] Updating listing #${listing_id} metadata...`);
+    if (Object.keys(updateData).length > 0) {
+      await EtsyService.updateListing(listing_id, updateData);
+    }
+
+    if (req.file) {
+      console.log(`[Replace Single] Uploading new image for listing #${listing_id}...`);
+      await EtsyService.uploadListingImage(listing_id, req.file.path, 1, title || 'Artwork Print');
+      try { fs.unlinkSync(req.file.path); } catch(e){}
+    }
+
+    res.json({ success: true, listing_id, message: 'Listing successfully updated.' });
+  } catch (err) {
+    console.error("Replace single listing error:", err);
+    next(err);
+  }
+});
+
+// 6. Import Sold Orders CSV (EtsySoldOrders.csv or EtsySoldOrderItems.csv) to map real sales & revenue
+router.post('/analytics/import-sales-csv', multer({ dest: 'uploads/' }).single('file'), async (req, res, next) => {
+  try {
+    let csvContent = '';
+    if (req.file) {
+      csvContent = fs.readFileSync(req.file.path, 'utf8');
+      try { fs.unlinkSync(req.file.path); } catch(e){}
+    } else if (req.body.csv_path && fs.existsSync(req.body.csv_path)) {
+      csvContent = fs.readFileSync(req.body.csv_path, 'utf8');
+    } else {
+      const defaultPath = 'C:\\Users\\usalk\\Downloads\\EtsySoldOrders2026.csv';
+      if (fs.existsSync(defaultPath)) {
+        csvContent = fs.readFileSync(defaultPath, 'utf8');
+      } else {
+        return res.status(400).json({ error: 'No CSV file provided or found.' });
+      }
+    }
+
+    const lines = csvContent.split('\n').filter(l => l.trim());
+    if (lines.length < 2) {
+      return res.status(400).json({ error: 'CSV file is empty or invalid.' });
+    }
+
+    const activeShop = getActiveShop();
+    const shopId = activeShop.shop_id;
+
+    const dbProducts = db.prepare("SELECT id, etsy_listing_id FROM products WHERE etsy_listing_id IS NOT NULL AND etsy_listing_id != ''").all();
+    const prefixToListingMap = {};
+    dbProducts.forEach(p => {
+      if (p.id) {
+        const prefix = p.id.substring(0, 6).toUpperCase();
+        const cleanListingId = String(p.etsy_listing_id).replace(/\.0$/, '').trim();
+        prefixToListingMap[prefix] = cleanListingId;
+      }
+    });
+
+    const listingSales = {};
+    let matchedOrders = 0;
+    let totalCsvItemsSold = 0;
+    let totalCsvRevenue = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+
+      const fields = [];
+      let insideQuote = false;
+      let currentField = '';
+      for (let c = 0; c < line.length; c++) {
+        const char = line[c];
+        if (char === '"') {
+          insideQuote = !insideQuote;
+        } else if (char === ',' && !insideQuote) {
+          fields.push(currentField.trim());
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+      fields.push(currentField.trim());
+
+      if (fields.length < 15) continue;
+
+      const numItems = parseInt(fields[6]?.replace(/"/g, '')) || 1;
+      let orderValueStr = fields[16]?.replace(/"/g, '').replace(/,/g, '') || '0';
+      let discountStr = fields[19]?.replace(/"/g, '').replace(/,/g, '') || '0';
+      let orderValue = parseFloat(orderValueStr) || 0;
+      let discount = parseFloat(discountStr) || 0;
+      let netRev = Math.max(0, orderValue - discount);
+
+      totalCsvItemsSold += numItems;
+      totalCsvRevenue += netRev;
+
+      const sku = fields[fields.length - 1]?.replace(/"/g, '').trim().toUpperCase() || '';
+
+      let matchedListingId = null;
+      if (sku.startsWith('ART-')) {
+        const skuParts = sku.split('-');
+        if (skuParts.length >= 2) {
+          const prefix = skuParts[1];
+          if (prefixToListingMap[prefix]) {
+            matchedListingId = prefixToListingMap[prefix];
+          }
+        }
+      }
+
+      if (matchedListingId) {
+        matchedOrders++;
+        if (!listingSales[matchedListingId]) {
+          listingSales[matchedListingId] = { sales_count: 0, total_revenue: 0 };
+        }
+        listingSales[matchedListingId].sales_count += numItems;
+        listingSales[matchedListingId].total_revenue += netRev;
+      }
+    }
+
+    // Save CSV Totals to Settings DB
+    const setStmt = db.prepare('INSERT INTO settings (shop_id, key, value) VALUES (?, ?, ?) ON CONFLICT(shop_id, key) DO UPDATE SET value = excluded.value');
+    setStmt.run(shopId, 'imported_sales_count', JSON.stringify(totalCsvItemsSold));
+    setStmt.run(shopId, 'imported_total_revenue', JSON.stringify(totalCsvRevenue));
+
+    const updateStmt = db.prepare(`
+      UPDATE etsy_analytics_cache
+      SET sales_count = ?, total_revenue = ?
+      WHERE listing_id = ?
+    `);
+
+    db.exec('BEGIN');
+    let updatedCount = 0;
+    for (const [listingId, stats] of Object.entries(listingSales)) {
+      updateStmt.run(stats.sales_count, stats.total_revenue, String(listingId));
+      updatedCount++;
+    }
+    db.exec('COMMIT');
+
+    res.json({
+      success: true,
+      total_orders_parsed: lines.length - 1,
+      total_items_sold: totalCsvItemsSold,
+      matched_orders: matchedOrders,
+      updated_listings: updatedCount,
+      total_revenue_imported: totalCsvRevenue
+    });
+  } catch (err) {
+    console.error("Import sales CSV error:", err);
+    next(err);
+  }
+});
+
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
 export default router;
+
+
+
+

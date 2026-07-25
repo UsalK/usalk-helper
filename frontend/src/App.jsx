@@ -7,6 +7,8 @@ import TemplateStudio from './pages/TemplateStudio';
 import VariationProfiles from './pages/VariationProfiles';
 import DefaultSettings from './pages/DefaultSettings';
 import EtsyConnect from './pages/EtsyConnect';
+import PriceUpdate from './pages/PriceUpdate';
+import Analytics from './pages/Analytics';
 
 // Shopify Pages
 import ShopifyConnect from './pages/ShopifyConnect';
@@ -73,7 +75,13 @@ export default function App() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard key={shopKey} appMode={appMode} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={appMode === 'etsy' ? activeShop : null} />;
+      case 'analytics':
+        return <Analytics key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
+      case 'price-update':
+        return <PriceUpdate key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
       case 'bulk-upload':
+
+
         return <BulkUpload key={shopKey} etsyConnected={etsyConnected} activeShop={activeShop} />;
       case 'shopify-upload':
         return <ShopifyBulkUpload />;

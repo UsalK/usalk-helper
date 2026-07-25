@@ -216,6 +216,37 @@ try {
   // Column already exists, ignore
 }
 
+// Ensure etsy_analytics_cache table exists
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS etsy_analytics_cache (
+      listing_id TEXT PRIMARY KEY,
+      shop_id TEXT DEFAULT 'default_shop',
+      title TEXT,
+      state TEXT,
+      views INTEGER DEFAULT 0,
+      num_favorers INTEGER DEFAULT 0,
+      sales_count INTEGER DEFAULT 0,
+      total_revenue REAL DEFAULT 0.0,
+      price_amount REAL DEFAULT 0.0,
+      currency_code TEXT DEFAULT 'USD',
+      quantity INTEGER DEFAULT 0,
+      creation_timestamp INTEGER DEFAULT 0,
+      original_creation_timestamp INTEGER DEFAULT 0,
+      url TEXT,
+      image_url TEXT,
+      image_width INTEGER DEFAULT 0,
+      image_height INTEGER DEFAULT 0,
+      tags TEXT,
+      shop_section_id TEXT,
+      section_title TEXT,
+      last_synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch (err) {
+  console.error("Failed to ensure etsy_analytics_cache table:", err);
+}
+
 // Global helper: Get current active shop
 export function getActiveShop() {
   const row = db.prepare('SELECT * FROM etsy_auth WHERE is_active = 1').get();
@@ -298,7 +329,8 @@ export function seedDefaultProfilesForShop(shopId) {
     { id: 'ratio_12_7', name: '12:7 Oranı (Geniş)', ratio: '12:7' },
     { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' },
     { id: 'ratio_12_5', name: '12:5 Oranı (Panoramik)', ratio: '12:5' },
-    { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' }
+    { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' },
+    { id: 'double_1_2', name: 'İkili Set (1:2)', ratio: '1:2' }
   ];
   defaults.forEach(d => {
     seedStmt.run(
