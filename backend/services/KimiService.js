@@ -36,6 +36,39 @@ function sanitizeText(text) {
   return sanitized;
 }
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+
+// Bir API anahtarının hangi sağlayıcıya ait olduğunu önekinden belirler.
+// NVIDIA anahtarını OpenRouter'a (veya tersini) göndermek her zaman 401 döner.
+function detectProvider(key) {
+  if (typeof key !== 'string' || !key.trim()) return null;
+  const k = key.trim();
+  if (k.startsWith('nvapi-')) return 'nvidia';
+  if (k.startsWith('sk-or-')) return 'openrouter';
+  return null; // bilinmeyen önek: kaynağına göre karar verilir
+}
+
+// Elde bulunan anahtarlardan sağlayıcı bazlı bir liste kurar.
+// Sıra korunur: OpenRouter birincil, NVIDIA yedek.
+function resolveProviderKeys({ openRouterKey, userApiKey, nvidiaEnvKey }) {
+  const found = { openrouter: null, nvidia: null };
+
+  // Kaynağı kesin olanlar (env değişkenleri) önce yerleşir.
+  if (openRouterKey?.trim()) found.openrouter = openRouterKey.trim();
+  if (nvidiaEnvKey?.trim()) found.nvidia = nvidiaEnvKey.trim();
+
+  // Kullanıcının ayarlar ekranından girdiği anahtar 'nvidia_api_key' altında saklanıyor
+  // ama pratikte OpenRouter anahtarı da yapıştırılabiliyor. Öneke göre yerleştir.
+  if (userApiKey?.trim()) {
+    const uk = userApiKey.trim();
+    const provider = detectProvider(uk) || 'nvidia'; // ayar alanının adı gereği varsayılan NVIDIA
+    if (!found[provider]) found[provider] = uk;
+  }
+
+  return found;
+}
+
 // Helper to retry temporary errors (429 rate limit or timeouts)
 async function withRetry(fn, retries = 2, delayMs = 2000) {
   for (let i = 0; i <= retries; i++) {
@@ -50,7 +83,11 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
   }
 }
 
-export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy") {
+/**
+ * @param {Array<{shop_section_id, title}>} sections Verilirse AI, görsele en uygun
+ *   mağaza bölümünü bu listeden seçer ve sonuçta shop_section_id döner.
+ */
+export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null) {
   const targetShopId = shopId || getActiveShop().shop_id;
 
   // 1. Key Resolution: NEVER use hardcoded fallback keys
@@ -79,6 +116,24 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
   const isWebp = imagePath.toLowerCase().endsWith('.webp');
   const mimeType = isPng ? 'image/png' : (isWebp ? 'image/webp' : 'image/jpeg');
   const dataUrl = await image.getBase64(mimeType);
+
+  // Mağaza bölümü otomatik seçimi: bölüm listesi verilirse şemaya bir alan
+  // eklenir ve AI görsele en uygun bölümü BU listeden seçer. Serbest metin
+  // üretmemesi için isimlerin birebir kopyalanması şart koşulur.
+  const usableSections = Array.isArray(sections)
+    ? sections.filter(s => s && s.title && s.shop_section_id)
+    : [];
+
+  const sectionSchemaLine = usableSections.length > 0
+    ? ',\n  "shop_section": "EXACTLY one name copied verbatim from the allowed list below"'
+    : '';
+
+  const sectionInstruction = usableSections.length > 0
+    ? `\n\nSHOP SECTION SELECTION:
+Pick the single best-fitting section for this artwork from this list. Copy the name EXACTLY as written, character for character. Do not invent new names, do not translate, do not abbreviate. If nothing fits well, pick the closest general one.
+Allowed sections:
+${usableSections.map(s => `- ${s.title}`).join('\n')}`
+    : '';
 
   // Shortened and token-efficient system prompt
   const systemPrompt = platform === 'shopify'
@@ -113,21 +168,35 @@ Schema:
   "visual_style": ["1 to 3 style tags"],
   "occasion": ["occasion tags if applicable"],
   "holiday": ["holiday tags if applicable"],
-  "room": ["room tags where this art fits best"]
-}
+  "room": ["room tags where this art fits best"]${sectionSchemaLine}
+}${sectionInstruction}
 CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
 
-  // Define queue list - strictly Qwen 3.7 Plus on OpenRouter
+  // Sağlayıcı bazlı deneme sırası: OpenRouter (Qwen) birincil, NVIDIA (Nemotron VL) yedek.
+  // Her anahtar yalnızca kendi sağlayıcısının endpoint'ine gönderilir.
+  const providerKeys = resolveProviderKeys({ openRouterKey, userApiKey, nvidiaEnvKey });
   const queueToTry = [];
-  const activeKey = openRouterKey || userApiKey || nvidiaEnvKey;
 
-  if (activeKey) {
+  if (providerKeys.openrouter) {
     queueToTry.push({
-      url: "https://openrouter.ai/api/v1/chat/completions",
+      url: OPENROUTER_URL,
       model: "qwen/qwen3.7-plus",
-      key: activeKey,
+      key: providerKeys.openrouter,
       isOpenRouter: true
     });
+  }
+
+  if (providerKeys.nvidia) {
+    queueToTry.push({
+      url: NVIDIA_URL,
+      model: "nvidia/nemotron-nano-12b-v2-vl",
+      key: providerKeys.nvidia,
+      isOpenRouter: false
+    });
+  }
+
+  if (queueToTry.length === 0) {
+    throw new Error('AI anahtarı bulunamadı. Genel Ayarlar ekranından bir API anahtarı girin veya .env dosyasına OPENROUTER_API_KEY / NVIDIA_API_KEY ekleyin.');
   }
 
   let finalResponse = null;
@@ -381,6 +450,24 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     ? parsed.room.map(r => sanitizeText(r).trim()).filter(Boolean)
     : [];
 
+  // AI'ın seçtiği bölümü gerçek section ID'sine eşle.
+  // Tam eşleşme olmazsa büyük/küçük harf ve boşluk toleranslı arama yapılır;
+  // yine bulunamazsa bölüm atanmaz (uydurulmuş isim kabul edilmez).
+  let chosenSection = null;
+  if (usableSections.length > 0 && parsed.shop_section) {
+    const want = String(parsed.shop_section).trim().toLowerCase();
+    chosenSection =
+      usableSections.find(s => s.title.trim().toLowerCase() === want) ||
+      usableSections.find(s => s.title.trim().toLowerCase().replace(/\s+/g, '') === want.replace(/\s+/g, '')) ||
+      null;
+
+    if (!chosenSection) {
+      console.warn(`[AI Section] "${parsed.shop_section}" mağaza bölümleriyle eşleşmedi, bölüm atanmadı.`);
+    } else {
+      console.log(`[AI Section] Seçilen bölüm: ${chosenSection.title}`);
+    }
+  }
+
   return {
     title,
     tags: processedTags,
@@ -390,164 +477,11 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     occasion,
     holiday,
     room,
+    shop_section_id: chosenSection ? chosenSection.shop_section_id : null,
+    shop_section_title: chosenSection ? chosenSection.title : null,
     _meta: {
       model: successModel,
-      fallbackUsed: false
-    }
-  };
-}
-
-export async function evaluateListingAI(listing, memoryBankText = '', shopId = null) {
-  const targetShopId = shopId || getActiveShop().shop_id;
-
-  let userApiKey = null;
-  try {
-    const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
-    const setting = stmt.get(targetShopId, 'nvidia_api_key');
-    if (setting) {
-      userApiKey = JSON.parse(setting.value);
-    }
-  } catch (err) {
-    console.error("Error reading api key from db:", err);
-  }
-
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const nvidiaEnvKey = process.env.NVIDIA_API_KEY;
-  const apiKey = userApiKey || nvidiaEnvKey || openRouterKey;
-
-  const systemPrompt = `You are a concise Etsy SEO & Product Optimization AI. Analyze listing metrics and memory bank history of analyzed listings. Return ONLY a single valid JSON object (no markdown formatting, no text before or after). Schema:
-{
-  "action": "OPTIMIZE" or "REPLACE",
-  "reason": "Short 1-2 sentence reason for decision",
-  "ai_short_note": "Very concise 1-sentence product identifier/summary for memory bank tracking",
-  "suggested_title": "Improved title (max 140 chars) if OPTIMIZE, else empty string",
-  "suggested_tags": ["up to 5 high-converting search tags if OPTIMIZE, else empty array"]
-}`;
-
-  const tagsStr = Array.isArray(listing.tags) ? listing.tags.join(', ') : (listing.tags || 'None');
-  const userPrompt = `Listing ID: ${listing.listing_id}
-Title: ${listing.title}
-Section: ${listing.section_title || 'None'}
-Active Days: ${listing.age_days || 0}
-Views: ${listing.views || 0}, Favorites: ${listing.num_favorers || 0}, Sales: ${listing.sales_count || 0}, Revenue: $${listing.total_revenue || 0}
-Price: $${listing.price_amount || 0}, Stock: ${listing.quantity || 0}
-Tags: ${tagsStr}
-Image Resolution: ${listing.image_width || 0}x${listing.image_height || 0} (${listing.is_high_res ? 'High Res >= 2000px' : 'LOW RES < 2000px'})
-
-Memory Bank Context (Recently analyzed listings):
-${memoryBankText ? memoryBankText.substring(0, 1000) : 'None (Memory bank is empty)'}
-
-Evaluate whether this listing should be OPTIMIZE (improve SEO/title) or REPLACE (retire listing and swap out). If memory bank has very similar redundant listings, recommend REPLACE.`;
-
-  let responseData = null;
-  let successModel = 'moonshotai/kimi-k2.6';
-  let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-
-  const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-  const payload = {
-    model: successModel,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ],
-    max_tokens: 1024,
-    temperature: 0.3
-  };
-
-  try {
-    const res = await withRetry(async () => {
-      return await axios.post(invokeUrl, payload, {
-        headers: {
-          "Authorization": `Bearer ${nvidiaEnvKey || userApiKey || apiKey}`,
-          "Content-Type": "application/json"
-        },
-        timeout: 25000
-      });
-    });
-    responseData = res.data;
-    if (responseData?.usage) {
-      usage = responseData.usage;
-    }
-  } catch (err) {
-    console.warn("[evaluateListingAI] Primary Nvidia API error:", err.response?.data || err.message);
-    if (openRouterKey) {
-      try {
-        const orRes = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-          model: "meta-llama/llama-3.3-70b-instruct",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-          ],
-          max_tokens: 1024
-        }, {
-          headers: {
-            "Authorization": `Bearer ${openRouterKey}`,
-            "Content-Type": "application/json"
-          },
-          timeout: 25000
-        });
-        responseData = orRes.data;
-        successModel = 'openrouter/llama-3.3-70b-instruct';
-        if (responseData?.usage) {
-          usage = responseData.usage;
-        }
-      } catch (orErr) {
-        console.error("[evaluateListingAI] OpenRouter fallback failed:", orErr.response?.data || orErr.message);
-      }
-    }
-  }
-
-
-  // Log usage to database & debug console
-  console.log(`\n=================== [AI DEBUG CONSOLE] ===================`);
-  console.log(`[AI Listing Evaluate] Target Listing: #${listing.listing_id} ("${listing.title.substring(0, 35)}...")`);
-  console.log(`[AI Model Used]: ${successModel}`);
-  console.log(`[Tokens Spent]: Prompt: ${usage.prompt_tokens || 0} | Completion: ${usage.completion_tokens || 0} | Total: ${usage.total_tokens || 0}`);
-  console.log(`===========================================================\n`);
-
-  try {
-    const logStmt = db.prepare(`
-      INSERT INTO ai_usage (id, shop_id, model, prompt_tokens, completion_tokens, total_tokens, cost, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 0.0, CURRENT_TIMESTAMP)
-    `);
-    logStmt.run(uuidv4(), targetShopId, successModel, usage.prompt_tokens || 0, usage.completion_tokens || 0, usage.total_tokens || 0);
-  } catch (logErr) {
-    console.error("Failed to log ai_usage to DB:", logErr.message);
-  }
-
-  let parsed = {
-    action: "OPTIMIZE",
-    reason: "Analiz tamamlandı.",
-    ai_short_note: `${listing.title.substring(0, 30)} (Visits: ${listing.views}, Fav: ${listing.num_favorers})`,
-    suggested_title: "",
-    suggested_tags: []
-  };
-
-  if (responseData?.choices?.[0]?.message?.content) {
-    const rawContent = responseData.choices[0].message.content.trim();
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const jsonParsed = JSON.parse(jsonMatch[0]);
-        parsed = { ...parsed, ...jsonParsed };
-      } catch (e) {
-        console.warn("Could not parse AI response JSON:", e.message);
-      }
-    }
-  }
-
-  return {
-    listing_id: listing.listing_id,
-    action: parsed.action?.toUpperCase() === 'REPLACE' ? 'REPLACE' : 'OPTIMIZE',
-    reason: parsed.reason || 'Metrikler ve hafıza bankası değerlendirildi.',
-    ai_short_note: parsed.ai_short_note || `${listing.title.substring(0, 40)}`,
-    suggested_title: parsed.suggested_title || '',
-    suggested_tags: Array.isArray(parsed.suggested_tags) ? parsed.suggested_tags : [],
-    token_usage: {
-      prompt_tokens: usage.prompt_tokens || 0,
-      completion_tokens: usage.completion_tokens || 0,
-      total_tokens: usage.total_tokens || 0,
-      model: successModel
+      fallbackUsed: successModel !== queueToTry[0].model
     }
   };
 }

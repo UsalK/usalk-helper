@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS products (
   etsy_listing_id TEXT, -- filled after upload
   shop_section_id TEXT, -- Etsy shop section ID
   digital_file_path TEXT, -- path to high-res digital file
+  shopify_product_id TEXT,    -- filled after Shopify upload
+  shopify_collection_id TEXT, -- Shopify collection ID
   status TEXT CHECK(status IN ('draft','uploading','live','error')) DEFAULT 'draft',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

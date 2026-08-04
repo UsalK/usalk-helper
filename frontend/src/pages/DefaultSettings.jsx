@@ -22,6 +22,9 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
   // Settings state
   const [settings, setSettings] = useState({
     default_price: 35.00,
+    shop_discount_percent: 0,
+    mockup_max_output_px: 2000,
+    mockup_jpeg_quality: 92,
     default_taxonomy_id: 1027, // Wall Decor
     default_who_made: 'i_did',
     default_when_made: 'made_to_order',
@@ -505,6 +508,65 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                       onChange={handleChange}
                       className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                     />
+                  </div>
+
+                  {/* Mockup Çıktı Boyutu */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Mockup Çıktı Boyutu (px)</label>
+                    <input
+                      type="number"
+                      step="100"
+                      min="0"
+                      name="mockup_max_output_px"
+                      value={settings.mockup_max_output_px}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block leading-relaxed">
+                      Mockup'ların en uzun kenarı. Render süresinin ~%70'i JPEG sıkıştırma ve bu doğrudan
+                      piksel sayısına bağlı. <strong className="text-slate-400">2000</strong> Etsy'nin önerdiği alt sınır
+                      ve varsayılan. <strong className="text-slate-400">0</strong> yazarsan şablonun tam çözünürlüğü
+                      kullanılır (yaklaşık 2 kat yavaş).
+                    </span>
+                  </div>
+
+                  {/* Mockup JPEG Kalitesi */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Mockup JPEG Kalitesi</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="70"
+                      max="100"
+                      name="mockup_jpeg_quality"
+                      value={settings.mockup_jpeg_quality}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block leading-relaxed">
+                      70-100 arası. Varsayılan <strong className="text-slate-400">92</strong>; 95'e göre gözle
+                      ayırt edilemiyor ama dosyalar ~%30 küçük, hem render hem Etsy'ye yükleme hızlanıyor.
+                    </span>
+                  </div>
+
+                  {/* Mağaza İndirim Oranı */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Mağaza İndirim Oranı (%)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="99"
+                      name="shop_discount_percent"
+                      value={settings.shop_discount_percent}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block leading-relaxed">
+                      Etsy API'si kampanya bilgisi vermediği için buraya elle girilir. Analiz sekmesinde
+                      fiyatlar bu orana göre üstü çizili gösterilir (örn. <span className="line-through">$100</span> $50).
+                      0 girilirse indirim gösterilmez.
+                    </span>
                   </div>
 
                   {/* Varsayılan Liste Durumu */}

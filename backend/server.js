@@ -14,6 +14,9 @@ import etsyRouter from './routes/etsy.js';
 import productsRouter from './routes/products.js';
 import mockupRouter from './routes/mockup.js';
 import shopifyRouter from './routes/shopify.js';
+import storageRouter from './routes/storage.js';
+import bulkJobsRouter from './routes/bulkjobs.js';
+import { resumePendingJobs } from './services/BulkJobService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -60,6 +63,8 @@ app.use('/api/etsy', etsyRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/mockup', mockupRouter);
 app.use('/api/shopify', shopifyRouter);
+app.use('/api/storage', storageRouter);
+app.use('/api/bulk-jobs', bulkJobsRouter);
 
 
 // Global Error Handler
@@ -70,4 +75,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  // Sunucu kapanmışken yarım kalan toplu yükleme işlerini devam ettir
+  resumePendingJobs();
 });

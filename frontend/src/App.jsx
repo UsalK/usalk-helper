@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -14,16 +14,47 @@ import Analytics from './pages/Analytics';
 import ShopifyConnect from './pages/ShopifyConnect';
 import ThemeStudio from './pages/ThemeStudio';
 import ShopifyBulkUpload from './pages/ShopifyBulkUpload';
+import StorageCleanup from './pages/StorageCleanup';
+import BulkJobWidget from './components/BulkJobWidget';
 
 const API_BASE = 'http://localhost:3001/api';
 
+// Adres çubuğu ile senkronize edilen sayfalar. Sidebar menüsüyle aynı olmalı.
+const VALID_PAGES = {
+  etsy: [
+    'dashboard', 'analytics', 'price-update', 'bulk-upload',
+    'templates', 'variations', 'storage', 'settings', 'etsy-connect'
+  ],
+  shopify: [
+    'dashboard', 'shopify-upload', 'templates', 'variations',
+    'theme-studio', 'storage', 'shopify-connect', 'settings'
+  ]
+};
+
+// URL hash'ini (#/etsy/dashboard) uygulama durumuna çevirir.
+// Geçersiz değerlerde güvenli varsayılana düşer.
+function parseHash() {
+  const raw = (window.location.hash || '').replace(/^#\/?/, '');
+  const [mode, page] = raw.split('/');
+
+  if (mode !== 'etsy' && mode !== 'shopify') {
+    return { mode: null, page: 'dashboard' };
+  }
+  return {
+    mode,
+    page: VALID_PAGES[mode].includes(page) ? page : 'dashboard'
+  };
+}
+
 export default function App() {
-  const [appMode, setAppMode] = useState(null);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const initialRoute = parseHash();
+  const [appMode, setAppMode] = useState(initialRoute.mode);
+  const [currentPage, setCurrentPage] = useState(initialRoute.page);
   const [etsyConnected, setEtsyConnected] = useState(false);
   const [activeShop, setActiveShop] = useState(null);
   const [shops, setShops] = useState([]);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const isFirstRouteSync = useRef(true);
 
   useEffect(() => {
     if (appMode === 'etsy') {
@@ -32,6 +63,41 @@ export default function App() {
       setCheckingAuth(false);
     }
   }, [appMode]);
+
+  // Durum -> URL. Normal gezinmede hash ataması yapılır ki tarayıcı geri/ileri
+  // tuşları çalışsın. İlk render ve geçersiz adres düzeltmelerinde ise replaceState
+  // kullanılır: geçmişe çöp kayıt eklenmez ve düzeltme ikinci bir hashchange
+  // tetiklemez (aksi halde hızlı gezinmede eski adres geri gelebiliyor).
+  useEffect(() => {
+    const target = appMode ? `#/${appMode}/${currentPage}` : '#/';
+    const current = window.location.hash;
+    if (current === target) return;
+
+    const parsed = parseHash();
+    const canonical = parsed.mode ? `#/${parsed.mode}/${parsed.page}` : '#/';
+    const isCorrection = current !== canonical;
+
+    if (isFirstRouteSync.current || isCorrection) {
+      window.history.replaceState(null, '', target);
+    } else {
+      window.location.hash = target;
+    }
+  }, [appMode, currentPage]);
+
+  useEffect(() => {
+    isFirstRouteSync.current = false;
+  }, []);
+
+  // URL -> durum. Geri/ileri tuşu ve elle girilen adresler için.
+  useEffect(() => {
+    const onHashChange = () => {
+      const { mode, page } = parseHash();
+      setAppMode(prev => (prev === mode ? prev : mode));
+      setCurrentPage(prev => (prev === page ? prev : page));
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const checkEtsyAuth = async () => {
     try {
@@ -93,6 +159,8 @@ export default function App() {
         return <ThemeStudio />;
       case 'shopify-connect':
         return <ShopifyConnect />;
+      case 'storage':
+        return <StorageCleanup />;
       case 'settings':
         return <DefaultSettings key={shopKey} appMode={appMode} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={activeShop} />;
       case 'etsy-connect':
@@ -216,6 +284,9 @@ export default function App() {
           {renderPage()}
         </div>
       </main>
+
+      {/* Sayfadan bağımsız çalışır: iş sunucuda olduğu için gezinme onu etkilemez */}
+      <BulkJobWidget />
     </div>
   );
 }

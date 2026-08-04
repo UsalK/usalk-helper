@@ -8,7 +8,8 @@ import {
   Palette,
   Shuffle,
   Coins,
-  BarChart3
+  BarChart3,
+  HardDrive
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -30,6 +31,7 @@ export default function Sidebar({
     { id: 'bulk-upload', name: 'Toplu Yükleme Sihirbazı', icon: UploadCloud },
     { id: 'templates', name: 'Şablon Stüdyosu', icon: Layers },
     { id: 'variations', name: 'Varyasyon Profilleri', icon: Tag },
+    { id: 'storage', name: 'Depolama Temizliği', icon: HardDrive },
     { id: 'settings', name: 'Genel Ayarlar', icon: Settings },
     { id: 'etsy-connect', name: 'Etsy Bağlantısı', icon: Link }
   ] : [
@@ -39,6 +41,7 @@ export default function Sidebar({
     { id: 'templates', name: 'Şablon Stüdyosu', icon: Layers },
     { id: 'variations', name: 'Varyasyon Profilleri', icon: Tag },
     { id: 'theme-studio', name: 'Tema Stüdyosu', icon: Palette },
+    { id: 'storage', name: 'Depolama Temizliği', icon: HardDrive },
     { id: 'shopify-connect', name: 'Shopify Bağlantısı', icon: Link },
     { id: 'settings', name: 'Genel Ayarlar', icon: Settings }
   ];

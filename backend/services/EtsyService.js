@@ -62,7 +62,9 @@ export function getEtsyCredentials() {
   };
 }
 
-let activeRefreshPromise = null;
+// Mağaza bazlı yenileme kilidi. Global tek promise kullanıldığında iki farklı
+// mağaza aynı anda yenileme isterse ikincisi birincinin token'ını alıyordu.
+const activeRefreshPromises = new Map();
 
 // Helper to get stored auth details and refresh them if expired
 export async function getValidToken() {
@@ -79,12 +81,13 @@ export async function getValidToken() {
   
   // If expired or expiring in 5 minutes, refresh
   if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
-    if (activeRefreshPromise) {
-      console.log("A token refresh is already in progress, waiting for it...");
-      return activeRefreshPromise;
+    const pending = activeRefreshPromises.get(auth.shop_id);
+    if (pending) {
+      console.log(`A token refresh is already in progress for shop ${auth.shop_id}, waiting for it...`);
+      return pending;
     }
 
-    activeRefreshPromise = (async () => {
+    const refreshPromise = (async () => {
       console.log(`Etsy token expired or expiring soon for shop ${auth.shop_id}, refreshing...`);
       try {
         const response = await axios.post('https://api.etsy.com/v3/public/oauth/token', 
@@ -110,7 +113,6 @@ export async function getValidToken() {
         updateStmt.run(access_token, refresh_token, newExpiresAt, auth.shop_id);
         
         console.log(`Etsy token refreshed successfully for shop ${auth.shop_id}! New expiry:`, newExpiresAt);
-        activeRefreshPromise = null;
 
         return {
           access_token,
@@ -119,13 +121,15 @@ export async function getValidToken() {
           shop_id: auth.shop_id
         };
       } catch (err) {
-        activeRefreshPromise = null;
         console.error("Failed to refresh Etsy token:", err.response?.data || err.message);
         throw new Error("Etsy bağlantısı sona erdi. Lütfen Etsy hesabınızı yeniden bağlayın.");
+      } finally {
+        activeRefreshPromises.delete(auth.shop_id);
       }
     })();
 
-    return activeRefreshPromise;
+    activeRefreshPromises.set(auth.shop_id, refreshPromise);
+    return refreshPromise;
   }
   
   return {
@@ -243,6 +247,29 @@ export async function uploadListingImage(listing_id, imagePath, rank = 1, altTex
   return res.data;
 }
 
+export async function getListingImages(listing_id) {
+  const { access_token, client_id, client_secret } = await getValidToken();
+  const url = `https://openapi.etsy.com/v3/application/listings/${listing_id}/images`;
+  const res = await axios.get(url, {
+    headers: {
+      'x-api-key': `${client_id}:${client_secret}`,
+      'Authorization': `Bearer ${access_token}`
+    }
+  });
+  return res.data.results || [];
+}
+
+export async function deleteListingImage(listing_id, listing_image_id) {
+  const { access_token, client_id, client_secret, shop_id } = await getValidToken();
+  const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings/${listing_id}/images/${listing_image_id}`;
+  await axios.delete(url, {
+    headers: {
+      'x-api-key': `${client_id}:${client_secret}`,
+      'Authorization': `Bearer ${access_token}`
+    }
+  });
+}
+
 export async function updateListingInventory(listing_id, inventoryData) {
   const { access_token, client_id, client_secret } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/listings/${listing_id}/inventory`;
@@ -331,21 +358,36 @@ export async function createShopSection(title) {
   return res.data;
 }
 
+/**
+ * Listing'i günceller.
+ *
+ * Değer olarak `null` verilen alanlar Etsy'ye BOŞ olarak gönderilir, yani
+ * alan temizlenir (item_width, item_height gibi nullable alanlar için).
+ * Alanı hiç değiştirmemek için değeri `undefined` bırakın ya da göndermeyin.
+ */
 export async function updateListing(listing_id, listingData) {
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings/${listing_id}`;
-  
+
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(listingData)) {
+    if (value === undefined) continue;
+
+    // null -> alanı temizle (boş değer gönder)
+    if (value === null) {
+      params.append(key, '');
+      continue;
+    }
+
     if (key === 'tags' || key === 'materials') {
       if (Array.isArray(value)) {
         params.append(key, value.join(','));
-      } else if (value !== null && value !== undefined) {
+      } else {
         params.append(key, value.toString());
       }
     } else if (Array.isArray(value)) {
       value.forEach(v => params.append(key, v));
-    } else if (value !== null && value !== undefined) {
+    } else {
       params.append(key, value.toString());
     }
   }
