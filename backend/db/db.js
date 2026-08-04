@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { importTemplatesFromSeed } from '../services/TemplateSync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -392,6 +393,13 @@ try {
 } catch (err) {
   const activeShop = getActiveShop();
   seedDefaultProfilesForShop(activeShop.shop_id);
+}
+
+// Auto-restore templates and variation profiles from seed JSON if present
+try {
+  importTemplatesFromSeed();
+} catch (err) {
+  console.error("Failed to import templates from seed:", err);
 }
 
 // Dynamic Shopify credentials auto-seed on startup

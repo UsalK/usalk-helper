@@ -1,0 +1,1766 @@
+[
+  {
+    "id": "39423527-8a76-4bba-8578-720c57424bf1",
+    "shop_id": "65571647",
+    "name": "d1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.30100006103515625,\"y\":0.01579998779296875,\"width\":0.410199951171875,\"height\":0.6152999267578125},\"frame\":{\"style\":\"black_frame\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":7,\"blur\":8}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526725485-518719208.png",
+    "created_at": "2026-06-15 12:32:05"
+  },
+  {
+    "id": "82572b82-ba3b-4c0a-8b19-be197c358042",
+    "shop_id": "65571647",
+    "name": "d3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3068012881240966,\"y\":0.11360254573061516},\"tr\":{\"x\":0.719585977119312,\"y\":0.07040637348181134},\"br\":{\"x\":0.7195987362899658,\"y\":0.7811974420623536},\"bl\":{\"x\":0.3040165991288812,\"y\":0.768798717979419}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526854204-739498178.png",
+    "created_at": "2026-06-15 12:34:14"
+  },
+  {
+    "id": "4a81ddd0-da50-4a79-9e8e-8bd4dc19a74d",
+    "shop_id": "65571647",
+    "name": "d4",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"placement\":{\"x\":0.228,\"y\":0.1365,\"width\":0.5669332682291667,\"height\":0.6377999267578125},\"frame\":{\"style\":\"natural_wood\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526877261-896414663.png",
+    "created_at": "2026-06-15 12:34:37"
+  },
+  {
+    "id": "87c1b0a0-14f1-4652-bcab-adf8f815f5be",
+    "shop_id": "65571647",
+    "name": "d5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3214067858255698,\"y\":0.028834931507892576},\"tr\":{\"x\":0.7358631138113092,\"y\":0.028628157889354255},\"br\":{\"x\":0.7363087466098832,\"y\":0.6155194234865025},\"bl\":{\"x\":0.32142817619990105,\"y\":0.6159543610979104}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526905047-590941287.png",
+    "created_at": "2026-06-15 12:35:05"
+  },
+  {
+    "id": "891c3d3d-0a6f-4a47-80c2-530672525e24",
+    "shop_id": "65571647",
+    "name": "d6",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.3175041706232733,\"y\":0.09867347455946777},\"tr\":{\"x\":0.7712979091131444,\"y\":0.09825634748764453},\"br\":{\"x\":0.7704728630726289,\"y\":0.5837812093660975},\"bl\":{\"x\":0.31713952973929554,\"y\":0.5836513751119532}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526936922-117928317.png",
+    "created_at": "2026-06-15 12:35:36"
+  },
+  {
+    "id": "c6b82eb9-57f5-47c9-8755-24ee3345c538",
+    "shop_id": "65571647",
+    "name": "d7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.1846312424464779,\"y\":0.20605469002908106},\"tr\":{\"x\":0.6869811503654467,\"y\":0.22301877842687115},\"br\":{\"x\":0.7415041706232733,\"y\":0.8437093861616778},\"bl\":{\"x\":0.22894800119417588,\"y\":0.8867452977638877}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781526985502-318581801.png",
+    "created_at": "2026-06-15 12:36:25"
+  },
+  {
+    "id": "f73ec89a-7d8f-46af-a726-ba78cb2f1ef5",
+    "shop_id": "65571647",
+    "name": "d11",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3378022728181828,\"y\":0.10411863760220805},\"tr\":{\"x\":0.7108666788736979,\"y\":0.058733327229817694},\"br\":{\"x\":0.7105333455403642,\"y\":0.7523999938964842},\"bl\":{\"x\":0.337866678873698,\"y\":0.7387333272298174}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781527155472-679271679.jpg",
+    "created_at": "2026-06-15 12:39:15"
+  },
+  {
+    "id": "12b84222-4203-4e03-9700-913000e9f2bd",
+    "shop_id": "65571647",
+    "name": "y2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.23975754801432295,\"y\":0.2330302988688151},\"tr\":{\"x\":0.7664242146809892,\"y\":0.23303029886881518},\"br\":{\"x\":0.7667575480143229,\"y\":0.595030298868815},\"bl\":{\"x\":0.23975754801432295,\"y\":0.5950302988688144}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781539505870-681315055.png",
+    "created_at": "2026-06-15 16:05:05"
+  },
+  {
+    "id": "1d66d999-fc70-4df2-bd37-fb8df06258c0",
+    "shop_id": "65571647",
+    "name": "y3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1666086718184285,\"y\":0.24647997123300644},\"tr\":{\"x\":0.813483225845264,\"y\":0.2753556480103512},\"br\":{\"x\":0.8570972609329831,\"y\":0.7525390610885012},\"bl\":{\"x\":0.1842998127671139,\"y\":0.7889441647567628}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781539585137-543144573.png",
+    "created_at": "2026-06-15 16:06:25"
+  },
+  {
+    "id": "aa5000b8-72b9-4584-9f45-a7bb49a3bc60",
+    "shop_id": "65571647",
+    "name": "y5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.16501721916888726,\"y\":0.09236357932867006},\"tr\":{\"x\":0.8541776069305234,\"y\":0.1802824008389839},\"br\":{\"x\":0.8541750707900027,\"y\":0.8229464630582439},\"bl\":{\"x\":0.1650215250651042,\"y\":0.8901040344238281}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781539729728-91277554.png",
+    "created_at": "2026-06-15 16:08:49"
+  },
+  {
+    "id": "21ad4466-bf8c-4215-aa50-18a1fa6c4c63",
+    "shop_id": "65571647",
+    "name": "y7",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"placement\":{\"x\":0.11363400148478096,\"y\":0.1058929765886287,\"width\":0.7777599194136564,\"height\":0.7777599194136564},\"frame\":{\"style\":\"black_frame\",\"thickness\":7},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":19}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781539811963-513202029.png",
+    "created_at": "2026-06-15 16:10:12"
+  },
+  {
+    "id": "42bcd07c-7e31-4c94-8a9a-330e14a70c4a",
+    "shop_id": "65571647",
+    "name": "y8",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":666,\"corners\":{\"tl\":{\"x\":0.18275678796445266,\"y\":0.18792665614344137},\"tr\":{\"x\":0.8969043298861631,\"y\":0.1398342910947521},\"br\":{\"x\":0.8828909691069209,\"y\":0.9031642252042148},\"bl\":{\"x\":0.15074411230536805,\"y\":0.836703820047677}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781539885730-986092008.png",
+    "created_at": "2026-06-15 16:11:25"
+  },
+  {
+    "id": "5759b1c0-c49a-484d-9b7d-7660fd2912f1",
+    "shop_id": "65571647",
+    "name": "statik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"2:3\",\"3:2\",\"1:1\",\"12:7\",\"7:12\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781540299552-413438474.png",
+    "created_at": "2026-06-15 16:18:19"
+  },
+  {
+    "id": "ec6e8c06-cf20-4669-9a61-79ef3aa534ee",
+    "shop_id": "65571647",
+    "name": "k1",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3458819499281986,\"y\":0.28295054434208966},\"tr\":{\"x\":0.8171036405183101,\"y\":0.2081467165908935},\"br\":{\"x\":0.8170908813476563,\"y\":0.765741612922632},\"bl\":{\"x\":0.3459010886841793,\"y\":0.745741612922632}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688287421-82929393.png",
+    "created_at": "2026-06-17 09:24:47"
+  },
+  {
+    "id": "c5ce1d72-515b-48cd-9036-484fd67ad057",
+    "shop_id": "65571647",
+    "name": "k2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.36370969187661994,\"y\":0.188988817230176},\"tr\":{\"x\":0.7832045792355469,\"y\":0.16024993422819084},\"br\":{\"x\":0.7830845017623294,\"y\":0.5985454406738281},\"bl\":{\"x\":0.3638947090988524,\"y\":0.5921467165908935}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688325731-299640574.png",
+    "created_at": "2026-06-17 09:25:25"
+  },
+  {
+    "id": "c38cdd07-76f4-473c-a0aa-da002eac97df",
+    "shop_id": "65571647",
+    "name": "k5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.40367509638909216,\"y\":0.2147300669689052},\"tr\":{\"x\":0.819619196397814,\"y\":0.1820292516105108},\"br\":{\"x\":0.8194959850159178,\"y\":0.6605454406738281},\"bl\":{\"x\":0.4038947090988524,\"y\":0.643741612922632}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688456627-345540264.png",
+    "created_at": "2026-06-17 09:27:36"
+  },
+  {
+    "id": "6038ed66-dc79-47c0-9220-dc79ae26e208",
+    "shop_id": "65571647",
+    "name": "k6",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3851951111843064,\"y\":0.23247255861934252},\"tr\":{\"x\":0.7863935843556324,\"y\":0.13452318532193516},\"br\":{\"x\":0.7870845017623294,\"y\":0.7621403370055666},\"bl\":{\"x\":0.38509088134765623,\"y\":0.7353492684250242}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688527134-474722157.png",
+    "created_at": "2026-06-17 09:28:47"
+  },
+  {
+    "id": "ac83a317-7e3b-4ebd-bd18-668ec0c013c4",
+    "shop_id": "65571647",
+    "name": "k7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3998213110397743,\"y\":0.2571090161148206},\"tr\":{\"x\":0.8586350552388419,\"y\":0.19284461132194292},\"br\":{\"x\":0.8586921572647216,\"y\":0.7993492684250243},\"bl\":{\"x\":0.4003061923524408,\"y\":0.7605390610885012}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688761181-729523016.png",
+    "created_at": "2026-06-17 09:32:41"
+  },
+  {
+    "id": "adc80b99-645d-4541-b874-4d78a61f314e",
+    "shop_id": "65571647",
+    "name": "k8",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30750236460124464,\"y\":0.1799649119339111},\"tr\":{\"x\":0.7450845017623293,\"y\":0.1799585323485842},\"br\":{\"x\":0.7450908813476562,\"y\":0.6335661878509765},\"bl\":{\"x\":0.3074959850159178,\"y\":0.6327623600997804}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688919137-842066536.png",
+    "created_at": "2026-06-17 09:35:19"
+  },
+  {
+    "id": "5b1827a3-ce79-46d6-ab06-9982849b99dd",
+    "shop_id": "65571647",
+    "name": "k9",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2736934509198109,\"y\":0.17232853251453994},\"tr\":{\"x\":0.7588221503066501,\"y\":0.17242971801716914},\"br\":{\"x\":0.759483225845264,\"y\":0.6589377851714359},\"bl\":{\"x\":0.2733139010029569,\"y\":0.659162004392721}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781688974973-376945740.png",
+    "created_at": "2026-06-17 09:36:15"
+  },
+  {
+    "id": "c2c44051-04da-40ee-a83f-ff2814d43f9e",
+    "shop_id": "65571647",
+    "name": "k10",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.27933342943183076,\"y\":0.2250136694807331},\"tr\":{\"x\":0.7171133649972751,\"y\":0.22478678698062166},\"br\":{\"x\":0.7170908813476562,\"y\":0.6861403370055666},\"bl\":{\"x\":0.27950236460124467,\"y\":0.6857479925079589}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781689013723-72700697.png",
+    "created_at": "2026-06-17 09:36:53"
+  },
+  {
+    "id": "4fe542b2-71f1-41ed-a22c-7938ab0cbc38",
+    "shop_id": "65571647",
+    "name": "k12",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.26571609798519286,\"y\":0.2460884125591104},\"tr\":{\"x\":0.7346719139875173,\"y\":0.24664312438209007},\"br\":{\"x\":0.7342998127671139,\"y\":0.714551820259155},\"bl\":{\"x\":0.26548960543059086,\"y\":0.7145454406738281}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1781689065302-390488394.png",
+    "created_at": "2026-06-17 09:37:45"
+  },
+  {
+    "id": "7892f2b4-bf53-451f-964c-97109b1c4171",
+    "shop_id": "66531013",
+    "name": "k12 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.26571609798519286,\"y\":0.2460884125591104},\"tr\":{\"x\":0.7346719139875173,\"y\":0.24664312438209007},\"br\":{\"x\":0.7342998127671139,\"y\":0.714551820259155},\"bl\":{\"x\":0.26548960543059086,\"y\":0.7145454406738281}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240493-375063662.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "3a734716-c264-4a5c-91ae-931be1cd94f3",
+    "shop_id": "66531013",
+    "name": "k10 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.27933342943183076,\"y\":0.2250136694807331},\"tr\":{\"x\":0.7171133649972751,\"y\":0.22478678698062166},\"br\":{\"x\":0.7170908813476562,\"y\":0.6861403370055666},\"bl\":{\"x\":0.27950236460124467,\"y\":0.6857479925079589}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240496-165295858.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "b4299d31-f630-451f-9dbe-035bd8f9ac8b",
+    "shop_id": "66531013",
+    "name": "k9 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2736934509198109,\"y\":0.17232853251453994},\"tr\":{\"x\":0.7588221503066501,\"y\":0.17242971801716914},\"br\":{\"x\":0.759483225845264,\"y\":0.6589377851714359},\"bl\":{\"x\":0.2733139010029569,\"y\":0.659162004392721}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240499-65697355.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "c3770dcc-2d18-4f1d-89b7-c333b4ad61aa",
+    "shop_id": "66531013",
+    "name": "k8 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30750236460124464,\"y\":0.1799649119339111},\"tr\":{\"x\":0.7450845017623293,\"y\":0.1799585323485842},\"br\":{\"x\":0.7450908813476562,\"y\":0.6335661878509765},\"bl\":{\"x\":0.3074959850159178,\"y\":0.6327623600997804}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240503-553566780.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "0e6a7d29-8eb3-48f5-9f8a-155e83cf2ec3",
+    "shop_id": "66531013",
+    "name": "k7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3998213110397743,\"y\":0.2571090161148206},\"tr\":{\"x\":0.8586350552388419,\"y\":0.19284461132194292},\"br\":{\"x\":0.8586921572647216,\"y\":0.7993492684250243},\"bl\":{\"x\":0.4003061923524408,\"y\":0.7605390610885012}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240512-93560403.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "8ed3b0ad-db2d-48a6-bc21-54b22e1962a4",
+    "shop_id": "66531013",
+    "name": "k6 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3851951111843064,\"y\":0.23247255861934252},\"tr\":{\"x\":0.7863935843556324,\"y\":0.13452318532193516},\"br\":{\"x\":0.7870845017623294,\"y\":0.7621403370055666},\"bl\":{\"x\":0.38509088134765623,\"y\":0.7353492684250242}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240519-752889795.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "0204a11b-3e81-44fa-b5c7-eed5c8a9c2ef",
+    "shop_id": "66531013",
+    "name": "k5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.40367509638909216,\"y\":0.2147300669689052},\"tr\":{\"x\":0.819619196397814,\"y\":0.1820292516105108},\"br\":{\"x\":0.8194959850159178,\"y\":0.6605454406738281},\"bl\":{\"x\":0.4038947090988524,\"y\":0.643741612922632}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240531-793175710.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "3ed40917-4e31-4e96-ab02-4d9ddb95cdd7",
+    "shop_id": "66531013",
+    "name": "k3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.39226067996079467,\"y\":0.21041828942824023},\"tr\":{\"x\":0.7715537051826827,\"y\":0.1456874966090871},\"br\":{\"x\":0.7742806740111332,\"y\":0.6241339574202397},\"bl\":{\"x\":0.3946921572647216,\"y\":0.6161403370055666}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240545-590603939.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "749462c6-aed5-4da2-9b2c-815c3057e922",
+    "shop_id": "66531013",
+    "name": "k2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.36370969187661994,\"y\":0.188988817230176},\"tr\":{\"x\":0.7832045792355469,\"y\":0.16024993422819084},\"br\":{\"x\":0.7830845017623294,\"y\":0.5985454406738281},\"bl\":{\"x\":0.3638947090988524,\"y\":0.5921467165908935}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240552-162742384.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "dfa9d662-4432-40d4-bc09-12bd1b8617a8",
+    "shop_id": "66531013",
+    "name": "k1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3458819499281986,\"y\":0.28295054434208966},\"tr\":{\"x\":0.8171036405183101,\"y\":0.2081467165908935},\"br\":{\"x\":0.8170908813476563,\"y\":0.765741612922632},\"bl\":{\"x\":0.3459010886841793,\"y\":0.745741612922632}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240561-304553980.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "b3966ce7-5370-4d6e-9307-ba76ed3b67e1",
+    "shop_id": "66531013",
+    "name": "y8 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":666,\"corners\":{\"tl\":{\"x\":0.18275678796445266,\"y\":0.18792665614344137},\"tr\":{\"x\":0.8969043298861631,\"y\":0.1398342910947521},\"br\":{\"x\":0.8828909691069209,\"y\":0.9031642252042148},\"bl\":{\"x\":0.15074411230536805,\"y\":0.836703820047677}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240584-342998662.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "182d47d1-d3d8-483e-9263-fce6d86639c8",
+    "shop_id": "66531013",
+    "name": "y7 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"placement\":{\"x\":0.11363400148478096,\"y\":0.1058929765886287,\"width\":0.7777599194136564,\"height\":0.7777599194136564},\"frame\":{\"style\":\"black_frame\",\"thickness\":7},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":19}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240588-125767820.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "87b70774-2ee0-4740-99cf-d0a874d162a4",
+    "shop_id": "66531013",
+    "name": "y5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.16501721916888726,\"y\":0.09236357932867006},\"tr\":{\"x\":0.8541776069305234,\"y\":0.1802824008389839},\"br\":{\"x\":0.8541750707900027,\"y\":0.8229464630582439},\"bl\":{\"x\":0.1650215250651042,\"y\":0.8901040344238281}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240598-51397288.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "b27ac48c-8e18-4e58-87bc-b8c5b6582844",
+    "shop_id": "66531013",
+    "name": "y3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1666086718184285,\"y\":0.24647997123300644},\"tr\":{\"x\":0.813483225845264,\"y\":0.2753556480103512},\"br\":{\"x\":0.8570972609329831,\"y\":0.7525390610885012},\"bl\":{\"x\":0.1842998127671139,\"y\":0.7889441647567628}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240606-26631963.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "528cc37d-f87f-482b-9f12-c1ae3b8ad504",
+    "shop_id": "66531013",
+    "name": "y2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.23975754801432295,\"y\":0.2330302988688151},\"tr\":{\"x\":0.7664242146809892,\"y\":0.23303029886881518},\"br\":{\"x\":0.7667575480143229,\"y\":0.595030298868815},\"bl\":{\"x\":0.23975754801432295,\"y\":0.5950302988688144}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240609-847523427.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "3eefb7a6-7554-4581-b27c-2af14d1e993c",
+    "shop_id": "66531013",
+    "name": "d11 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3378022728181828,\"y\":0.10411863760220805},\"tr\":{\"x\":0.7108666788736979,\"y\":0.058733327229817694},\"br\":{\"x\":0.7105333455403642,\"y\":0.7523999938964842},\"bl\":{\"x\":0.337866678873698,\"y\":0.7387333272298174}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240643-924973051.jpg",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "1a6ed1ac-cb6f-4de7-8291-4b7509f9ec63",
+    "shop_id": "66531013",
+    "name": "d7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.1846312424464779,\"y\":0.20605469002908106},\"tr\":{\"x\":0.6869811503654467,\"y\":0.22301877842687115},\"br\":{\"x\":0.7415041706232733,\"y\":0.8437093861616778},\"bl\":{\"x\":0.22894800119417588,\"y\":0.8867452977638877}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240651-898635835.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "dae431f0-874c-40df-9a2b-70ebaf16e6a0",
+    "shop_id": "66531013",
+    "name": "d6 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.3175041706232733,\"y\":0.09867347455946777},\"tr\":{\"x\":0.7712979091131444,\"y\":0.09825634748764453},\"br\":{\"x\":0.7704728630726289,\"y\":0.5837812093660975},\"bl\":{\"x\":0.31713952973929554,\"y\":0.5836513751119532}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240655-543806864.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "5562b575-98f2-42b2-b4d9-bf45d1eee618",
+    "shop_id": "66531013",
+    "name": "d5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3214067858255698,\"y\":0.028834931507892576},\"tr\":{\"x\":0.7358631138113092,\"y\":0.028628157889354255},\"br\":{\"x\":0.7363087466098832,\"y\":0.6155194234865025},\"bl\":{\"x\":0.32142817619990105,\"y\":0.6159543610979104}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240660-406457784.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "6f5de058-af26-4b37-ab38-c9aad152f6a0",
+    "shop_id": "66531013",
+    "name": "d4 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"placement\":{\"x\":0.228,\"y\":0.1365,\"width\":0.5669332682291667,\"height\":0.6377999267578125},\"frame\":{\"style\":\"natural_wood\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240666-637460023.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "f4e10097-3e8a-4385-ac23-9924b8a165ed",
+    "shop_id": "66531013",
+    "name": "d3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3068012881240966,\"y\":0.11360254573061516},\"tr\":{\"x\":0.719585977119312,\"y\":0.07040637348181134},\"br\":{\"x\":0.7195987362899658,\"y\":0.7811974420623536},\"bl\":{\"x\":0.3040165991288812,\"y\":0.768798717979419}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240672-500856315.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "6ba6e2b2-425e-497d-b4de-83e31aeea54c",
+    "shop_id": "66531013",
+    "name": "d1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.30100006103515625,\"y\":0.01579998779296875,\"width\":0.410199951171875,\"height\":0.6152999267578125},\"frame\":{\"style\":\"black_frame\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":7,\"blur\":8}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1781718240686-44410361.png",
+    "created_at": "2026-06-17 17:44:00"
+  },
+  {
+    "id": "9f3cfc1d-2dee-47d7-b917-fdc674d47ca8",
+    "shop_id": "66531013",
+    "name": "statik2",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"2:3\",\"1:1\",\"3:2\",\"12:7\",\"7:12\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1781736488664-20275587.png",
+    "created_at": "2026-06-17 22:48:08"
+  },
+  {
+    "id": "964a0d36-1ae4-4691-86af-7b0703d12cf8",
+    "shop_id": "66531013",
+    "name": "dd2",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.31100006103515626,\"y\":0.104,\"width\":0.404199951171875,\"height\":0.6929142020089285},\"frame\":{\"style\":\"walnut\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5.5,\"distance\":4,\"blur\":15}}",
+    "background_path": "storage/usalkStudio/templates/template-1781773982476-824365332.png",
+    "created_at": "2026-06-18 09:13:02"
+  },
+  {
+    "id": "10f9264a-abb1-4bd6-b042-b9f0bb270f9f",
+    "shop_id": "66531013",
+    "name": "d15",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.27280936421239094,\"y\":0.11966696436682411,\"width\":0.5023906479946403,\"height\":0.7535859719919605},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6.5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1781774045591-906967119.jpg",
+    "created_at": "2026-06-18 09:14:05"
+  },
+  {
+    "id": "cd880b5e-8b98-4f29-8197-45f21daa4bf9",
+    "shop_id": "66531013",
+    "name": "dd5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.29022344970703123,\"y\":0.12244686889648437},\"tr\":{\"x\":0.7482234497070313,\"y\":0.12239999389648437},\"br\":{\"x\":0.7481765747070312,\"y\":0.8552359313964844},\"bl\":{\"x\":0.29017657470703123,\"y\":0.8544468688964844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1781774293703-764653353.png",
+    "created_at": "2026-06-18 09:18:13"
+  },
+  {
+    "id": "e143952a-62d7-48d4-a8ad-43d5c4914c58",
+    "shop_id": "66531013",
+    "name": "dd8",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.2660000610351563,\"y\":0.07079998779296875,\"width\":0.453199951171875,\"height\":0.7769142020089286},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":4.5,\"distance\":5,\"blur\":11}}",
+    "background_path": "storage/usalkStudio/templates/template-1781775168929-416888775.png",
+    "created_at": "2026-06-18 09:32:48"
+  },
+  {
+    "id": "d31cce7d-3741-4088-b047-e341843f9e77",
+    "shop_id": "66531013",
+    "name": "dd7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2984153232118158,\"y\":0.1452102012330075},\"tr\":{\"x\":0.7167949085387697,\"y\":0.1715770273893073},\"br\":{\"x\":0.7892127713776851,\"y\":0.853982131057569},\"bl\":{\"x\":0.3559974603729005,\"y\":0.8911974420623536}}}",
+    "background_path": "storage/usalkStudio/templates/template-1781775666680-114077342.png",
+    "created_at": "2026-06-18 09:41:06"
+  },
+  {
+    "id": "fb33a6b1-27ad-4925-9cab-00e578312dfb",
+    "shop_id": "66531013",
+    "name": "dd1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":288,\"placement\":{\"x\":0.16666666666666666,\"y\":0.096,\"width\":0.6826388041178385,\"height\":0.6740570591517857},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4,\"distance\":7,\"blur\":14}}",
+    "background_path": "storage/usalkStudio/templates/template-1781776078066-704473330.png",
+    "created_at": "2026-06-18 09:47:58"
+  },
+  {
+    "id": "66813402-0539-4498-9493-26991697b018",
+    "shop_id": "66531013",
+    "name": "dd150",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.40915053763440856,\"y\":0.12780428519300233,\"width\":0.3526613030382382,\"height\":0.604562233779837},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":8,\"blur\":16}}",
+    "background_path": "storage/usalkStudio/templates/template-1781776263498-220626798.png",
+    "created_at": "2026-06-18 09:51:03"
+  },
+  {
+    "id": "85b46f6f-f311-4ffb-b793-00397d3025e6",
+    "shop_id": "66531013",
+    "name": "dd250",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.33713800469760236,\"y\":0.09120688181910021,\"width\":0.3960620075094289,\"height\":0.6789634414447352},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":7,\"blur\":11}}",
+    "background_path": "storage/usalkStudio/templates/template-1781776292889-17324988.png",
+    "created_at": "2026-06-18 09:51:32"
+  },
+  {
+    "id": "25c4df6c-f375-4b9e-97c1-111fddc5b2e3",
+    "shop_id": "66531013",
+    "name": "dd300",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.3454494382022472,\"y\":0.035943803080012285,\"width\":0.319750574004784,\"height\":0.5481438411510583},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":3,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1781776327655-235354781.png",
+    "created_at": "2026-06-18 09:52:07"
+  },
+  {
+    "id": "0d5affbe-36da-4a6a-bbef-e1b909aadf69",
+    "shop_id": "66531013",
+    "name": "d150",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.4383788316514756,\"y\":0.11984270222981758},\"tr\":{\"x\":0.8209829983181424,\"y\":0.11970207722981775},\"br\":{\"x\":0.8212000122070312,\"y\":0.6654381883409282},\"bl\":{\"x\":0.4379916788736978,\"y\":0.6648340216742621}}}",
+    "background_path": "storage/usalkStudio/templates/template-1781777917553-8927380.jpg",
+    "created_at": "2026-06-18 10:18:37"
+  },
+  {
+    "id": "98abb777-08ae-4b37-a597-f0b01ba711ae",
+    "shop_id": "65571647",
+    "name": "y212",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2942443654462085,\"y\":0.17079998779296876,\"width\":0.6719999389648438,\"height\":0.44799995930989583},\"frame\":{\"style\":\"black_frame\",\"thickness\":7.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782039195059-779143731.png",
+    "created_at": "2026-06-21 10:53:15"
+  },
+  {
+    "id": "a604af01-b65e-4b53-b2ac-78e181fbba2e",
+    "shop_id": "65571647",
+    "name": "y52",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.14841975141930458,\"y\":0.07824143831717538,\"width\":0.7107802607877267,\"height\":0.47385350719181774},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782039231013-657783875.png",
+    "created_at": "2026-06-21 10:53:51"
+  },
+  {
+    "id": "4177bf2c-6226-4346-9165-d294787f9435",
+    "shop_id": "66531013",
+    "name": "y52 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.14841975141930458,\"y\":0.07824143831717538,\"width\":0.7107802607877267,\"height\":0.47385350719181774},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1782039364278-422834040.png",
+    "created_at": "2026-06-21 10:56:04"
+  },
+  {
+    "id": "b50293e1-f886-4da9-bd70-42cb1f7871d3",
+    "shop_id": "66531013",
+    "name": "y212 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2942443654462085,\"y\":0.17079998779296876,\"width\":0.6719999389648438,\"height\":0.44799995930989583},\"frame\":{\"style\":\"black_frame\",\"thickness\":7.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1782039364285-665419034.png",
+    "created_at": "2026-06-21 10:56:04"
+  },
+  {
+    "id": "41ac0b14-4db0-4c2d-8ac6-f9ba52967b26",
+    "shop_id": "66531013",
+    "name": "yy3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16520001220703126,\"y\":0.30002040856953044},\"tr\":{\"x\":0.8839974603729005,\"y\":0.14080509756474593},\"br\":{\"x\":0.8832000122070313,\"y\":0.7355770273893075},\"bl\":{\"x\":0.16480766770942362,\"y\":0.6707923383940921}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782211751875-684978645.png",
+    "created_at": "2026-06-23 10:49:11"
+  },
+  {
+    "id": "abc3c024-7b0c-4112-bc6d-e2f57d78a641",
+    "shop_id": "66531013",
+    "name": "yy7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":856,\"corners\":{\"tl\":{\"x\":0.2473632822640601,\"y\":0.09457346328423952},\"tr\":{\"x\":0.7553225170640963,\"y\":0.20639999389648436},\"br\":{\"x\":0.7865435941616807,\"y\":0.7723999938964844},\"bl\":{\"x\":0.2741680713747829,\"y\":0.8930377489985252}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212033054-871367992.png",
+    "created_at": "2026-06-23 10:53:53"
+  },
+  {
+    "id": "0e8a6c9a-890a-42d6-8d16-3d00e6237628",
+    "shop_id": "66531013",
+    "name": "yy8",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.14649279862853054,\"y\":0.21415671242548015},\"tr\":{\"x\":0.8546144393640326,\"y\":0.21439999389648437},\"br\":{\"x\":0.8556639443145279,\"y\":0.6218144210534857},\"bl\":{\"x\":0.14649279862853054,\"y\":0.619107207474985}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212109577-305180336.png",
+    "created_at": "2026-06-23 10:55:09"
+  },
+  {
+    "id": "d04a9454-3538-4d1c-bcb3-c4088b494f5f",
+    "shop_id": "66531013",
+    "name": "yy9",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.346402564041162,\"y\":0.31362806407192273},\"tr\":{\"x\":0.8699974603729005,\"y\":0.25400764939887666},\"br\":{\"x\":0.8699974603729005,\"y\":0.6831974420623537},\"bl\":{\"x\":0.346402564041162,\"y\":0.6595897865599614}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212155082-191485003.png",
+    "created_at": "2026-06-23 10:55:55"
+  },
+  {
+    "id": "a85f7155-8eb2-4cfa-8745-834ef93fa4c4",
+    "shop_id": "66531013",
+    "name": "yy10",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.2047130998653803,\"y\":0.21657346328423951},\"tr\":{\"x\":0.8053687592134616,\"y\":0.21703774899852518},\"br\":{\"x\":0.808763086530523,\"y\":0.8210377489985251},\"bl\":{\"x\":0.20153697930441578,\"y\":0.8203132592026067}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212437749-301250449.png",
+    "created_at": "2026-06-23 11:00:37"
+  },
+  {
+    "id": "5a894f22-fb48-4c4e-9636-b3bdd4bcf295",
+    "shop_id": "66531013",
+    "name": "yy12",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.21011804657790503,\"y\":0.14521121838628032},\"tr\":{\"x\":0.8060606131742606,\"y\":0.14512448369240274},\"br\":{\"x\":0.8059073489050974,\"y\":0.7535887694066883},\"bl\":{\"x\":0.21011804657790503,\"y\":0.7537622387944436}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212542493-266670284.png",
+    "created_at": "2026-06-23 11:02:22"
+  },
+  {
+    "id": "e4ec3bbc-ada2-4161-a704-f7b2dbfb07ef",
+    "shop_id": "66531013",
+    "name": "yy13",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":805,\"corners\":{\"tl\":{\"x\":0.14179419556913733,\"y\":0.09103774899852518},\"tr\":{\"x\":0.8154267896401272,\"y\":0.15657346328423952},\"br\":{\"x\":0.8208465174493527,\"y\":0.8131244836924028},\"bl\":{\"x\":0.1397605072292946,\"y\":0.8470377489985251}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212616359-985721087.png",
+    "created_at": "2026-06-23 11:03:36"
+  },
+  {
+    "id": "76d881af-86bb-4578-a981-6c7aa3b2d8a5",
+    "shop_id": "66531013",
+    "name": "yy15",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":888,\"corners\":{\"tl\":{\"x\":0.1729729798463014,\"y\":0.10049374389648434},\"tr\":{\"x\":0.7547322116055332,\"y\":0.20835311889648434},\"br\":{\"x\":0.7822344391077607,\"y\":0.7923999938964844},\"bl\":{\"x\":0.1917780486513702,\"y\":0.8950979105631511}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212734529-388697965.png",
+    "created_at": "2026-06-23 11:05:34"
+  },
+  {
+    "id": "30afa4c9-3f56-42f0-b8b4-606ed154a6a6",
+    "shop_id": "66531013",
+    "name": "yy150",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":888,\"placement\":{\"x\":0.3102477821143898,\"y\":0.1,\"width\":0.4516891616958756,\"height\":0.46794997151692713},\"frame\":{\"style\":\"black_frame\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212776128-231104332.png",
+    "created_at": "2026-06-23 11:06:16"
+  },
+  {
+    "id": "76e72093-473e-45a4-9f87-5869545d7283",
+    "shop_id": "66531013",
+    "name": "yy157",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.2601177164713542,\"y\":0.09835311889648438},\"tr\":{\"x\":0.8701958414713543,\"y\":0.09639999389648438},\"br\":{\"x\":0.8701645914713543,\"y\":0.6943531188964843},\"bl\":{\"x\":0.2594666748046875,\"y\":0.6923062438964844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212888105-631690186.png",
+    "created_at": "2026-06-23 11:08:08"
+  },
+  {
+    "id": "2e18e399-7f01-4b01-bab8-e8301723f53d",
+    "shop_id": "66531013",
+    "name": "yy235",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.1452214523350998,\"y\":0.12526519765823987},\"tr\":{\"x\":0.8619528848303788,\"y\":0.1243101297376547},\"br\":{\"x\":0.8620564534062544,\"y\":0.8284898580553139},\"bl\":{\"x\":0.14339552415494153,\"y\":0.8303101297376547}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782212982442-728301626.png",
+    "created_at": "2026-06-23 11:09:42"
+  },
+  {
+    "id": "facbe938-47bb-43ba-92c9-1da707385852",
+    "shop_id": "66531013",
+    "name": "yy2522",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":815,\"corners\":{\"tl\":{\"x\":0.28199456804002015,\"y\":0.17912448369240275},\"tr\":{\"x\":0.7539420730405719,\"y\":0.2579357081821985},\"br\":{\"x\":0.7817177989000191,\"y\":0.7263999938964844},\"bl\":{\"x\":0.306871173133148,\"y\":0.8077622387944436}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782213090200-800859074.png",
+    "created_at": "2026-06-23 11:11:30"
+  },
+  {
+    "id": "57c6801d-9e6d-4d39-8e7a-e01110df4dd1",
+    "shop_id": "65571647",
+    "name": "yy157 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.2601177164713542,\"y\":0.09835311889648438},\"tr\":{\"x\":0.8701958414713543,\"y\":0.09639999389648438},\"br\":{\"x\":0.8701645914713543,\"y\":0.6943531188964843},\"bl\":{\"x\":0.2594666748046875,\"y\":0.6923062438964844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971607-504756164.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "fa0383df-293b-49be-8eba-06340223a96a",
+    "shop_id": "65571647",
+    "name": "yy15 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":888,\"corners\":{\"tl\":{\"x\":0.1729729798463014,\"y\":0.10049374389648434},\"tr\":{\"x\":0.7547322116055332,\"y\":0.20835311889648434},\"br\":{\"x\":0.7822344391077607,\"y\":0.7923999938964844},\"bl\":{\"x\":0.1917780486513702,\"y\":0.8950979105631511}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971626-183256327.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "5e212abe-f82a-455f-8538-c21143cbe835",
+    "shop_id": "65571647",
+    "name": "yy13 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":805,\"corners\":{\"tl\":{\"x\":0.14179419556913733,\"y\":0.09103774899852518},\"tr\":{\"x\":0.8154267896401272,\"y\":0.15657346328423952},\"br\":{\"x\":0.8208465174493527,\"y\":0.8131244836924028},\"bl\":{\"x\":0.1397605072292946,\"y\":0.8470377489985251}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971630-354430750.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "40281cd5-e918-4ea0-a961-a92524e6c03d",
+    "shop_id": "65571647",
+    "name": "yy12 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.21011804657790503,\"y\":0.14521121838628032},\"tr\":{\"x\":0.8060606131742606,\"y\":0.14512448369240274},\"br\":{\"x\":0.8059073489050974,\"y\":0.7535887694066883},\"bl\":{\"x\":0.21011804657790503,\"y\":0.7537622387944436}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971634-232777394.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "0bccc2af-9efc-44b1-acc9-8e0045ab8f53",
+    "shop_id": "65571647",
+    "name": "yy10 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.2047130998653803,\"y\":0.21657346328423951},\"tr\":{\"x\":0.8053687592134616,\"y\":0.21703774899852518},\"br\":{\"x\":0.808763086530523,\"y\":0.8210377489985251},\"bl\":{\"x\":0.20153697930441578,\"y\":0.8203132592026067}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971638-975253772.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "3fbefaff-d38e-41a0-ac0f-17a195346f1c",
+    "shop_id": "65571647",
+    "name": "yy9 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.346402564041162,\"y\":0.31362806407192273},\"tr\":{\"x\":0.8699974603729005,\"y\":0.25400764939887666},\"br\":{\"x\":0.8699974603729005,\"y\":0.6831974420623537},\"bl\":{\"x\":0.346402564041162,\"y\":0.6595897865599614}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971646-62033979.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "39f66f7e-2247-4d0c-87b9-2eaa6072390f",
+    "shop_id": "65571647",
+    "name": "yy8 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.14649279862853054,\"y\":0.21415671242548015},\"tr\":{\"x\":0.8546144393640326,\"y\":0.21439999389648437},\"br\":{\"x\":0.8556639443145279,\"y\":0.6218144210534857},\"bl\":{\"x\":0.14649279862853054,\"y\":0.619107207474985}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971649-852720093.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "56ba7962-7b08-4ca3-9330-47c7a3e90b1c",
+    "shop_id": "65571647",
+    "name": "yy7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":856,\"corners\":{\"tl\":{\"x\":0.2473632822640601,\"y\":0.09457346328423952},\"tr\":{\"x\":0.7553225170640963,\"y\":0.20639999389648436},\"br\":{\"x\":0.7865435941616807,\"y\":0.7723999938964844},\"bl\":{\"x\":0.2741680713747829,\"y\":0.8930377489985252}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971653-346458172.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "5c18f334-ece8-49e6-99ec-3fee50d099a9",
+    "shop_id": "65571647",
+    "name": "yy3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16520001220703126,\"y\":0.30002040856953044},\"tr\":{\"x\":0.8839974603729005,\"y\":0.14080509756474593},\"br\":{\"x\":0.8832000122070313,\"y\":0.7355770273893075},\"bl\":{\"x\":0.16480766770942362,\"y\":0.6707923383940921}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782633971661-827559372.png",
+    "created_at": "2026-06-28 08:06:11"
+  },
+  {
+    "id": "af70f407-08c0-4048-884c-2f9f48b87285",
+    "shop_id": "66531013",
+    "name": "pana2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.14880325175810902,\"y\":0.2594723501116978},\"tr\":{\"x\":0.8704332285865736,\"y\":0.2597617749725514},\"br\":{\"x\":0.8711439230590826,\"y\":0.8180808844345175},\"bl\":{\"x\":0.14853320044836016,\"y\":0.817327637681271}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782723979759-42178780.png",
+    "created_at": "2026-06-29 09:06:19"
+  },
+  {
+    "id": "19aeff43-1b11-4181-9246-a940fa3335a0",
+    "shop_id": "66531013",
+    "name": "pana7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18695282119579532,\"y\":0.24084943209873155},\"tr\":{\"x\":0.846750574004784,\"y\":0.24084943209873155},\"br\":{\"x\":0.846750574004784,\"y\":0.5112988703009788},\"bl\":{\"x\":0.18695282119579532,\"y\":0.5112988703009788}}}",
+    "background_path": "storage/usalkStudio/templates/template-1782724352560-871574531.png",
+    "created_at": "2026-06-29 09:12:32"
+  },
+  {
+    "id": "0cd6cb05-69e9-4d1c-9a6f-d4e11420a7f5",
+    "shop_id": "66531013",
+    "name": "pana8",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.02700006103515625,\"y\":0.09579998779296875,\"width\":0.946199951171875,\"height\":0.39424997965494796},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1782724395751-407837538.png",
+    "created_at": "2026-06-29 09:13:15"
+  },
+  {
+    "id": "b8dfe54b-2754-49eb-8bf6-72287a9ccc55",
+    "shop_id": "66531013",
+    "name": "statik2",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"12:5\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782727146452-813058773.png",
+    "created_at": "2026-06-29 09:59:06"
+  },
+  {
+    "id": "79ba74f4-63f8-4e08-9082-be61c8f48959",
+    "shop_id": "65571647",
+    "name": "pana8 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.02700006103515625,\"y\":0.09579998779296875,\"width\":0.946199951171875,\"height\":0.39424997965494796},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782820239235-692838021.png",
+    "created_at": "2026-06-30 11:50:39"
+  },
+  {
+    "id": "54a9d7d2-f7ab-4738-9464-ef8572b3e5f6",
+    "shop_id": "65571647",
+    "name": "pana7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18695282119579532,\"y\":0.24084943209873155},\"tr\":{\"x\":0.846750574004784,\"y\":0.24084943209873155},\"br\":{\"x\":0.846750574004784,\"y\":0.5112988703009788},\"bl\":{\"x\":0.18695282119579532,\"y\":0.5112988703009788}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782820239239-217011645.png",
+    "created_at": "2026-06-30 11:50:39"
+  },
+  {
+    "id": "093783a6-fe27-4caa-9731-7ff2de3f16c9",
+    "shop_id": "65571647",
+    "name": "pana3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.17025619198231218,\"y\":0.4021078590650237},\"tr\":{\"x\":0.8620988886115256,\"y\":0.32215280288524845},\"br\":{\"x\":0.8623011358025369,\"y\":0.7606471849077203},\"bl\":{\"x\":0.17030113580253686,\"y\":0.7026471849077203}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782820239260-952067118.png",
+    "created_at": "2026-06-30 11:50:39"
+  },
+  {
+    "id": "495633a4-e6f0-47e9-83e7-28376d678894",
+    "shop_id": "65571647",
+    "name": "pana2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.14880325175810902,\"y\":0.2594723501116978},\"tr\":{\"x\":0.8704332285865736,\"y\":0.2597617749725514},\"br\":{\"x\":0.8711439230590826,\"y\":0.8180808844345175},\"bl\":{\"x\":0.14853320044836016,\"y\":0.817327637681271}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782820239264-96279471.png",
+    "created_at": "2026-06-30 11:50:39"
+  },
+  {
+    "id": "c940dadd-0232-4f7e-9c21-300b9abba56f",
+    "shop_id": "65571647",
+    "name": "statik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"12:5\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782826542168-742363201.png",
+    "created_at": "2026-06-30 13:35:42"
+  },
+  {
+    "id": "bdce507d-dab7-4f42-bebc-66575ef226b9",
+    "shop_id": "65571647",
+    "name": "yatay",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"12:7\",\"3:2\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782910752203-417836257.png",
+    "created_at": "2026-07-01 12:59:12"
+  },
+  {
+    "id": "e956d798-bab1-4184-aec1-0f99f66ed668",
+    "shop_id": "65571647",
+    "name": "dikey",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"2:3\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782910760992-82801589.png",
+    "created_at": "2026-07-01 12:59:21"
+  },
+  {
+    "id": "b86b3740-064c-49af-8805-21235fe5fb99",
+    "shop_id": "65571647",
+    "name": "kare",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:1\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782910766784-863033251.png",
+    "created_at": "2026-07-01 12:59:26"
+  },
+  {
+    "id": "0ca4300d-477e-4137-84c8-279e5503a596",
+    "shop_id": "65571647",
+    "name": "panaromik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"12:5\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1782910774244-888124247.png",
+    "created_at": "2026-07-01 12:59:34"
+  },
+  {
+    "id": "7ec29e00-3c5e-4687-94c3-f22ea762c1c7",
+    "shop_id": "66531013",
+    "name": "yatay",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"3:2\",\"12:7\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782911282705-926549294.png",
+    "created_at": "2026-07-01 13:08:02"
+  },
+  {
+    "id": "b731742a-3824-488b-817a-0ba164960c87",
+    "shop_id": "66531013",
+    "name": "panaromik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"12:5\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782911292543-972376461.png",
+    "created_at": "2026-07-01 13:08:12"
+  },
+  {
+    "id": "b3cdb971-1cf5-4366-805e-1133885fe37f",
+    "shop_id": "66531013",
+    "name": "kare",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:1\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782911316625-861128543.png",
+    "created_at": "2026-07-01 13:08:36"
+  },
+  {
+    "id": "d9eeb87d-fe77-49eb-b322-d551f9487fd3",
+    "shop_id": "66531013",
+    "name": "dikkk",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"7:12\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782911334541-304912021.png",
+    "created_at": "2026-07-01 13:08:54"
+  },
+  {
+    "id": "668ba772-db3e-426e-a8fc-9d554be4a53d",
+    "shop_id": "66531013",
+    "name": "dik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"2:3\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1782911480400-345483993.png",
+    "created_at": "2026-07-01 13:11:20"
+  },
+  {
+    "id": "4953510b-6bb4-4194-9c7e-e0e270e06260",
+    "shop_id": "65571647",
+    "name": "dd2 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.31100006103515626,\"y\":0.104,\"width\":0.404199951171875,\"height\":0.6929142020089285},\"frame\":{\"style\":\"walnut\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5.5,\"distance\":4,\"blur\":15}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490808-236844080.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "5a84f727-19a7-4d43-b035-aa91a541bdaa",
+    "shop_id": "65571647",
+    "name": "dd5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.29022344970703123,\"y\":0.12244686889648437},\"tr\":{\"x\":0.7482234497070313,\"y\":0.12239999389648437},\"br\":{\"x\":0.7481765747070312,\"y\":0.8552359313964844},\"bl\":{\"x\":0.29017657470703123,\"y\":0.8544468688964844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490812-138992882.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "9440e886-2623-4052-9535-bfb52a4c7cfd",
+    "shop_id": "65571647",
+    "name": "dd8 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.2660000610351563,\"y\":0.07079998779296875,\"width\":0.453199951171875,\"height\":0.7769142020089286},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":4.5,\"distance\":5,\"blur\":11}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490816-435220294.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "df93631f-d95e-4e26-b863-fbdc85dd9bbd",
+    "shop_id": "65571647",
+    "name": "dd1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":288,\"placement\":{\"x\":0.16666666666666666,\"y\":0.096,\"width\":0.6826388041178385,\"height\":0.6740570591517857},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4,\"distance\":7,\"blur\":14}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490820-804421008.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "2f8e3f67-b73f-4f60-99ae-1193e01ec1fc",
+    "shop_id": "65571647",
+    "name": "dd250 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.33713800469760236,\"y\":0.09120688181910021,\"width\":0.3960620075094289,\"height\":0.6789634414447352},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":7,\"blur\":11}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490822-364662528.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "217341a6-9764-4622-bea4-406b0c3d8fd9",
+    "shop_id": "65571647",
+    "name": "dd150 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.40915053763440856,\"y\":0.12780428519300233,\"width\":0.3526613030382382,\"height\":0.604562233779837},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":8,\"blur\":16}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490825-202278333.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "f23c714e-6328-402e-8586-3ea02693f2ac",
+    "shop_id": "65571647",
+    "name": "dd7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2984153232118158,\"y\":0.1452102012330075},\"tr\":{\"x\":0.7167949085387697,\"y\":0.1715770273893073},\"br\":{\"x\":0.7892127713776851,\"y\":0.853982131057569},\"bl\":{\"x\":0.3559974603729005,\"y\":0.8911974420623536}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490828-485421905.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "e49eba6d-0116-40b2-9701-56744d8179d6",
+    "shop_id": "65571647",
+    "name": "dd300 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.3454494382022472,\"y\":0.035943803080012285,\"width\":0.319750574004784,\"height\":0.5481438411510583},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":3,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1782995490830-547965022.png",
+    "created_at": "2026-07-02 12:31:30"
+  },
+  {
+    "id": "628a6921-2372-4214-89ec-1941e1d5345a",
+    "shop_id": "66531013",
+    "name": "bereket (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.352402564041162,\"y\":0.3211974420623536},\"tr\":{\"x\":0.712402564041162,\"y\":0.3212229604036612},\"br\":{\"x\":0.7116051158752927,\"y\":0.856798717979419},\"bl\":{\"x\":0.35159873628996585,\"y\":0.8579885106428959}}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1783245626228-174565890.png",
+    "created_at": "2026-07-05 10:00:26"
+  },
+  {
+    "id": "0588a760-3265-4613-9fb2-df9f09c0a4af",
+    "shop_id": "66531013",
+    "name": "t1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.3830270886120496,\"y\":0.2813477354307432,\"width\":0.23017292359498168,\"height\":0.46034584718996335},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":10}}",
+    "background_path": "storage/usalkStudio/templates/template-1783432277757-536741502.png",
+    "created_at": "2026-07-07 13:51:17"
+  },
+  {
+    "id": "2559cdf7-7376-4232-a540-690f17716a28",
+    "shop_id": "66531013",
+    "name": "t2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.5162234497070313,\"y\":0.2670289001464844},\"tr\":{\"x\":0.7566648559570313,\"y\":0.24137655639648437},\"br\":{\"x\":0.7536882934570313,\"y\":0.7894234313964844},\"bl\":{\"x\":0.5116882934570313,\"y\":0.7668414001464844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1783432312008-990731378.png",
+    "created_at": "2026-07-07 13:51:52"
+  },
+  {
+    "id": "a1043b2d-415f-4260-8cc6-effae95dc9f1",
+    "shop_id": "66531013",
+    "name": "t4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3332468872070313,\"y\":0.15347030639648437},\"tr\":{\"x\":0.6672000122070313,\"y\":0.15342343139648437},\"br\":{\"x\":0.6692000122070313,\"y\":0.7789820251464844},\"bl\":{\"x\":0.3317820434570313,\"y\":0.7783999938964844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1783432381176-273158132.png",
+    "created_at": "2026-07-07 13:53:01"
+  },
+  {
+    "id": "39988884-6947-4256-a6d0-4b8df5dc5391",
+    "shop_id": "66531013",
+    "name": "t5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3417351684570312,\"y\":0.10039999389648438},\"tr\":{\"x\":0.6572468872070313,\"y\":0.09995858764648438},\"br\":{\"x\":0.6558289184570313,\"y\":0.6693765563964844},\"bl\":{\"x\":0.3422703247070312,\"y\":0.6699117126464844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1783432421107-197843993.png",
+    "created_at": "2026-07-07 13:53:41"
+  },
+  {
+    "id": "995fb816-7c67-4535-a08f-0c3de0afb358",
+    "shop_id": "66531013",
+    "name": "t6",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.35812969970703123,\"y\":0.19542343139648438},\"tr\":{\"x\":0.6427117309570313,\"y\":0.19591171264648438},\"br\":{\"x\":0.6441765747070313,\"y\":0.7363999938964844},\"bl\":{\"x\":0.35968829345703124,\"y\":0.7378648376464844}}}",
+    "background_path": "storage/usalkStudio/templates/template-1783432474633-324000615.png",
+    "created_at": "2026-07-07 13:54:34"
+  },
+  {
+    "id": "2e1c01cd-1fff-4fde-910f-68f44ea223b9",
+    "shop_id": "66531013",
+    "name": "statik21",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:2\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1783432625880-667028779.png",
+    "created_at": "2026-07-07 13:57:05"
+  },
+  {
+    "id": "7746352e-5348-42a5-92e2-129a98d2f607",
+    "shop_id": "66531013",
+    "name": "statik12",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:2\"]}",
+    "background_path": "storage/usalkStudio/templates/template-1783434031930-470751655.jpg",
+    "created_at": "2026-07-07 14:20:31"
+  },
+  {
+    "id": "6bdda102-5a0b-405e-ba0f-f37a8acfa9bb",
+    "shop_id": "66531013",
+    "name": "t8",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.20488505747126437,\"y\":0.062,\"width\":0.37431495473576687,\"height\":0.7486299094715337},\"frame\":{\"style\":\"walnut\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":8,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1783439759640-320888496.png",
+    "created_at": "2026-07-07 15:55:59"
+  },
+  {
+    "id": "9b5f79fc-b22f-4a68-828c-43ee6467bbbc",
+    "shop_id": "66531013",
+    "name": "t9",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.32520001220703126,\"y\":0.1074000244140625,\"width\":0.312,\"height\":0.624},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":5,\"blur\":9}}",
+    "background_path": "storage/usalkStudio/templates/template-1783440812303-771564596.png",
+    "created_at": "2026-07-07 16:13:32"
+  },
+  {
+    "id": "e4499300-3365-45d6-8393-0a4993d058b8",
+    "shop_id": "65571647",
+    "name": "t9 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.32520001220703126,\"y\":0.1074000244140625,\"width\":0.312,\"height\":0.624},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":5,\"blur\":9}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181563-790422126.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "7ffb5b8c-6618-4ac5-af19-2fe112dd39d0",
+    "shop_id": "65571647",
+    "name": "t8 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.20488505747126437,\"y\":0.062,\"width\":0.37431495473576687,\"height\":0.7486299094715337},\"frame\":{\"style\":\"walnut\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":8,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181573-390831998.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "a0b5bab0-9bb9-405c-8e9f-84319b22469d",
+    "shop_id": "65571647",
+    "name": "t6 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.35812969970703123,\"y\":0.19542343139648438},\"tr\":{\"x\":0.6427117309570313,\"y\":0.19591171264648438},\"br\":{\"x\":0.6441765747070313,\"y\":0.7363999938964844},\"bl\":{\"x\":0.35968829345703124,\"y\":0.7378648376464844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181581-635238240.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "b9c576bc-8a6d-4839-a856-0470eb7da06b",
+    "shop_id": "65571647",
+    "name": "t4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3332468872070313,\"y\":0.15347030639648437},\"tr\":{\"x\":0.6672000122070313,\"y\":0.15342343139648437},\"br\":{\"x\":0.6692000122070313,\"y\":0.7789820251464844},\"bl\":{\"x\":0.3317820434570313,\"y\":0.7783999938964844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181589-767558599.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "fba1a40d-b868-4d26-954f-b87a03a10aeb",
+    "shop_id": "65571647",
+    "name": "t5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3417351684570312,\"y\":0.10039999389648438},\"tr\":{\"x\":0.6572468872070313,\"y\":0.09995858764648438},\"br\":{\"x\":0.6558289184570313,\"y\":0.6693765563964844},\"bl\":{\"x\":0.3422703247070312,\"y\":0.6699117126464844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181597-236411018.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "65d3e002-0a8f-4a6e-af03-415ed45513a3",
+    "shop_id": "65571647",
+    "name": "t2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.5162234497070313,\"y\":0.2670289001464844},\"tr\":{\"x\":0.7566648559570313,\"y\":0.24137655639648437},\"br\":{\"x\":0.7536882934570313,\"y\":0.7894234313964844},\"bl\":{\"x\":0.5116882934570313,\"y\":0.7668414001464844}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1783441181619-376605576.png",
+    "created_at": "2026-07-07 16:19:41"
+  },
+  {
+    "id": "7e82b383-8f23-4a7f-947e-2c9a89132023",
+    "shop_id": "65571647",
+    "name": "t10",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.3983590526091747,\"y\":0.14031808080428665,\"width\":0.2688409595978566,\"height\":0.5376819191957132},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":8,\"blur\":8}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783501176075-213519563.png",
+    "created_at": "2026-07-08 08:59:36"
+  },
+  {
+    "id": "bf3fd8ab-f5a2-44d8-ab56-df5c1d4641bf",
+    "shop_id": "65571647",
+    "name": "t12",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.404,\"y\":0.098,\"width\":0.273529426724303,\"height\":0.547058853448606},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783501229986-788937697.png",
+    "created_at": "2026-07-08 09:00:29"
+  },
+  {
+    "id": "b94f14f7-165c-47bd-95c9-4f759404c153",
+    "shop_id": "65571647",
+    "name": "t13",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.354,\"y\":0.086,\"width\":0.30320001220703124,\"height\":0.6064000244140625},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":7,\"blur\":7}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783501257062-872480988.png",
+    "created_at": "2026-07-08 09:00:57"
+  },
+  {
+    "id": "d67e99c7-c5ec-495d-8656-7b24361682cb",
+    "shop_id": "66531013",
+    "name": "t13 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.354,\"y\":0.086,\"width\":0.30320001220703124,\"height\":0.6064000244140625},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":7,\"blur\":7},\"is_thumbnail\":false}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1783518860797-107560112.png",
+    "created_at": "2026-07-08 13:54:20"
+  },
+  {
+    "id": "f579031c-46f4-4ac8-b180-b1f9e421e66f",
+    "shop_id": "66531013",
+    "name": "t12 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.404,\"y\":0.098,\"width\":0.273529426724303,\"height\":0.547058853448606},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6},\"is_thumbnail\":false}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1783518860809-832264489.png",
+    "created_at": "2026-07-08 13:54:20"
+  },
+  {
+    "id": "d5802550-8803-446c-a43c-7ea979c278aa",
+    "shop_id": "66531013",
+    "name": "t10 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.3983590526091747,\"y\":0.14031808080428665,\"width\":0.2688409595978566,\"height\":0.5376819191957132},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":8,\"blur\":8}}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1783518860819-245924489.png",
+    "created_at": "2026-07-08 13:54:20"
+  },
+  {
+    "id": "a55710d9-31b7-4caf-bfc4-6d591c174c50",
+    "shop_id": "65571647",
+    "name": "statik12",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:2\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783538626693-419189053.jpg",
+    "created_at": "2026-07-08 19:23:46"
+  },
+  {
+    "id": "f4e4eb2f-4cac-40cc-b489-f1e044052c98",
+    "shop_id": "65571647",
+    "name": "stat121",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"1:2\"]}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783538645624-899526263.png",
+    "created_at": "2026-07-08 19:24:05"
+  },
+  {
+    "id": "7929bf77-5e75-408e-a9d6-a008b89f9b3c",
+    "shop_id": "65571647",
+    "name": "t45",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.309,\"y\":0.08949214659685867,\"width\":0.367,\"height\":0.734},\"frame\":{\"style\":\"black_frame\",\"thickness\":7.5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783954441584-362522485.png",
+    "created_at": "2026-07-13 14:54:01"
+  },
+  {
+    "id": "4b27b610-4912-47b6-9881-e5d5da846c11",
+    "shop_id": "65571647",
+    "name": "t566",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.312,\"y\":0.078,\"width\":0.352,\"height\":0.704},\"frame\":{\"style\":\"black_frame\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783954485582-977977920.png",
+    "created_at": "2026-07-13 14:54:45"
+  },
+  {
+    "id": "c633b48e-622a-426f-bae6-4e44a3fbdb6d",
+    "shop_id": "65571647",
+    "name": "thumbLARGE1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.03854580707707222,\"y\":0.236,\"width\":0.912,\"height\":0.532},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974138213-971668464.png",
+    "created_at": "2026-07-13 20:22:18"
+  },
+  {
+    "id": "d428a383-e197-48dc-a66c-0be966ba78d1",
+    "shop_id": "65571647",
+    "name": "thumbLARGE2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.10711111111111112,\"y\":0.09422222222222223},\"tr\":{\"x\":0.9106666666666666,\"y\":0.09444444444444444},\"br\":{\"x\":0.91,\"y\":0.5511111111111113},\"bl\":{\"x\":0.10666666666666667,\"y\":0.550888888888889}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974188924-271682048.png",
+    "created_at": "2026-07-13 20:23:08"
+  },
+  {
+    "id": "d433a5d4-082a-4e72-8d16-2dc700adb5cf",
+    "shop_id": "65571647",
+    "name": "thumbLARGE3",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.077,\"y\":0.127,\"width\":0.883,\"height\":0.5150833333333333},\"frame\":{\"style\":\"stretched\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974231851-249012173.png",
+    "created_at": "2026-07-13 20:23:51"
+  },
+  {
+    "id": "77d2ef6a-d17e-44dc-a32b-80c646acd54a",
+    "shop_id": "65571647",
+    "name": "thumbLARGE4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1771111111111111,\"y\":0.3364444444444445},\"tr\":{\"x\":0.8528888888888889,\"y\":0.24888888888888888},\"br\":{\"x\":0.8528888888888889,\"y\":0.7804444444444445},\"bl\":{\"x\":0.1771111111111111,\"y\":0.7106666666666666}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974265844-410840282.png",
+    "created_at": "2026-07-13 20:24:25"
+  },
+  {
+    "id": "b26605c9-616e-4752-885d-2f8c11c534df",
+    "shop_id": "65571647",
+    "name": "thumbLARGE5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.13333333333333333,\"y\":0.15844444444444444},\"tr\":{\"x\":0.8931111111111111,\"y\":0.15844444444444444},\"br\":{\"x\":0.8937777777777777,\"y\":0.6075555555555555},\"bl\":{\"x\":0.13311111111111112,\"y\":0.6068888888888889}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974319121-243618895.png",
+    "created_at": "2026-07-13 20:25:19"
+  },
+  {
+    "id": "5f265e94-7c61-4985-8529-b481b40693ed",
+    "shop_id": "65571647",
+    "name": "thumbPAN1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.094,\"y\":0.14,\"width\":0.822,\"height\":0.3425},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974357787-462699190.png",
+    "created_at": "2026-07-13 20:25:57"
+  },
+  {
+    "id": "09c204e5-7b44-45f8-8b20-0a83b1bcf415",
+    "shop_id": "65571647",
+    "name": "thumbPAN2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.06422222222222221,\"y\":0.33355555555555555},\"tr\":{\"x\":0.9415555555555555,\"y\":0.29733333333333317},\"br\":{\"x\":0.9417777777777778,\"y\":0.6797777777777779},\"bl\":{\"x\":0.06511111111111112,\"y\":0.6673333333333334}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974545771-719106786.png",
+    "created_at": "2026-07-13 20:29:05"
+  },
+  {
+    "id": "7298dcb2-e0fe-4687-bf5f-2a1d6221f53b",
+    "shop_id": "65571647",
+    "name": "thumbPAN3",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.105,\"y\":0.323,\"width\":0.797,\"height\":0.3320833333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3.5,\"distance\":9,\"blur\":9},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974594511-484135355.png",
+    "created_at": "2026-07-13 20:29:54"
+  },
+  {
+    "id": "fea03b6e-b5d4-423f-893f-4fef89d72ca2",
+    "shop_id": "65571647",
+    "name": "thumbPAN4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.08266666666666668,\"y\":0.24466666666666667},\"tr\":{\"x\":0.9186666666666666,\"y\":0.24422222222222223},\"br\":{\"x\":0.9184444444444445,\"y\":0.5968888888888889},\"bl\":{\"x\":0.0817777777777778,\"y\":0.5975555555555555}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974630006-313424895.png",
+    "created_at": "2026-07-13 20:30:30"
+  },
+  {
+    "id": "a78be787-41f5-4818-a7f2-1a361e25983f",
+    "shop_id": "65571647",
+    "name": "thumbSQR1",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.22355555555555556,\"y\":0.22511111111111112},\"tr\":{\"x\":0.756,\"y\":0.13444444444444445},\"br\":{\"x\":0.7586666666666668,\"y\":0.806},\"bl\":{\"x\":0.22422222222222224,\"y\":0.794}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974714571-322524212.png",
+    "created_at": "2026-07-13 20:31:54"
+  },
+  {
+    "id": "73abcc54-5756-4921-acba-4f7317f27f76",
+    "shop_id": "65571647",
+    "name": "thumbSQR2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18755555555555556,\"y\":0.18466666666666667},\"tr\":{\"x\":0.8053333333333335,\"y\":0.12355555555555556},\"br\":{\"x\":0.8055555555555558,\"y\":0.8464444444444444},\"bl\":{\"x\":0.18844444444444444,\"y\":0.8284444444444444}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974751281-474231851.png",
+    "created_at": "2026-07-13 20:32:31"
+  },
+  {
+    "id": "cd3bb568-d1e4-4308-b3ff-4579cb53765f",
+    "shop_id": "65571647",
+    "name": "thumbSQR3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.19822222222222222,\"y\":0.18133333333333332},\"tr\":{\"x\":0.7995555555555556,\"y\":0.182},\"br\":{\"x\":0.8002222222222224,\"y\":0.7944444444444445},\"bl\":{\"x\":0.19822222222222224,\"y\":0.7942222222222224}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974794834-99197292.png",
+    "created_at": "2026-07-13 20:33:14"
+  },
+  {
+    "id": "b574604a-0fab-40dc-ab60-c3e8c2e270cb",
+    "shop_id": "65571647",
+    "name": "thumbSQR4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16955555555555557,\"y\":0.2},\"tr\":{\"x\":0.8284444444444444,\"y\":0.2},\"br\":{\"x\":0.8284444444444444,\"y\":0.8588888888888889},\"bl\":{\"x\":0.16955555555555557,\"y\":0.8591111111111113}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974840789-452484855.png",
+    "created_at": "2026-07-13 20:34:00"
+  },
+  {
+    "id": "9469a8fc-f320-4871-9940-b302e412c527",
+    "shop_id": "65571647",
+    "name": "thumbHALF1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.318,\"y\":0.068,\"width\":0.404,\"height\":0.808},\"frame\":{\"style\":\"stretched\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974917938-104497723.png",
+    "created_at": "2026-07-13 20:35:17"
+  },
+  {
+    "id": "763870eb-359a-4bde-9199-ac8baf74257e",
+    "shop_id": "65571647",
+    "name": "thumbHALF2",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.284,\"y\":0.12,\"width\":0.38,\"height\":0.76},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974958570-78123508.png",
+    "created_at": "2026-07-13 20:35:58"
+  },
+  {
+    "id": "3daa2f1f-d829-4d08-bba4-59cae574aacc",
+    "shop_id": "65571647",
+    "name": "thumbHALF3",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.305,\"y\":0.059,\"width\":0.403,\"height\":0.806},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783974979537-311656508.png",
+    "created_at": "2026-07-13 20:36:19"
+  },
+  {
+    "id": "e403fa0b-71f4-46ee-a252-26a9033df1ed",
+    "shop_id": "65571647",
+    "name": "thumbHALF4",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2858598130841121,\"y\":0.03804672897196258,\"width\":0.42614018691588784,\"height\":0.8522803738317757},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975036484-735385880.png",
+    "created_at": "2026-07-13 20:37:16"
+  },
+  {
+    "id": "b858f76d-2a32-4338-b9f7-60053f337578",
+    "shop_id": "65571647",
+    "name": "thumbVERT1",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30751526902569076,\"y\":0.15109161415414443},\"tr\":{\"x\":0.7090305380513815,\"y\":0.124},\"br\":{\"x\":0.679938923897237,\"y\":0.8910305380513815},\"bl\":{\"x\":0.2595152690256908,\"y\":0.842}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975085157-409829689.png",
+    "created_at": "2026-07-13 20:38:05"
+  },
+  {
+    "id": "85bd1323-727b-410d-8258-ef968dfa1fd7",
+    "shop_id": "65571647",
+    "name": "thumbVERT2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.21822816399286993,\"y\":0.08510873440285205},\"tr\":{\"x\":0.782663101604278,\"y\":0.08444563279857398},\"br\":{\"x\":0.7846737967914441,\"y\":0.9377825311942961},\"bl\":{\"x\":0.21244563279857398,\"y\":0.9373368983957221}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975133051-22245028.png",
+    "created_at": "2026-07-13 20:38:53"
+  },
+  {
+    "id": "3503fe3e-c402-4719-bc51-0aa80e998538",
+    "shop_id": "65571647",
+    "name": "thumbVERT3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2637835241965274,\"y\":0.1505223494643517},\"tr\":{\"x\":0.7152611747321758,\"y\":0.08163058736608793},\"br\":{\"x\":0.7047388252678242,\"y\":0.93},\"bl\":{\"x\":0.228,\"y\":0.8854776505356484}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975165503-664748285.jpg",
+    "created_at": "2026-07-13 20:39:25"
+  },
+  {
+    "id": "68b1e0ba-5749-402f-8590-24e6d52fecab",
+    "shop_id": "65571647",
+    "name": "thumbVERT4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.24266666666666664,\"y\":0.12466666666666669},\"tr\":{\"x\":0.7510000000000001,\"y\":0.12533333333333335},\"br\":{\"x\":0.7583333333333333,\"y\":0.9023333333333333},\"bl\":{\"x\":0.23833333333333337,\"y\":0.9043333333333333}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975220124-95699396.png",
+    "created_at": "2026-07-13 20:40:20"
+  },
+  {
+    "id": "0c1269f5-ad20-4342-a9fa-0634cb57be49",
+    "shop_id": "65571647",
+    "name": "thumbVERT5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.278,\"y\":0.10348533196088522},\"tr\":{\"x\":0.7375440041173444,\"y\":0.13445599588265572},\"br\":{\"x\":0.7365733401955741,\"y\":0.868},\"bl\":{\"x\":0.277941327843541,\"y\":0.8790293360782296}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975254999-106202800.png",
+    "created_at": "2026-07-13 20:40:55"
+  },
+  {
+    "id": "a124ae20-817b-4063-b6ca-3cf2328f53e5",
+    "shop_id": "65571647",
+    "name": "thumbHORZ1",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.127,\"y\":0.201,\"width\":0.749,\"height\":0.4993333333333333},\"frame\":{\"style\":\"black_frame\",\"thickness\":9},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":2.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975431672-427739452.png",
+    "created_at": "2026-07-13 20:43:51"
+  },
+  {
+    "id": "56fcc91b-2d2d-4c86-8d0f-6d14d1b8aee1",
+    "shop_id": "65571647",
+    "name": "thumbHORZ2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.12346627565982404,\"y\":0.252},\"tr\":{\"x\":0.8489325513196481,\"y\":0.30253372434017595},\"br\":{\"x\":0.8775112414467253,\"y\":0.7869775171065494},\"bl\":{\"x\":0.13902248289345065,\"y\":0.85}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975466890-153095206.png",
+    "created_at": "2026-07-13 20:44:26"
+  },
+  {
+    "id": "9ba372f5-68e8-486f-b8b3-57491edeef62",
+    "shop_id": "65571647",
+    "name": "thumbHORZ3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":622,\"corners\":{\"tl\":{\"x\":0.17148905166529152,\"y\":0.2751103202846975},\"tr\":{\"x\":0.7927837752735648,\"y\":0.1951103202846975},\"br\":{\"x\":0.792604501607717,\"y\":0.7764448398576512},\"bl\":{\"x\":0.1720257234726688,\"y\":0.7648896797153024}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975504367-725055569.png",
+    "created_at": "2026-07-13 20:45:04"
+  },
+  {
+    "id": "213fcfb1-9cbd-4686-b049-172d7408d0ad",
+    "shop_id": "65571647",
+    "name": "thumbHORZ4",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.13379166666666664,\"y\":0.210125,\"width\":0.7462083333333334,\"height\":0.4974722222222222},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1783975527242-122866929.png",
+    "created_at": "2026-07-13 20:45:27"
+  },
+  {
+    "id": "accf9a5d-5f85-4023-8cd4-38c0e6f2f69a",
+    "shop_id": "66531013",
+    "name": "thumbVERT1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30751526902569076,\"y\":0.15109161415414443},\"tr\":{\"x\":0.7090305380513815,\"y\":0.124},\"br\":{\"x\":0.679938923897237,\"y\":0.8910305380513815},\"bl\":{\"x\":0.2595152690256908,\"y\":0.842}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117493718-525483649.png",
+    "created_at": "2026-07-15 12:11:33"
+  },
+  {
+    "id": "a29ce4a9-3061-4dea-9ae9-cd0817a5b612",
+    "shop_id": "66531013",
+    "name": "thumbVERT2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.21822816399286993,\"y\":0.08510873440285205},\"tr\":{\"x\":0.782663101604278,\"y\":0.08444563279857398},\"br\":{\"x\":0.7846737967914441,\"y\":0.9377825311942961},\"bl\":{\"x\":0.21244563279857398,\"y\":0.9373368983957221}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117493728-478576514.png",
+    "created_at": "2026-07-15 12:11:33"
+  },
+  {
+    "id": "6cfa0898-9d8e-46f7-916d-f7098424337b",
+    "shop_id": "66531013",
+    "name": "thumbVERT3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2637835241965274,\"y\":0.1505223494643517},\"tr\":{\"x\":0.7152611747321758,\"y\":0.08163058736608793},\"br\":{\"x\":0.7047388252678242,\"y\":0.93},\"bl\":{\"x\":0.228,\"y\":0.8854776505356484}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117493732-899781001.jpg",
+    "created_at": "2026-07-15 12:11:33"
+  },
+  {
+    "id": "0ff919c2-efe0-44db-b9dd-17e95e2cca60",
+    "shop_id": "66531013",
+    "name": "thumbVERT4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.24266666666666664,\"y\":0.12466666666666669},\"tr\":{\"x\":0.7510000000000001,\"y\":0.12533333333333335},\"br\":{\"x\":0.7583333333333333,\"y\":0.9023333333333333},\"bl\":{\"x\":0.23833333333333337,\"y\":0.9043333333333333}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117493734-940488746.png",
+    "created_at": "2026-07-15 12:11:33"
+  },
+  {
+    "id": "9a08bc31-2f6c-4143-9a69-ffc9f2f10c17",
+    "shop_id": "66531013",
+    "name": "thumbVERT5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.278,\"y\":0.10348533196088522},\"tr\":{\"x\":0.7375440041173444,\"y\":0.13445599588265572},\"br\":{\"x\":0.7365733401955741,\"y\":0.868},\"bl\":{\"x\":0.277941327843541,\"y\":0.8790293360782296}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117493744-559680176.png",
+    "created_at": "2026-07-15 12:11:33"
+  },
+  {
+    "id": "d3779b57-74bf-476a-a9f4-7bd532141c59",
+    "shop_id": "66531013",
+    "name": "thumbSQR3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.19822222222222222,\"y\":0.18133333333333332},\"tr\":{\"x\":0.7995555555555556,\"y\":0.182},\"br\":{\"x\":0.8002222222222224,\"y\":0.7944444444444445},\"bl\":{\"x\":0.19822222222222224,\"y\":0.7942222222222224}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117531229-754192203.png",
+    "created_at": "2026-07-15 12:12:11"
+  },
+  {
+    "id": "185a2a09-ee5d-4ae3-abe6-75b72b926909",
+    "shop_id": "66531013",
+    "name": "thumbSQR1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.22355555555555556,\"y\":0.22511111111111112},\"tr\":{\"x\":0.756,\"y\":0.13444444444444445},\"br\":{\"x\":0.7586666666666668,\"y\":0.806},\"bl\":{\"x\":0.22422222222222224,\"y\":0.794}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117531235-374476322.png",
+    "created_at": "2026-07-15 12:12:11"
+  },
+  {
+    "id": "19e4cf1c-df5e-4c5e-a45f-05458755e474",
+    "shop_id": "66531013",
+    "name": "thumbSQR2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18755555555555556,\"y\":0.18466666666666667},\"tr\":{\"x\":0.8053333333333335,\"y\":0.12355555555555556},\"br\":{\"x\":0.8055555555555558,\"y\":0.8464444444444444},\"bl\":{\"x\":0.18844444444444444,\"y\":0.8284444444444444}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117531238-654251722.png",
+    "created_at": "2026-07-15 12:12:11"
+  },
+  {
+    "id": "701ff2ca-e250-443d-8953-9f77a757736d",
+    "shop_id": "66531013",
+    "name": "thumbSQR4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16955555555555557,\"y\":0.2},\"tr\":{\"x\":0.8284444444444444,\"y\":0.2},\"br\":{\"x\":0.8284444444444444,\"y\":0.8588888888888889},\"bl\":{\"x\":0.16955555555555557,\"y\":0.8591111111111113}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784117531242-900419368.png",
+    "created_at": "2026-07-15 12:12:11"
+  },
+  {
+    "id": "0eb3a20e-41ee-4faf-820b-d805c05d8077",
+    "shop_id": "65571647",
+    "name": "thumbPAN5",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.027,\"y\":0.257,\"width\":0.933,\"height\":0.38875},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkArtHouse/templates/template-1784119089120-12463573.png",
+    "created_at": "2026-07-15 12:38:09"
+  },
+  {
+    "id": "30332fff-731b-4750-8fda-3bbf69d161c1",
+    "shop_id": "66531013",
+    "name": "thumbPAN5 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.027,\"y\":0.257,\"width\":0.933,\"height\":0.38875},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784119767478-18505799.png",
+    "created_at": "2026-07-15 12:49:27"
+  },
+  {
+    "id": "14951440-0a22-4df2-93a6-985a6c07b927",
+    "shop_id": "66531013",
+    "name": "thumbPAN3 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.105,\"y\":0.323,\"width\":0.797,\"height\":0.3320833333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3.5,\"distance\":9,\"blur\":9},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784119767485-479698716.png",
+    "created_at": "2026-07-15 12:49:27"
+  },
+  {
+    "id": "54011130-6bc4-4f9b-8961-bf720149536f",
+    "shop_id": "66531013",
+    "name": "thumbPAN1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.094,\"y\":0.14,\"width\":0.822,\"height\":0.3425},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784119767489-189518608.png",
+    "created_at": "2026-07-15 12:49:27"
+  },
+  {
+    "id": "060e1293-26b6-4f11-9bb5-376db0e90a16",
+    "shop_id": "66531013",
+    "name": "thumbPAN2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.06422222222222221,\"y\":0.33355555555555555},\"tr\":{\"x\":0.9415555555555555,\"y\":0.29733333333333317},\"br\":{\"x\":0.9417777777777778,\"y\":0.6797777777777779},\"bl\":{\"x\":0.06511111111111112,\"y\":0.6673333333333334}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784119767492-546163291.png",
+    "created_at": "2026-07-15 12:49:27"
+  },
+  {
+    "id": "93c39530-f548-4a6a-9914-cbb8ad9558fd",
+    "shop_id": "66531013",
+    "name": "thumbPAN4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.08266666666666668,\"y\":0.24466666666666667},\"tr\":{\"x\":0.9186666666666666,\"y\":0.24422222222222223},\"br\":{\"x\":0.9184444444444445,\"y\":0.5968888888888889},\"bl\":{\"x\":0.0817777777777778,\"y\":0.5975555555555555}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784119767497-731812000.png",
+    "created_at": "2026-07-15 12:49:27"
+  },
+  {
+    "id": "69035b72-f060-4ed5-b666-1e88b7e4dd02",
+    "shop_id": "66531013",
+    "name": "thumbVERT6",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.285,\"y\":0.109,\"width\":0.427,\"height\":0.6405},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1784127780960-316877461.png",
+    "created_at": "2026-07-15 15:03:01"
+  },
+  {
+    "id": "be14b705-708f-4f7e-8073-8968266c0e5c",
+    "shop_id": "66531013",
+    "name": "thumbVERT7",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.2597543859649123,\"y\":0.08175438596491229},\"tr\":{\"x\":0.628,\"y\":0.15449122807017543},\"br\":{\"x\":0.6651228070175439,\"y\":0.8246315789473684},\"bl\":{\"x\":0.29712280701754384,\"y\":0.9075087719298246}}}",
+    "background_path": "storage/usalkStudio/templates/template-1784127834358-317321796.jpg",
+    "created_at": "2026-07-15 15:03:54"
+  },
+  {
+    "id": "70fe33f4-5d13-447f-a1fd-59c066db0a0d",
+    "shop_id": "66531013",
+    "name": "thumbSQR5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.314,\"y\":0.1431111111111111},\"tr\":{\"x\":0.7175555555555555,\"y\":0.1431111111111111},\"br\":{\"x\":0.7173333333333334,\"y\":0.5471111111111111},\"bl\":{\"x\":0.31355555555555553,\"y\":0.5475555555555556}}}",
+    "background_path": "storage/usalkStudio/templates/template-1784127897650-87178360.png",
+    "created_at": "2026-07-15 15:04:57"
+  },
+  {
+    "id": "4c376659-82e4-41bc-8af1-530b978183bc",
+    "shop_id": "66531013",
+    "name": "thumbHALF5",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.343,\"y\":0.172,\"width\":0.325,\"height\":0.65},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6.5,\"distance\":6,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1784127938674-207610303.png",
+    "created_at": "2026-07-15 15:05:38"
+  },
+  {
+    "id": "16399843-00bb-4a4f-b34e-e89b0e28aeb3",
+    "shop_id": "66531013",
+    "name": "thumbHALF4 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2858598130841121,\"y\":0.03804672897196258,\"width\":0.42614018691588784,\"height\":0.8522803738317757},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784127966453-228807461.png",
+    "created_at": "2026-07-15 15:06:06"
+  },
+  {
+    "id": "0cb51507-c266-4346-938f-26330c7bd0fc",
+    "shop_id": "66531013",
+    "name": "thumbHALF3 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.305,\"y\":0.059,\"width\":0.403,\"height\":0.806},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784127966460-888914337.png",
+    "created_at": "2026-07-15 15:06:06"
+  },
+  {
+    "id": "ff292f71-aaf3-4a2d-b777-0e3ff28e888e",
+    "shop_id": "66531013",
+    "name": "thumbHALF1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.318,\"y\":0.068,\"width\":0.404,\"height\":0.808},\"frame\":{\"style\":\"stretched\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784127966463-125387427.png",
+    "created_at": "2026-07-15 15:06:06"
+  },
+  {
+    "id": "648ffb9e-69a7-4b54-9e87-ba0981c6595f",
+    "shop_id": "66531013",
+    "name": "thumbHALF2 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.284,\"y\":0.12,\"width\":0.38,\"height\":0.76},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784127966466-74868061.png",
+    "created_at": "2026-07-15 15:06:06"
+  },
+  {
+    "id": "38c6d35c-d416-4a33-a0c8-75c22996bdc3",
+    "shop_id": "66531013",
+    "name": "thumbHOR5",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.123,\"y\":0.117,\"width\":0.773,\"height\":0.5153333333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":1,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkStudio/templates/template-1784128118148-183610027.png",
+    "created_at": "2026-07-15 15:08:38"
+  },
+  {
+    "id": "be7430e4-716a-4944-b7a9-171d81f1406b",
+    "shop_id": "66531013",
+    "name": "thumbHORZ4 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.13379166666666664,\"y\":0.210125,\"width\":0.7462083333333334,\"height\":0.4974722222222222},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128136362-498934376.png",
+    "created_at": "2026-07-15 15:08:56"
+  },
+  {
+    "id": "6dfe8413-4c84-4ee8-9475-d7dcabc901a5",
+    "shop_id": "66531013",
+    "name": "thumbHORZ2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.12346627565982404,\"y\":0.252},\"tr\":{\"x\":0.8489325513196481,\"y\":0.30253372434017595},\"br\":{\"x\":0.8775112414467253,\"y\":0.7869775171065494},\"bl\":{\"x\":0.13902248289345065,\"y\":0.85}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128136371-769547055.png",
+    "created_at": "2026-07-15 15:08:56"
+  },
+  {
+    "id": "031927ff-a45d-49ca-b0d7-6656de50b1d9",
+    "shop_id": "66531013",
+    "name": "thumbHORZ3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":622,\"corners\":{\"tl\":{\"x\":0.17148905166529152,\"y\":0.2751103202846975},\"tr\":{\"x\":0.7927837752735648,\"y\":0.1951103202846975},\"br\":{\"x\":0.792604501607717,\"y\":0.7764448398576512},\"bl\":{\"x\":0.1720257234726688,\"y\":0.7648896797153024}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128136374-777162967.png",
+    "created_at": "2026-07-15 15:08:56"
+  },
+  {
+    "id": "2db39dce-4320-45f3-8b54-8b7a30acea8b",
+    "shop_id": "66531013",
+    "name": "thumbHORZ1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.127,\"y\":0.201,\"width\":0.749,\"height\":0.4993333333333333},\"frame\":{\"style\":\"black_frame\",\"thickness\":9},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":2.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128136381-104910743.png",
+    "created_at": "2026-07-15 15:08:56"
+  },
+  {
+    "id": "a35ec11a-e143-49a7-84a5-a1389ac7b944",
+    "shop_id": "66531013",
+    "name": "thumbLARGE5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.13333333333333333,\"y\":0.15844444444444444},\"tr\":{\"x\":0.8931111111111111,\"y\":0.15844444444444444},\"br\":{\"x\":0.8937777777777777,\"y\":0.6075555555555555},\"bl\":{\"x\":0.13311111111111112,\"y\":0.6068888888888889}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128192193-505999013.png",
+    "created_at": "2026-07-15 15:09:52"
+  },
+  {
+    "id": "e610a7ab-95d8-4361-b247-f1f6efdccfc6",
+    "shop_id": "66531013",
+    "name": "thumbLARGE4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1771111111111111,\"y\":0.3364444444444445},\"tr\":{\"x\":0.8528888888888889,\"y\":0.24888888888888888},\"br\":{\"x\":0.8528888888888889,\"y\":0.7804444444444445},\"bl\":{\"x\":0.1771111111111111,\"y\":0.7106666666666666}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128192202-358583540.png",
+    "created_at": "2026-07-15 15:09:52"
+  },
+  {
+    "id": "f1e3988d-8c41-4a13-9d86-41bfd3ce63f7",
+    "shop_id": "66531013",
+    "name": "thumbLARGE2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.10711111111111112,\"y\":0.09422222222222223},\"tr\":{\"x\":0.9106666666666666,\"y\":0.09444444444444444},\"br\":{\"x\":0.91,\"y\":0.5511111111111113},\"bl\":{\"x\":0.10666666666666667,\"y\":0.550888888888889}},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128192205-451027472.png",
+    "created_at": "2026-07-15 15:09:52"
+  },
+  {
+    "id": "27ff0ae8-6a0c-4f14-9660-b2b9b6eb2a23",
+    "shop_id": "66531013",
+    "name": "thumbLARGE3 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.077,\"y\":0.127,\"width\":0.883,\"height\":0.5150833333333333},\"frame\":{\"style\":\"stretched\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128192210-255654265.png",
+    "created_at": "2026-07-15 15:09:52"
+  },
+  {
+    "id": "0a9c0f0b-fc5c-4b03-9c8e-44ea22e1ef91",
+    "shop_id": "66531013",
+    "name": "thumbLARGE1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.03854580707707222,\"y\":0.236,\"width\":0.912,\"height\":0.532},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/usalkStudio/templates/template-copy-1784128192214-425460502.png",
+    "created_at": "2026-07-15 15:09:52"
+  },
+  {
+    "id": "d234a24e-d2c6-4a24-843a-775716019055",
+    "shop_id": "65571647",
+    "name": "thumbSQR5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.314,\"y\":0.1431111111111111},\"tr\":{\"x\":0.7175555555555555,\"y\":0.1431111111111111},\"br\":{\"x\":0.7173333333333334,\"y\":0.5471111111111111},\"bl\":{\"x\":0.31355555555555553,\"y\":0.5475555555555556}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128273922-772331584.png",
+    "created_at": "2026-07-15 15:11:13"
+  },
+  {
+    "id": "b899300a-18a1-484f-b232-d1839526f9d2",
+    "shop_id": "65571647",
+    "name": "thumbHALF5 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.343,\"y\":0.172,\"width\":0.325,\"height\":0.65},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6.5,\"distance\":6,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128327047-881197248.png",
+    "created_at": "2026-07-15 15:12:07"
+  },
+  {
+    "id": "9899a275-4bd3-4770-a8f3-61fa2fbfb697",
+    "shop_id": "65571647",
+    "name": "thumbVERT6 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.285,\"y\":0.109,\"width\":0.427,\"height\":0.6405},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128344842-946369509.png",
+    "created_at": "2026-07-15 15:12:24"
+  },
+  {
+    "id": "617886b5-f55f-4f25-a7c2-a00784b6cbbc",
+    "shop_id": "65571647",
+    "name": "thumbVERT7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.2597543859649123,\"y\":0.08175438596491229},\"tr\":{\"x\":0.628,\"y\":0.15449122807017543},\"br\":{\"x\":0.6651228070175439,\"y\":0.8246315789473684},\"bl\":{\"x\":0.29712280701754384,\"y\":0.9075087719298246}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128344849-880131000.jpg",
+    "created_at": "2026-07-15 15:12:24"
+  },
+  {
+    "id": "e5419c01-36e1-421f-a5a4-01640934796f",
+    "shop_id": "65571647",
+    "name": "thumbHOR5 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.123,\"y\":0.117,\"width\":0.773,\"height\":0.5153333333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":1,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128360239-340360912.png",
+    "created_at": "2026-07-15 15:12:40"
+  }
+]

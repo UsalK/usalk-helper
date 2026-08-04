@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import db, { getActiveShop, getShopStorageName } from '../db/db.js';
+import { exportTemplatesToSeed } from '../services/TemplateSync.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -59,6 +60,7 @@ router.post('/', upload.single('background'), (req, res, next) => {
       'INSERT INTO templates (id, shop_id, name, type, config, background_path) VALUES (?, ?, ?, ?, ?, ?)'
     );
     stmt.run(id, activeShop.shop_id, name, type, config, background_path);
+    exportTemplatesToSeed();
     
     res.json({ id, shop_id: activeShop.shop_id, name, type, config: JSON.parse(config), background_path });
   } catch (err) {
@@ -85,6 +87,7 @@ router.delete('/:id', (req, res, next) => {
     
     const stmt = db.prepare('DELETE FROM templates WHERE id = ? AND shop_id = ?');
     stmt.run(id, activeShop.shop_id);
+    exportTemplatesToSeed();
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -164,6 +167,7 @@ router.post('/copy', (req, res, next) => {
         });
       }
       db.exec('COMMIT');
+      exportTemplatesToSeed();
     } catch (txErr) {
       db.exec('ROLLBACK');
       throw txErr;
@@ -184,6 +188,7 @@ router.patch('/:id', (req, res, next) => {
     
     const stmt = db.prepare('UPDATE templates SET config = ? WHERE id = ? AND shop_id = ?');
     stmt.run(JSON.stringify(config), id, activeShop.shop_id);
+    exportTemplatesToSeed();
     
     res.json({ success: true });
   } catch (err) {
