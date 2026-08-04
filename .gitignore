@@ -1,6 +1,7 @@
 # Ortam Değişkenleri ve API Anahtarları (Environment & Secrets)
 .env
 .env.*
+!.env.example
 *.env
 kimik26_api.txt
 
