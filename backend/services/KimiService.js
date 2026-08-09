@@ -51,20 +51,11 @@ function detectProvider(key) {
 
 // Elde bulunan anahtarlardan sağlayıcı bazlı bir liste kurar.
 // Sıra korunur: OpenRouter birincil, NVIDIA yedek.
-function resolveProviderKeys({ openRouterKey, userApiKey, nvidiaEnvKey }) {
+function resolveProviderKeys({ openRouterKey, nvidiaEnvKey }) {
   const found = { openrouter: null, nvidia: null };
 
-  // Kaynağı kesin olanlar (env değişkenleri) önce yerleşir.
   if (openRouterKey?.trim()) found.openrouter = openRouterKey.trim();
   if (nvidiaEnvKey?.trim()) found.nvidia = nvidiaEnvKey.trim();
-
-  // Kullanıcının ayarlar ekranından girdiği anahtar 'nvidia_api_key' altında saklanıyor
-  // ama pratikte OpenRouter anahtarı da yapıştırılabiliyor. Öneke göre yerleştir.
-  if (userApiKey?.trim()) {
-    const uk = userApiKey.trim();
-    const provider = detectProvider(uk) || 'nvidia'; // ayar alanının adı gereği varsayılan NVIDIA
-    if (!found[provider]) found[provider] = uk;
-  }
 
   return found;
 }
@@ -90,19 +81,23 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
 export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null) {
   const targetShopId = shopId || getActiveShop().shop_id;
 
-  // 1. Key Resolution: NEVER use hardcoded fallback keys
-  let userApiKey = null;
+  // 1. Read selected AI model from DB (default to qwen/qwen3.7-flash)
+  let selectedModel = "qwen/qwen3.7-flash";
+  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "google/gemini-2.5-flash", "google/gemini-3.5-flash"];
   try {
     const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
-    const setting = stmt.get(targetShopId, 'nvidia_api_key');
+    const setting = stmt.get(targetShopId, 'nvidia_model');
     if (setting) {
-      userApiKey = JSON.parse(setting.value);
+      const parsedModel = JSON.parse(setting.value);
+      if (parsedModel && validModels.includes(parsedModel)) {
+        selectedModel = parsedModel;
+      }
     }
   } catch (err) {
-    console.error("Error reading api key from db:", err);
+    console.error("Error reading ai model from db:", err);
   }
 
-  // Get OpenRouter Key from env if present
+  // Get OpenRouter Key and NVIDIA Key from env
   const openRouterKey = process.env.OPENROUTER_API_KEY;
   const nvidiaEnvKey = process.env.NVIDIA_API_KEY;
 
@@ -172,15 +167,14 @@ Schema:
 }${sectionInstruction}
 CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
 
-  // Sağlayıcı bazlı deneme sırası: OpenRouter (Qwen) birincil, NVIDIA (Nemotron VL) yedek.
-  // Her anahtar yalnızca kendi sağlayıcısının endpoint'ine gönderilir.
-  const providerKeys = resolveProviderKeys({ openRouterKey, userApiKey, nvidiaEnvKey });
+  // Sağlayıcı bazlı deneme sırası: OpenRouter (seçilen model) birincil, NVIDIA (Nemotron VL) yedek.
+  const providerKeys = resolveProviderKeys({ openRouterKey, nvidiaEnvKey });
   const queueToTry = [];
 
   if (providerKeys.openrouter) {
     queueToTry.push({
       url: OPENROUTER_URL,
-      model: "qwen/qwen3.7-plus",
+      model: selectedModel,
       key: providerKeys.openrouter,
       isOpenRouter: true
     });
@@ -196,7 +190,7 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   }
 
   if (queueToTry.length === 0) {
-    throw new Error('AI anahtarı bulunamadı. Genel Ayarlar ekranından bir API anahtarı girin veya .env dosyasına OPENROUTER_API_KEY / NVIDIA_API_KEY ekleyin.');
+    throw new Error('AI anahtarı bulunamadı. .env dosyasına OPENROUTER_API_KEY ekleyin.');
   }
 
   let finalResponse = null;
@@ -212,8 +206,8 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
       stream: false
     };
 
-    // Disabled reasoning to save output token costs
-    if (attempt.isOpenRouter && attempt.model === "qwen/qwen3.7-plus") {
+    // Disabled reasoning for Qwen models to save output token costs
+    if (attempt.isOpenRouter && (attempt.model.includes("qwen") || attempt.model === "qwen/qwen3.7-plus" || attempt.model === "qwen/qwen3.7-flash")) {
       payload.reasoning = { enabled: false };
     }
 
@@ -255,6 +249,7 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   console.log(`AI generation succeeded using model=${successModel}`);
 
   const MODEL_PRICING = {
+    "qwen/qwen3.7-flash": { input: 0.15 / 1000000, output: 0.60 / 1000000 },
     "qwen/qwen3.7-plus": { input: 0.32 / 1000000, output: 1.28 / 1000000 },
     "moonshotai/kimi-k2.6": { input: 1.00 / 1000000, output: 1.00 / 1000000 },
     "minimaxai/minimax-m3": { input: 0.18 / 1000000, output: 0.18 / 1000000 },
@@ -290,8 +285,9 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     }
   }
 
-  let assistantMsg = finalResponse.choices[0].message;
-  let textResponse = assistantMsg.content.trim();
+  let assistantMsg = finalResponse?.choices?.[0]?.message || {};
+  let rawContent = assistantMsg.content ?? assistantMsg.reasoning_content ?? assistantMsg.reasoning ?? '';
+  let textResponse = (typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent)).trim();
 
   // JSON Parsing & Single Self-Correction Retry Flow
   let parsed = null;
@@ -332,7 +328,7 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
           },
           {
             role: "assistant",
-            content: assistantMsg.content,
+            content: textResponse,
             ...(assistantMsg.reasoning_details ? { reasoning_details: assistantMsg.reasoning_details } : {})
           },
           {
@@ -357,7 +353,9 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
         };
 
         const retryRes = await withRetry(() => axios.post(targetUrl, retryPayload, { headers: retryHeaders, timeout: 30000 }));
-        const retryText = retryRes.data.choices[0].message.content.trim();
+        const retryMsg = retryRes?.data?.choices?.[0]?.message || {};
+        let retryRaw = retryMsg.content ?? retryMsg.reasoning_content ?? retryMsg.reasoning ?? '';
+        const retryText = (typeof retryRaw === 'string' ? retryRaw : JSON.stringify(retryRaw)).trim();
         parsed = parseJsonStr(retryText);
         console.log("Self-correction retry parsed successfully!");
       } catch (retryErr) {

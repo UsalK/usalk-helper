@@ -36,8 +36,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
     default_is_digital: false,
     shop_style: 'vintage poster, art deco',
     target_market: 'US/UK',
-    nvidia_api_key: '',
-    nvidia_model: 'moonshotai/kimi-k2.6',
+    nvidia_model: 'qwen/qwen3.7-flash',
 
     // New tab settings
     timezone: 'UTC - Coordinated Universal Time',
@@ -405,40 +404,21 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                 </p>
               </div>
 
-              {/* NVIDIA API Anahtarı */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">NVIDIA API Anahtarı</label>
-                <input
-                  type="text"
-                  name="nvidia_api_key"
-                  value={settings.nvidia_api_key || ''}
-                  onChange={handleChange}
-                  placeholder="nvapi-..."
-                  className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
-                    appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
-                  }`}
-                />
-                <p className="text-[10px] text-slate-500">
-                  Sihirli içerik oluştururken kullanılan NVIDIA API anahtarı. Boş bırakılırsa varsayılan anahtar kullanılır.
-                </p>
-              </div>
-
               {/* AI Model Seçimi */}
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktif AI Modeli</label>
                 <select
                   name="nvidia_model"
-                  value={settings.nvidia_model || 'qwen/qwen3.7-plus'}
+                  value={settings.nvidia_model || 'qwen/qwen3.7-flash'}
                   onChange={handleChange}
                   className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
                     appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
                   }`}
                 >
-                  <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen - Qwen Düşünme Modeli)</option>
-                  <option value="moonshotai/kimi-k2.6" disabled>Kimi K2.6 (Pasif)</option>
-                  <option value="minimaxai/minimax-m3" disabled>MiniMax M3 (Pasif)</option>
-                  <option value="nvidia/nemotron-nano-12b-v2-vl" disabled>Nemotron Nano 12B V2 VL (Pasif)</option>
-                  <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning" disabled>Nemotron 3 Nano Omni (Pasif)</option>
+                  <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı & Önerilen)</option>
+                  <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus</option>
+                  <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
                 </select>
                 <p className="text-[10px] text-slate-500">
                   Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin.

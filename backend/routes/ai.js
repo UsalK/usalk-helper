@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import db, { getActiveShop } from '../db/db.js';
@@ -23,7 +24,15 @@ router.post('/generate', async (req, res, next) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     
+    if (!product.image_path) {
+      return res.status(400).json({ error: 'Ürünün görsel yolu veritabanında tanımlı değil.' });
+    }
+    
     const imagePath = join(__dirname, '../..', product.image_path);
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({ error: `Ürün görsel dosyası disk üzerinde bulunamadı (${product.image_path}).` });
+    }
+    
     const platform = product.shop_id.includes('.myshopify.com') ? 'shopify' : 'etsy';
     
     // Call Kimi service for physical wall art SEO

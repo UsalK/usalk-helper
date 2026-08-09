@@ -1042,7 +1042,8 @@ export default function BulkUpload({ etsyConnected }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 animate-fade-in text-slate-100">
+    <>
+      <div className="max-w-7xl mx-auto py-8 px-4 animate-fade-in text-slate-100">
       {/* Hidden canvas for high-res mockup render */}
       <canvas ref={renderCanvasRef} className="hidden" />
 
@@ -1821,6 +1822,7 @@ export default function BulkUpload({ etsyConnected }) {
           <span className="text-xs font-semibold text-white tracking-wide">{toast.message}</span>
         </div>
       )}
+      </div>
 
       {/* Queue Progress Modal */}
       {queue.length > 0 && (() => {
@@ -1835,7 +1837,7 @@ export default function BulkUpload({ etsyConnected }) {
         const percent = Math.round((current / total) * 100);
 
         return (
-          <div className="fixed bottom-6 right-6 z-50 bg-[#0e1726]/90 backdrop-blur-xl border border-[#1e293b] rounded-2xl p-5 shadow-2xl w-80 text-xs text-slate-100 flex flex-col space-y-3 animate-fade-in-up transition-all duration-300">
+          <div className="fixed bottom-6 right-6 z-[9999] bg-[#0e1726]/90 backdrop-blur-xl border border-[#1e293b] rounded-2xl p-5 shadow-2xl w-80 text-xs text-slate-100 flex flex-col space-y-3 animate-fade-in-up transition-all duration-300">
             <div className="flex items-center justify-between">
               <span className="font-bold text-white flex items-center space-x-2">
                 {isDone ? (
@@ -1879,6 +1881,6 @@ export default function BulkUpload({ etsyConnected }) {
           </div>
         );
       })()}
-    </div>
+    </>
   );
 }

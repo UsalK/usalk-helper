@@ -545,7 +545,8 @@ export default function ShopifyBulkUpload() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto animate-fade-in">
+    <>
+      <div className="p-8 max-w-7xl mx-auto animate-fade-in">
       {/* Hidden canvas for mockup generation */}
       <canvas ref={renderCanvasRef} className="hidden" />
 
@@ -781,6 +782,7 @@ export default function ShopifyBulkUpload() {
           </div>
         )}
       </div>
+    </div>
 
       {/* Floating Queue Progress Modal */}
       {queue.length > 0 && (() => {
@@ -793,7 +795,7 @@ export default function ShopifyBulkUpload() {
         const percent = Math.round((current / total) * 100);
 
         return (
-          <div className="fixed bottom-6 right-6 z-50 bg-[#0e1726]/90 backdrop-blur-xl border border-[#1e293b] rounded-2xl p-5 shadow-2xl w-80 text-xs text-slate-100 flex flex-col space-y-3 animate-fade-in-up transition-all duration-300">
+          <div className="fixed bottom-6 right-6 z-[9999] bg-[#0e1726]/90 backdrop-blur-xl border border-[#1e293b] rounded-2xl p-5 shadow-2xl w-80 text-xs text-slate-100 flex flex-col space-y-3 animate-fade-in-up transition-all duration-300">
             <div className="flex items-center justify-between">
               <span className="font-bold text-white flex items-center space-x-2">
                 {isDone ? (
@@ -837,6 +839,6 @@ export default function ShopifyBulkUpload() {
           </div>
         );
       })()}
-    </div>
+    </>
   );
 }
