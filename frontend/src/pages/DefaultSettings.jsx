@@ -36,7 +36,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
     default_is_digital: false,
     shop_style: 'vintage poster, art deco',
     target_market: 'US/UK',
-    nvidia_model: 'qwen/qwen3.7-flash',
+    nvidia_model: 'qwen/qwen3.7-plus',
 
     // New tab settings
     timezone: 'UTC - Coordinated Universal Time',
@@ -409,14 +409,14 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Aktif AI Modeli</label>
                 <select
                   name="nvidia_model"
-                  value={settings.nvidia_model || 'qwen/qwen3.7-flash'}
+                  value={settings.nvidia_model || 'qwen/qwen3.7-plus'}
                   onChange={handleChange}
                   className={`w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none ${
                     appMode === 'shopify' ? 'focus:border-emerald-500' : 'focus:border-amber-500'
                   }`}
                 >
-                  <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı & Önerilen)</option>
-                  <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus</option>
+                  <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen)</option>
+                  <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı)</option>
                   <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
                   <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
                 </select>

@@ -81,8 +81,8 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
 export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null) {
   const targetShopId = shopId || getActiveShop().shop_id;
 
-  // 1. Read selected AI model from DB (default to qwen/qwen3.7-flash)
-  let selectedModel = "qwen/qwen3.7-flash";
+  // 1. Read selected AI model from DB (default to qwen/qwen3.7-plus)
+  let selectedModel = "qwen/qwen3.7-plus";
   const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "google/gemini-2.5-flash", "google/gemini-3.5-flash"];
   try {
     const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
