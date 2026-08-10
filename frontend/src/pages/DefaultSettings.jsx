@@ -417,8 +417,11 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                 >
                   <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen)</option>
                   <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı)</option>
+                  <option value="qwen/qwen3-vl-32b-instruct">Qwen 3 VL 32B Instruct</option>
+                  <option value="openai/gpt-5-mini">OpenAI GPT-5 Mini</option>
                   <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
                   <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
+                  <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
                 </select>
                 <p className="text-[10px] text-slate-500">
                   Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin.

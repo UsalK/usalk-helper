@@ -60,6 +60,19 @@ function resolveProviderKeys({ openRouterKey, nvidiaEnvKey }) {
   return found;
 }
 
+// Provider-specific way of asking for "as little reasoning as possible".
+// OpenAI's reasoning models cannot be fully disabled — sending
+// `{ enabled: false }` makes the upstream call fail — so they get the smallest
+// effort budget instead. `exclude: true` keeps reasoning out of the response
+// body in both cases, so we never pay to ship tokens we throw away.
+function buildReasoningConfig(model) {
+  const m = (model || '').toLowerCase();
+  const isOpenAiReasoner = m.startsWith('openai/') && (m.includes('gpt-5') || m.includes('o1') || m.includes('o3') || m.includes('o4'));
+  return isOpenAiReasoner
+    ? { effort: 'minimal', exclude: true }
+    : { enabled: false, exclude: true };
+}
+
 // Helper to retry temporary errors (429 rate limit or timeouts)
 async function withRetry(fn, retries = 2, delayMs = 2000) {
   for (let i = 0; i <= retries; i++) {
@@ -81,9 +94,13 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
 export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null) {
   const targetShopId = shopId || getActiveShop().shop_id;
 
-  // 1. Read selected AI model from DB (default to qwen/qwen3.7-plus)
-  let selectedModel = "qwen/qwen3.7-plus";
-  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "google/gemini-2.5-flash", "google/gemini-3.5-flash"];
+  // 1. Read selected AI model from DB (default to openai/gpt-5-mini).
+  // Chosen after a head-to-head on identical artwork: with reasoning suppressed
+  // it matched the cheapest option on price ($0.00086 avg), was the fastest
+  // (~1.8s), and was the only model to fill all 13 tag slots with genuine
+  // long-tail phrases on every run.
+  let selectedModel = "openai/gpt-5-mini";
+  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "qwen/qwen3-vl-32b-instruct", "openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite"];
   try {
     const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
     const setting = stmt.get(targetShopId, 'nvidia_model');
@@ -151,19 +168,24 @@ Format your response as a single, valid JSON object matching this schema:
   "room": ["rooms where this art fits best"]
 }
 CRITICAL: Return ONLY the JSON object. Do not include markdown code block formatting (like \`\`\`json).`
-    : `Analyze the image of this wall art (canvas print / poster print) and return Etsy metadata JSON.
+    : `Analyze the image of this wall art and return Etsy metadata JSON.
+CONTEXT ONLY (never quote or paraphrase this line in your output): the item is a physical canvas artwork shipped to the buyer, never a digital download, printable or file. Use this only to avoid digital-product wording.
 Shop Style: ${shopStyle}
 Target Market: ${targetMarket}
 
 Schema:
 {
-  "title": "Natural language title, UNDER 70 chars. Template: '[What you sell] – [Key Feature] – [Recipient/Room]'. Most important term at start (first 30-40 chars). NO repetitive words. NO generic gift terms.",
-  "tags": ["Exactly 13 multi-word phrases. Each tag MUST BE UNDER 20 characters (maximum 19 characters, including spaces). NEVER use the word 'digital' in any tag. DO NOT repeat words from the title. Target different search intents."],
-  "description": "2-3 sentences. What is sold, who it's for, why it's special. Primary keyword in first 40 chars. In English.",
+  "title": "Natural language title, 55-69 characters — aim for the upper end, never exceed 69. All THREE template segments are required: '[What you sell] – [Key Feature] – [Recipient/Room]'. Must end on a complete noun phrase, never cut off mid-phrase (write 'Wall Art', not 'Wall'). Most important term at start (first 30-40 chars). Use Title Case for every significant word. No word may appear twice within the title. NO generic gift terms. NEVER state the framing or mounting option (no 'Framed', 'Stretched', 'Rolled', 'Ready to Hang') — the buyer chooses that at checkout and a wrong promise causes returns.",
+  "tags": ["Exactly 16 multi-word phrases. Aim for 15-20 characters per tag: long enough to be a specific long-tail phrase, but never over 20 characters including spaces (anything longer is discarded). Avoid vague two-word fillers like 'old poster' or 'nature view' — every tag must be something a real buyer would type. NEVER use the word 'digital'. NEVER use material, print or mounting terms ('canvas', 'stretched canvas', 'archival', 'aged paper texture'). DO NOT repeat words from the title. Each tag must target a DIFFERENT search intent (subject, mood, colour, room, style, recipient, occasion)."],
+  "description": "2-3 sentences. What the artwork depicts, the mood it creates, and who it suits. Primary keyword in first 40 chars. In English. NEVER mention material, canvas, framing, printing, sizing, quality claims or shipping — the shop appends its own standard section covering all of that, so repeating it wastes the description's most valuable opening. Write about the IMAGE, not the product spec.",
   "visual_style": ["1 to 3 style tags"],
   "occasion": ["occasion tags if applicable"],
   "holiday": ["holiday tags if applicable"],
-  "room": ["room tags where this art fits best"]${sectionSchemaLine}
+  "room": ["room tags where this art fits best"],
+  "primary_color": "single dominant colour of the artwork, plain English (e.g. green, blue, beige)",
+  "secondary_color": "second most prominent colour, plain English",
+  "orientation": "one of: vertical, horizontal, square",
+  "subject": "one of: landscape, seascape, botanical, abstract, architecture, animal, figure, still life"${sectionSchemaLine}
 }${sectionInstruction}
 CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
 
@@ -196,19 +218,27 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   let finalResponse = null;
   let successModel = null;
   let lastError = null;
+  let reasoningSuppressed = false;
 
   for (const attempt of queueToTry) {
     const payload = {
       model: attempt.model,
       max_tokens: 4096,
-      temperature: 0.60, // 0.60 for creative/various SEO content
+      temperature: 0.40, // Rule-heavy structured task: lower temp for schema/rule compliance
       top_p: 1.00,
       stream: false
     };
 
-    // Disabled reasoning for Qwen models to save output token costs
-    if (attempt.isOpenRouter && (attempt.model.includes("qwen") || attempt.model === "qwen/qwen3.7-plus" || attempt.model === "qwen/qwen3.7-flash")) {
-      payload.reasoning = { enabled: false };
+    // Reasoning suppressed for ALL OpenRouter models. This task is rule-based, not
+    // exploratory: reasoning tokens are billed as output and inflate cost ~9x
+    // (observed: GPT-5 Mini 3064 output tokens vs ~300 of actual JSON).
+    //
+    // Two dialects are needed. OpenAI reasoning models reject `enabled: false`
+    // outright (500) because reasoning cannot be switched off for them — the
+    // lowest they accept is a minimal effort budget. Everyone else takes the
+    // hard off switch. Models with no reasoning support ignore the field.
+    if (attempt.isOpenRouter) {
+      payload.reasoning = buildReasoningConfig(attempt.model);
     }
 
     payload.messages = [
@@ -234,8 +264,32 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
       const res = await withRetry(() => axios.post(attempt.url, payload, { headers, timeout: 45000 }));
       finalResponse = res.data;
       successModel = attempt.model;
+      reasoningSuppressed = Boolean(payload.reasoning);
       break;
     } catch (err) {
+      // The `reasoning` field is the most likely thing to be rejected: support
+      // varies per model and per upstream provider, and a bad value surfaces as
+      // a 400 or a 500. Rather than losing the whole model over it, drop the
+      // field once and try again — a pricier call still beats no call.
+      const status = err.response?.status;
+      const reasoningMayBeCulprit = payload.reasoning && (status === 400 || status === 404 || status >= 500);
+
+      if (reasoningMayBeCulprit) {
+        console.warn(`Model=${attempt.model} rejected the reasoning config (HTTP ${status}). Retrying once without it — this call will cost more.`);
+        const { reasoning, ...payloadNoReasoning } = payload;
+        try {
+          const res = await withRetry(() => axios.post(attempt.url, payloadNoReasoning, { headers, timeout: 45000 }));
+          finalResponse = res.data;
+          successModel = attempt.model;
+          reasoningSuppressed = false;
+          break;
+        } catch (retryErr) {
+          lastError = retryErr;
+          console.warn(`Attempt failed with model=${attempt.model} (no-reasoning retry): ${retryErr.message}`);
+          continue;
+        }
+      }
+
       lastError = err;
       console.warn(`Attempt failed with model=${attempt.model}: ${err.message}`);
     }
@@ -251,6 +305,11 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   const MODEL_PRICING = {
     "qwen/qwen3.7-flash": { input: 0.15 / 1000000, output: 0.60 / 1000000 },
     "qwen/qwen3.7-plus": { input: 0.32 / 1000000, output: 1.28 / 1000000 },
+    "qwen/qwen3-vl-32b-instruct": { input: 0.20 / 1000000, output: 0.60 / 1000000 },
+    "openai/gpt-5-mini": { input: 0.25 / 1000000, output: 1.00 / 1000000 },
+    "google/gemini-2.5-flash": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
+    "google/gemini-3.5-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
+    "google/gemini-3.5-flash-lite": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
     "moonshotai/kimi-k2.6": { input: 1.00 / 1000000, output: 1.00 / 1000000 },
     "minimaxai/minimax-m3": { input: 0.18 / 1000000, output: 0.18 / 1000000 },
     "nvidia/nemotron-nano-12b-v2-vl": { input: 0.07 / 1000000, output: 0.07 / 1000000 },
@@ -346,6 +405,13 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
           stream: false
         };
 
+        // Keep reasoning suppressed on the correction pass too, but only if the
+        // model accepted the config on the first call — otherwise we would
+        // reproduce the very error we just worked around.
+        if (targetUrl.includes("openrouter") && reasoningSuppressed) {
+          retryPayload.reasoning = buildReasoningConfig(successModel);
+        }
+
         const retryHeaders = {
           "Content-Type": "application/json",
           "Accept": "application/json",
@@ -370,10 +436,27 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   // Sanitize title
   let title = parsed.title ? String(parsed.title) : '';
   title = sanitizeText(title);
+
+  // Etsy's hard ceiling is 140, but the 2026 NLP ranking favours natural titles
+  // under 70 — longer ones read as keyword stuffing and get pushed down. Trim on
+  // the segment separator so the title still ends on a complete phrase; only
+  // fall back to a hard cut if a single segment is somehow over the limit.
+  if (title.length > 70) {
+    const segments = title.split(/\s*[–—|-]\s*/).filter(Boolean);
+    let rebuilt = '';
+    for (const seg of segments) {
+      const candidate = rebuilt ? `${rebuilt} – ${seg}` : seg;
+      if (candidate.length > 70) break;
+      rebuilt = candidate;
+    }
+    console.warn(`[Title Sanity] Title was ${title.length} chars (over the 70-char guideline). Trimmed to ${rebuilt.length || 70}.`);
+    title = rebuilt || title.substring(0, 70).trim();
+  }
+
   if (title.length > 140) {
     title = title.substring(0, 140).trim();
-    title = title.replace(/,\s*$/, '').trim();
   }
+  title = title.replace(/[,\s–—|-]+$/, '').trim();
 
   // Sanitize description
   let description = parsed.description || parsed.description_hook || '';
@@ -424,6 +507,14 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     "living room art", "bedroom wall art"
   ];
 
+  // How many AI-generated tags survived sanitation? 16 are requested so that the
+  // 20-char filter has slack; if this number is still under 13 the generic
+  // fallback pool kicks in, which is an SEO downgrade worth knowing about.
+  const aiTagCount = processedTags.length;
+  if (aiTagCount < 13) {
+    console.warn(`[Tags Sanity] Only ${aiTagCount}/13 usable AI tags survived. Filling ${13 - aiTagCount} slot(s) from the generic fallback pool.`);
+  }
+
   for (const fbTag of fallbackTags) {
     if (processedTags.length >= 13) break;
     const lowerKey = fbTag.toLowerCase();
@@ -447,6 +538,25 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
   const room = Array.isArray(parsed.room)
     ? parsed.room.map(r => sanitizeText(r).trim()).filter(Boolean)
     : [];
+
+  // Etsy attributes: buyers filter search by colour/orientation, and a listing
+  // that leaves these empty is excluded from those filtered results entirely,
+  // even when the words appear in the title.
+  const cleanAttr = (val, allowed = null) => {
+    if (typeof val !== 'string') return null;
+    const v = sanitizeText(val).trim().toLowerCase();
+    if (!v) return null;
+    if (allowed && !allowed.includes(v)) return null;
+    return v;
+  };
+
+  const primaryColor = cleanAttr(parsed.primary_color);
+  const secondaryColor = cleanAttr(parsed.secondary_color);
+  const orientation = cleanAttr(parsed.orientation, ['vertical', 'horizontal', 'square']);
+  const subject = cleanAttr(parsed.subject, [
+    'landscape', 'seascape', 'botanical', 'abstract',
+    'architecture', 'animal', 'figure', 'still life'
+  ]);
 
   // AI'ın seçtiği bölümü gerçek section ID'sine eşle.
   // Tam eşleşme olmazsa büyük/küçük harf ve boşluk toleranslı arama yapılır;
@@ -475,11 +585,18 @@ CRITICAL: No artist/brand names. Return ONLY raw JSON without markdown blocks.`;
     occasion,
     holiday,
     room,
+    primary_color: primaryColor,
+    secondary_color: secondaryColor,
+    orientation,
+    subject,
     shop_section_id: chosenSection ? chosenSection.shop_section_id : null,
     shop_section_title: chosenSection ? chosenSection.title : null,
     _meta: {
       model: successModel,
-      fallbackUsed: successModel !== queueToTry[0].model
+      fallbackUsed: successModel !== queueToTry[0].model,
+      reasoningSuppressed,
+      aiTagCount,
+      fallbackTagsUsed: Math.max(0, 13 - aiTagCount)
     }
   };
 }
