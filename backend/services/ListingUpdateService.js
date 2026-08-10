@@ -20,6 +20,7 @@ import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '
 import * as EtsyService from './EtsyService.js';
 import { generateSEO } from './KimiService.js';
 import { getMockupPool } from './MockupPool.js';
+import { orderMockupFiles } from './MockupOrder.js';
 import { buildInventoryPayload } from './listingShared.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,50 +28,6 @@ const PROJECT_ROOT = join(__dirname, '../..');
 
 // Etsy bir listing'de en fazla 20 görsel kabul ediyor
 const MAX_LISTING_IMAGES = 20;
-
-/**
- * Mockup klasöründeki dosyaları yükleme sırasına dizer.
- * ListingUploadService ile birebir aynı thumbnail mantığı: adı "thumb" ile
- * başlayan veya config'inde is_thumbnail işaretli şablonlardan biri rastgele
- * seçilip 1. sıraya (kapak görseli) konur.
- */
-function orderMockupFiles(files) {
-  const getTemplateInfo = (filename) => {
-    const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
-    const lastUnderscoreIdx = nameWithoutExt.lastIndexOf('_');
-    if (lastUnderscoreIdx === -1) return null;
-
-    let templateId = nameWithoutExt.substring(0, lastUnderscoreIdx);
-    if (templateId.startsWith('static_')) templateId = templateId.substring(7);
-
-    try {
-      const row = db.prepare('SELECT name, config FROM templates WHERE id = ?').get(templateId);
-      if (row) return { name: row.name, config: JSON.parse(row.config) };
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
-  const isThumb = (f) => {
-    const info = getTemplateInfo(f);
-    if (!info) return false;
-    const configIsThumb = info.config && (info.config.is_thumbnail === true || info.config.is_thumbnail === 'true');
-    const nameIsThumb = info.name && info.name.toLowerCase().startsWith('thumb');
-    return configIsThumb || nameIsThumb;
-  };
-
-  const thumbFiles = files.filter(isThumb);
-  const nonThumbFiles = files.filter(f => !isThumb(f));
-
-  if (thumbFiles.length === 0) return [...files];
-
-  const randomIndex = Math.floor(Math.random() * thumbFiles.length);
-  const primaryThumb = thumbFiles[randomIndex];
-  const remainingThumbs = thumbFiles.filter((_, idx) => idx !== randomIndex);
-
-  return [primaryThumb, ...nonThumbFiles, ...remainingThumbs];
-}
 
 /** Ürünün mockup klasörünü bulur (eski düzenlere de bakar). */
 function findMockupsDir(productId, shopId) {
@@ -280,7 +237,7 @@ export async function updateListingFromProduct(input) {
 
     if (files.length > 0) {
       const oldImages = await EtsyService.getListingImages(listingId);
-      const ordered = orderMockupFiles(files);
+      const ordered = orderMockupFiles(files, { shopId: activeShop.shop_id });
       const willUpload = ordered.slice(0, MAX_LISTING_IMAGES);
 
       // Kapak için yer aç: listing zaten doluysa bir eski görsel silinir

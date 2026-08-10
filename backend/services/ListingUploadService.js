@@ -13,6 +13,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
 import * as EtsyService from './EtsyService.js';
+import { orderMockupFiles } from './MockupOrder.js';
 import {
   STYLE_MAPPING,
   OCCASION_MAPPING,
@@ -275,66 +276,9 @@ export async function uploadProductToEtsy(input) {
     if (fs.existsSync(mockupsDir)) {
       const files = fs.readdirSync(mockupsDir).filter(f => f.toLowerCase().endsWith('.jpg') || f.toLowerCase().endsWith('.jpeg') || f.toLowerCase().endsWith('.png'));
       if (files.length > 0) {
-        const getTemplateInfo = (filename) => {
-          const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'));
-          const lastUnderscoreIdx = nameWithoutExt.lastIndexOf('_');
-          if (lastUnderscoreIdx === -1) return null;
-          
-          let templateId = nameWithoutExt.substring(0, lastUnderscoreIdx);
-          if (templateId.startsWith('static_')) {
-            templateId = templateId.substring(7);
-          }
-          
-          try {
-            const stmt = db.prepare('SELECT name, config FROM templates WHERE id = ?');
-            const row = stmt.get(templateId);
-            if (row) {
-              return {
-                name: row.name,
-                config: JSON.parse(row.config)
-              };
-            }
-            return null;
-          } catch (err) {
-            console.error("Failed to query template config from DB:", err.message);
-            return null;
-          }
-        };
-
-        // Group files by checking if their template config has is_thumbnail = true OR name starts with 'thumb' (case-insensitive)
-        const thumbFiles = files.filter(f => {
-          const info = getTemplateInfo(f);
-          if (!info) return false;
-          const configIsThumb = info.config && (info.config.is_thumbnail === true || info.config.is_thumbnail === 'true');
-          const nameIsThumb = info.name && info.name.toLowerCase().startsWith('thumb');
-          return configIsThumb || nameIsThumb;
-        });
-        const nonThumbFiles = files.filter(f => {
-          const info = getTemplateInfo(f);
-          if (!info) return true;
-          const configIsThumb = info.config && (info.config.is_thumbnail === true || info.config.is_thumbnail === 'true');
-          const nameIsThumb = info.name && info.name.toLowerCase().startsWith('thumb');
-          return !(configIsThumb || nameIsThumb);
-        });
-        
-        let orderedFiles = [];
-        if (thumbFiles.length > 0) {
-          // Select one random thumb file to be the primary thumbnail (rank = 1)
-          const randomIndex = Math.floor(Math.random() * thumbFiles.length);
-          const primaryThumb = thumbFiles[randomIndex];
-          
-          // The rest of the thumb files
-          const remainingThumbs = thumbFiles.filter((_, idx) => idx !== randomIndex);
-          
-          // Primary goes first, then non-thumb mockups, then remaining thumbs
-          orderedFiles = [primaryThumb, ...nonThumbFiles, ...remainingThumbs];
-          const primaryInfo = getTemplateInfo(primaryThumb);
-          const primaryName = primaryInfo ? primaryInfo.name : 'Unknown';
-          console.log(`[Thumbnail Selector] Selected ${primaryThumb} (Template: ${primaryName}) as primary thumbnail from ${thumbFiles.length} options.`);
-        } else {
-          orderedFiles = [...files];
-          console.log(`[Thumbnail Selector] No templates starting with "thumb" or marked as thumbnail found. Uploading in default order.`);
-        }
+        // Şablon Stüdyosu'ndaki oran bazlı dizilim ayarı (yoksa eski davranış)
+        const orderedFiles = orderMockupFiles(files, { shopId: product ? product.shop_id : activeShop.shop_id });
+        console.log(`[Mockup Order] Yükleme sırası: ${orderedFiles.join(' → ')}`);
 
         console.log(`Uploading ${orderedFiles.length} mockup images to Etsy for listing ${listing_id}...`);
         for (let i = 0; i < orderedFiles.length; i++) {

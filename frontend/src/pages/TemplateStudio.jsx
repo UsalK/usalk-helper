@@ -1,11 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle, 
-  Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square
+import {
+  Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle,
+  Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square,
+  GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Pin, Eye, ListOrdered
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
+
+// Bir oranın mockup dizilim ayarının varsayılanı (backend/services/MockupOrder.js ile aynı)
+const DEFAULT_ORDER = {
+  enabled: false,
+  thumbnailFirst: true,
+  mode: 'custom',
+  pinned: [],
+  restMode: 'random',
+  staticLast: true
+};
+
+const templateKey = (t) => (t.type === 'static' ? `static_${t.id}` : t.id);
+const isThumbTemplate = (t) => {
+  if (!t) return false;
+  const cfgThumb = t.config?.is_thumbnail === true || t.config?.is_thumbnail === 'true';
+  const nameThumb = (t.name || '').toLowerCase().startsWith('thumb');
+  return cfgThumb || nameThumb;
+};
 
 const FRAME_OPTIONS = [
   { id: 'stretched', name: 'Stretched Wood (Çerçevesiz)' },
@@ -239,7 +258,16 @@ export default function TemplateStudio() {
   const [libraryLoading, setLibraryLoading] = useState(false);
   
   // Static templates tab state
-  const [activeSubTab, setActiveSubTab] = useState('mockup'); // 'mockup' | 'static'
+  const [activeSubTab, setActiveSubTab] = useState('mockup'); // 'mockup' | 'static' | 'order'
+
+  // Mockup sıralama (dizilim) state'i
+  const [orderConfig, setOrderConfig] = useState({}); // { '2:3': {...}, ... }
+  const [orderRatio, setOrderRatio] = useState('2:3');
+  const [orderPreview, setOrderPreview] = useState([]);
+  const [orderPreviewLoading, setOrderPreviewLoading] = useState(false);
+  const [orderSaving, setOrderSaving] = useState(false);
+  const [orderDirty, setOrderDirty] = useState(false);
+  const [dragKey, setDragKey] = useState(null);
   const [staticName, setStaticName] = useState('');
   const [staticFile, setStaticFile] = useState(null);
   const [staticRatios, setStaticRatios] = useState(['2:3']);
@@ -338,6 +366,7 @@ export default function TemplateStudio() {
   useEffect(() => {
     fetchTemplates();
     fetchVariationProfiles();
+    fetchOrderConfig();
   }, []);
 
   // Keyboard navigation for selected handle (fine-tuning)
@@ -445,9 +474,124 @@ export default function TemplateStudio() {
     }
   };
 
+  const fetchOrderConfig = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/templates/mockup-order`);
+      setOrderConfig(res.data?.config || {});
+      setOrderDirty(false);
+    } catch (err) {
+      console.error('Mockup dizilim ayarı yüklenemedi:', err);
+    }
+  };
+
   const ratioPresets = variationProfiles.length > 0
     ? Array.from(new Set(variationProfiles.map(p => p.ratio)))
     : ['2:3', '3:2', '1:1', '12:7', '7:12', '12:5'];
+
+  // Seçili oran, mevcut oran listesinde yoksa ilk orana düş
+  useEffect(() => {
+    if (ratioPresets.length > 0 && !ratioPresets.includes(orderRatio)) {
+      setOrderRatio(ratioPresets[0]);
+    }
+  }, [variationProfiles]);
+
+  /* ---------------- Mockup dizilim yardımcıları ---------------- */
+
+  const currentOrder = { ...DEFAULT_ORDER, ...(orderConfig[orderRatio] || {}) };
+
+  // Bu orana ait şablonlar (mockup + statik)
+  const orderTemplates = templates.filter(t => {
+    const ratios = (t.config?.compatible_ratios && t.config.compatible_ratios.length > 0)
+      ? t.config.compatible_ratios
+      : ['2:3'];
+    return ratios.includes(orderRatio);
+  });
+  const orderTemplateByKey = new Map(orderTemplates.map(t => [templateKey(t), t]));
+
+  // Sabitlenmiş sıra: sadece bu oranda gerçekten var olan şablonlar
+  const pinnedKeys = currentOrder.pinned.filter(k => orderTemplateByKey.has(k));
+  // Thumbnail kuralı açıkken sabitlenen ilk thumbnail kapak (1. sıra) olur
+  const coverKey = currentOrder.thumbnailFirst
+    ? pinnedKeys.find(k => isThumbTemplate(orderTemplateByKey.get(k))) || null
+    : null;
+  const pinnedRows = pinnedKeys.filter(k => k !== coverKey);
+  const poolTemplates = orderTemplates.filter(t => !pinnedKeys.includes(templateKey(t)));
+  const thumbCount = orderTemplates.filter(isThumbTemplate).length;
+
+  const patchOrder = (patch) => {
+    setOrderConfig(prev => ({
+      ...prev,
+      [orderRatio]: { ...DEFAULT_ORDER, ...(prev[orderRatio] || {}), ...patch }
+    }));
+    setOrderDirty(true);
+  };
+
+  // Kapak her zaman dizinin başında tutulur; backend de ilk thumbnail'ı kapak sayar
+  const setPinnedRows = (rows) => patchOrder({ pinned: coverKey ? [coverKey, ...rows] : rows });
+
+  const addPinned = (key) => patchOrder({ enabled: true, pinned: [...pinnedKeys, key] });
+  const removePinned = (key) => patchOrder({ pinned: pinnedKeys.filter(k => k !== key) });
+
+  const movePinned = (key, direction) => {
+    const idx = pinnedRows.indexOf(key);
+    const target = idx + direction;
+    if (idx === -1 || target < 0 || target >= pinnedRows.length) return;
+    const rows = [...pinnedRows];
+    [rows[idx], rows[target]] = [rows[target], rows[idx]];
+    setPinnedRows(rows);
+  };
+
+  const handleDropOnRow = (targetKey) => {
+    if (!dragKey || dragKey === targetKey) return;
+    const rows = pinnedRows.filter(k => k !== dragKey);
+    const targetIdx = rows.indexOf(targetKey);
+    rows.splice(targetIdx === -1 ? rows.length : targetIdx, 0, dragKey);
+    if (!pinnedKeys.includes(dragKey)) patchOrder({ enabled: true });
+    setPinnedRows(rows);
+    setDragKey(null);
+  };
+
+  const handleDropOnList = () => {
+    if (!dragKey || pinnedKeys.includes(dragKey)) return;
+    addPinned(dragKey);
+    setDragKey(null);
+  };
+
+  const handleDropOnPool = () => {
+    if (!dragKey || !pinnedKeys.includes(dragKey)) return;
+    removePinned(dragKey);
+    setDragKey(null);
+  };
+
+  const runOrderPreview = async () => {
+    setOrderPreviewLoading(true);
+    try {
+      const res = await axios.post(`${API_BASE}/templates/mockup-order/preview`, {
+        ratio: orderRatio,
+        order: currentOrder
+      });
+      setOrderPreview(res.data?.items || []);
+    } catch (err) {
+      console.error('Dizilim önizlemesi alınamadı:', err);
+      alert('Dizilim önizlemesi alınamadı.');
+    } finally {
+      setOrderPreviewLoading(false);
+    }
+  };
+
+  const saveOrderConfig = async () => {
+    setOrderSaving(true);
+    try {
+      // Tüm oranlar tek seferde kaydedilir; oran değiştirince veri kaybolmaz
+      await axios.put(`${API_BASE}/templates/mockup-order`, { config: orderConfig });
+      setOrderDirty(false);
+    } catch (err) {
+      console.error('Dizilim kaydedilemedi:', err);
+      alert('Dizilim kaydedilirken hata oluştu.');
+    } finally {
+      setOrderSaving(false);
+    }
+  };
 
   const fetchLibraryTemplates = async () => {
     setLibraryLoading(true);
@@ -1197,6 +1341,393 @@ export default function TemplateStudio() {
     );
   };
 
+  const renderOrderSection = () => {
+    const rowCard = (key, index, opts = {}) => {
+      const tpl = orderTemplateByKey.get(key);
+      if (!tpl) return null;
+      const isThumb = isThumbTemplate(tpl);
+
+      return (
+        <div
+          key={key}
+          draggable
+          onDragStart={() => setDragKey(key)}
+          onDragEnd={() => setDragKey(null)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.stopPropagation(); handleDropOnRow(key); }}
+          className={`flex items-center space-x-3 bg-[#151f32] border rounded-2xl p-2.5 transition-colors cursor-grab active:cursor-grabbing ${
+            dragKey === key ? 'border-amber-500/60 opacity-60' : 'border-[#1e293b] hover:border-slate-700'
+          }`}
+        >
+          <GripVertical className="w-4 h-4 text-slate-600 shrink-0" />
+          <span className="w-6 h-6 shrink-0 rounded-lg bg-amber-500/15 text-amber-500 text-[10px] font-bold flex items-center justify-center">
+            {index}
+          </span>
+          <div className="w-12 h-9 shrink-0 rounded-lg overflow-hidden bg-slate-950 border border-[#1e293b]">
+            <img src={`http://localhost:3001/${tpl.background_path}`} alt="" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="block text-[11px] font-semibold text-white truncate">{tpl.name}</span>
+            <div className="flex items-center space-x-1.5 mt-0.5">
+              {tpl.type === 'static' && (
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400">Statik</span>
+              )}
+              {isThumb && (
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Thumbnail</span>
+              )}
+            </div>
+          </div>
+          {!opts.locked && (
+            <div className="flex items-center space-x-0.5 shrink-0">
+              <button type="button" onClick={() => movePinned(key, -1)} className="p-1 text-slate-500 hover:text-white transition-colors">
+                <ArrowUp className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={() => movePinned(key, 1)} className="p-1 text-slate-500 hover:text-white transition-colors">
+                <ArrowDown className="w-3.5 h-3.5" />
+              </button>
+              <button type="button" onClick={() => removePinned(key)} className="p-1 text-rose-500 hover:text-rose-400 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          {opts.locked && <Lock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+        </div>
+      );
+    };
+
+    const toggle = (label, hint, checked, onChange) => (
+      <div className="flex items-center justify-between p-3 bg-[#151f32] border border-[#1e293b] rounded-2xl">
+        <div className="space-y-0.5 pr-3">
+          <span className="text-[11px] font-semibold text-white">{label}</span>
+          <p className="text-[9px] text-slate-500 leading-relaxed">{hint}</p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+          <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
+          <div className="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+        </label>
+      </div>
+    );
+
+    return (
+      <div className="space-y-6 animate-fade-in text-slate-100">
+        {/* Başlık */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-white">Mockup Sıralaması</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Her oran için görsellerin Etsy/Shopify'a hangi sırayla yükleneceğini belirleyin. Ürün yüklemenize gerek yok.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {orderDirty && (
+              <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                Kaydedilmemiş değişiklik
+              </span>
+            )}
+            <button
+              onClick={saveOrderConfig}
+              disabled={orderSaving}
+              className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs shadow-lg shadow-amber-500/10 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              <span>{orderSaving ? 'Kaydediliyor...' : 'Dizilimi Kaydet'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Oran seçimi */}
+        <div className="flex flex-wrap gap-1 bg-[#0e1726] border border-[#1e293b] p-1 rounded-xl w-fit">
+          {ratioPresets.map(ratio => {
+            const cfg = orderConfig[ratio];
+            return (
+              <button
+                key={ratio}
+                onClick={() => setOrderRatio(ratio)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                  orderRatio === ratio
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>{ratio}</span>
+                {cfg?.enabled && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${orderRatio === ratio ? 'bg-slate-950' : 'bg-emerald-500'}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Ayarlar */}
+          <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-5 space-y-3">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+              <Sliders className="w-4 h-4 text-amber-500" />
+              <span>Kurallar</span>
+            </h4>
+
+            {toggle(
+              'Özel dizilimi kullan',
+              'Kapalıyken eski davranış geçerlidir: rastgele bir thumbnail kapak olur, kalanlar klasör sırasıyla yüklenir.',
+              currentOrder.enabled,
+              (v) => patchOrder({ enabled: v })
+            )}
+
+            {toggle(
+              'İlk görsel her zaman thumbnail',
+              `Açıkken 1. sıra kilitlidir ve thumbnail işaretli şablonlardan gelir (${thumbCount} aday). Kapatırsanız ilk görseli de kendiniz seçersiniz.`,
+              currentOrder.thumbnailFirst,
+              (v) => patchOrder({ thumbnailFirst: v })
+            )}
+
+            {toggle(
+              'Statik görseller en sonda',
+              'Ölçü tablosu gibi bilgilendirme görselleri sabitlemediğiniz sürece galerinin sonuna alınır.',
+              currentOrder.staticLast,
+              (v) => patchOrder({ staticLast: v })
+            )}
+
+            <div className="p-3 bg-[#151f32] border border-[#1e293b] rounded-2xl space-y-2">
+              <span className="text-[11px] font-semibold text-white block">Dizilim modu</span>
+              {[
+                { id: 'custom', label: 'Sabit sıra + kalanlar', hint: 'Belirlediğiniz şablonlar sırayla, gerisi aşağıdaki kurala göre.' },
+                { id: 'random', label: 'Tamamen rastgele', hint: 'Sabit sıra yok sayılır, tüm mockuplar her üründe karışır.' }
+              ].map(opt => (
+                <label key={opt.id} className="flex items-start space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="order-mode"
+                    checked={currentOrder.mode === opt.id}
+                    onChange={() => patchOrder({ mode: opt.id })}
+                    className="mt-0.5 accent-amber-500"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="text-[10px] font-semibold text-slate-200 block">{opt.label}</span>
+                    <span className="text-[9px] text-slate-500 block leading-relaxed">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className={`p-3 bg-[#151f32] border border-[#1e293b] rounded-2xl space-y-2 ${currentOrder.mode === 'random' ? 'opacity-40 pointer-events-none' : ''}`}>
+              <span className="text-[11px] font-semibold text-white block">Sabit sıradan sonrası</span>
+              {[
+                { id: 'random', label: 'Rastgele karışsın', hint: 'Her üründe farklı sıra — listelerin tekdüze görünmesini engeller.' },
+                { id: 'sequential', label: 'Klasör sırasıyla', hint: 'Her üründe aynı sabit sıra.' }
+              ].map(opt => (
+                <label key={opt.id} className="flex items-start space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="order-rest"
+                    checked={currentOrder.restMode === opt.id}
+                    onChange={() => patchOrder({ restMode: opt.id })}
+                    className="mt-0.5 accent-amber-500"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="text-[10px] font-semibold text-slate-200 block">{opt.label}</span>
+                    <span className="text-[9px] text-slate-500 block leading-relaxed">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex items-start space-x-2 p-3 bg-slate-950/50 border border-[#1e293b] rounded-2xl">
+              <HelpCircle className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+              <p className="text-[9px] text-slate-500 leading-relaxed">
+                Bu oran için {orderTemplates.length} şablon üretiliyor. Sabit sıradaki {pinnedRows.length + (coverKey ? 1 : 0)} görsel
+                her üründe aynı konumda, kalan {Math.max(0, orderTemplates.length - pinnedRows.length - (coverKey ? 1 : 0))} görsel
+                {currentOrder.mode === 'random' || currentOrder.restMode === 'random' ? ' rastgele' : ' sabit'} sırayla yüklenir.
+              </p>
+            </div>
+          </div>
+
+          {/* Sabit sıra */}
+          <div
+            className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-5 space-y-3"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDropOnList}
+          >
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center space-x-2">
+                <ListOrdered className="w-4 h-4 text-amber-500" />
+                <span>Sabit Sıra</span>
+              </span>
+              {pinnedKeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => patchOrder({ pinned: [] })}
+                  className="text-[9px] font-bold text-slate-500 hover:text-rose-400 normal-case tracking-normal"
+                >
+                  Temizle
+                </button>
+              )}
+            </h4>
+
+            <div className={`space-y-2 ${currentOrder.mode === 'random' ? 'opacity-40 pointer-events-none' : ''}`}>
+              {/* 1. sıra: thumbnail kuralı */}
+              {currentOrder.thumbnailFirst && (
+                coverKey ? (
+                  <div className="relative">
+                    {rowCard(coverKey, 1, { locked: true })}
+                    <button
+                      type="button"
+                      onClick={() => removePinned(coverKey)}
+                      className="absolute -top-1.5 -right-1.5 bg-slate-800 border border-[#1e293b] rounded-full p-0.5 text-slate-400 hover:text-rose-400"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-3 bg-emerald-500/5 border border-dashed border-emerald-500/30 rounded-2xl p-2.5">
+                    <Lock className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span className="w-6 h-6 shrink-0 rounded-lg bg-emerald-500/15 text-emerald-400 text-[10px] font-bold flex items-center justify-center">1</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-[11px] font-semibold text-emerald-400">Kapak: Thumbnail (otomatik)</span>
+                      <span className="block text-[9px] text-slate-500">
+                        {thumbCount > 0
+                          ? `${thumbCount} thumbnail şablonundan rastgele biri. Belirli birini istiyorsanız havuzdan sabitleyin.`
+                          : 'Bu oranda thumbnail işaretli şablon yok — 1. sıra sabit sıranın ilk görseli olur.'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              )}
+
+              {pinnedRows.map((key, idx) => rowCard(key, idx + 1 + (currentOrder.thumbnailFirst ? 1 : 0)))}
+
+              {pinnedRows.length === 0 && (
+                <div className="border border-dashed border-[#1e293b] rounded-2xl py-8 text-center">
+                  <Pin className="w-5 h-5 text-slate-600 mx-auto mb-2" />
+                  <p className="text-[10px] text-slate-500 px-4">
+                    Havuzdan şablon sürükleyin veya "+" ile ekleyin. Buraya koyduklarınız her üründe aynı konumda kalır.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {currentOrder.mode === 'random' && (
+              <p className="text-[9px] text-amber-500/80 text-center">Tamamen rastgele modda sabit sıra kullanılmaz.</p>
+            )}
+          </div>
+
+          {/* Havuz */}
+          <div
+            className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-5 space-y-3"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDropOnPool}
+          >
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center space-x-2">
+                <Layers className="w-4 h-4 text-amber-500" />
+                <span>Havuz</span>
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 normal-case tracking-normal">{poolTemplates.length} şablon</span>
+            </h4>
+
+            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+              {poolTemplates.map(tpl => {
+                const key = templateKey(tpl);
+                const isThumb = isThumbTemplate(tpl);
+                return (
+                  <div
+                    key={key}
+                    draggable
+                    onDragStart={() => setDragKey(key)}
+                    onDragEnd={() => setDragKey(null)}
+                    className={`flex items-center space-x-3 bg-[#151f32] border rounded-2xl p-2.5 transition-colors cursor-grab active:cursor-grabbing ${
+                      dragKey === key ? 'border-amber-500/60 opacity-60' : 'border-[#1e293b] hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="w-12 h-9 shrink-0 rounded-lg overflow-hidden bg-slate-950 border border-[#1e293b]">
+                      <img src={`http://localhost:3001/${tpl.background_path}`} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-[11px] font-semibold text-white truncate">{tpl.name}</span>
+                      <div className="flex items-center space-x-1.5 mt-0.5">
+                        {tpl.type === 'static' && (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400">Statik</span>
+                        )}
+                        {isThumb && (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Thumbnail</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addPinned(key)}
+                      title={isThumb && currentOrder.thumbnailFirst ? 'Kapak olarak sabitle' : 'Sabit sıraya ekle'}
+                      className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-colors shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {poolTemplates.length === 0 && (
+                <div className="border border-dashed border-[#1e293b] rounded-2xl py-8 text-center text-[10px] text-slate-500 px-4">
+                  {orderTemplates.length === 0
+                    ? 'Bu oran için uyumlu şablon bulunmuyor.'
+                    : 'Tüm şablonlar sabit sırada. Kaldırmak için buraya sürükleyin.'}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Simülasyon */}
+        <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+                <Eye className="w-4 h-4 text-amber-500" />
+                <span>Simülasyon</span>
+              </h4>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Yükleme sırasını gerçek algoritmayla hesaplar. Rastgelelik varsa her denemede farklı çıkar.
+              </p>
+            </div>
+            <button
+              onClick={runOrderPreview}
+              disabled={orderPreviewLoading || orderTemplates.length === 0}
+              className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-bold py-2.5 px-4 rounded-xl border border-[#334155] text-xs transition-colors"
+            >
+              <Shuffle className={`w-4 h-4 text-amber-500 ${orderPreviewLoading ? 'animate-spin' : ''}`} />
+              <span>{orderPreview.length > 0 ? 'Yeniden Hesapla' : 'Sırayı Göster'}</span>
+            </button>
+          </div>
+
+          {orderPreview.length > 0 ? (
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-3">
+              {orderPreview.map((item, idx) => (
+                <div key={`${item.key}-${idx}`} className="space-y-1.5">
+                  <div className={`relative aspect-square rounded-xl overflow-hidden bg-slate-950 border ${
+                    idx === 0 ? 'border-emerald-500/60' : 'border-[#1e293b]'
+                  }`}>
+                    <img src={`http://localhost:3001/${item.background_path}`} alt="" className="w-full h-full object-cover" />
+                    <span className={`absolute top-1 left-1 w-5 h-5 rounded-md text-[9px] font-bold flex items-center justify-center ${
+                      idx === 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950/80 text-slate-200'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    {item.is_thumbnail && (
+                      <span className="absolute bottom-1 right-1 text-[7px] font-bold px-1 py-0.5 rounded bg-emerald-500/80 text-white">TH</span>
+                    )}
+                  </div>
+                  <span className="block text-[9px] text-slate-400 truncate">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed border-[#1e293b] rounded-2xl py-8 text-center text-[10px] text-slate-500">
+              Henüz hesaplanmadı.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="max-w-6xl mx-auto py-8 px-4 animate-fade-in">
@@ -1250,9 +1781,21 @@ export default function TemplateStudio() {
             >
               Statik Görseller (Eklentiler)
             </button>
+            <button
+              onClick={() => setActiveSubTab('order')}
+              className={`pb-1 text-sm font-bold border-b-2 transition-all ${
+                activeSubTab === 'order'
+                  ? 'border-amber-500 text-amber-500'
+                  : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              Mockup Sıralaması
+            </button>
           </div>
 
-          {activeSubTab === 'static' ? (
+          {activeSubTab === 'order' ? (
+            renderOrderSection()
+          ) : activeSubTab === 'static' ? (
             renderStaticSection()
           ) : (
             <>

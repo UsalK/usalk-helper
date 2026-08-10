@@ -6,6 +6,14 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import db, { getActiveShop, getShopStorageName } from '../db/db.js';
 import { exportTemplatesToSeed } from '../services/TemplateSync.js';
+import {
+  getMockupOrderConfig,
+  saveRatioOrder,
+  saveMockupOrderConfig,
+  previewRatioOrder,
+  invalidateTemplateCache,
+  DEFAULT_RATIO_ORDER
+} from '../services/MockupOrder.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -61,8 +69,59 @@ router.post('/', upload.single('background'), (req, res, next) => {
     );
     stmt.run(id, activeShop.shop_id, name, type, config, background_path);
     exportTemplatesToSeed();
+    invalidateTemplateCache();
     
     res.json({ id, shop_id: activeShop.shop_id, name, type, config: JSON.parse(config), background_path });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ---------------------------------------------------------------- */
+/* Mockup dizilim ayarları (Şablon Stüdyosu → Mockup Sıralaması)      */
+/* ---------------------------------------------------------------- */
+
+// Tüm oranların dizilim ayarı
+router.get('/mockup-order', (req, res, next) => {
+  try {
+    res.json({
+      config: getMockupOrderConfig(),
+      defaults: DEFAULT_RATIO_ORDER
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Dizilim ayarını kaydet: tek oran ({ ratio, order }) veya tümü ({ config })
+router.put('/mockup-order', (req, res, next) => {
+  try {
+    const { ratio, order, config } = req.body || {};
+
+    if (ratio && order) {
+      const saved = saveRatioOrder(ratio, order);
+      return res.json({ success: true, ratio, order: saved });
+    }
+
+    if (config && typeof config === 'object') {
+      const saved = saveMockupOrderConfig(config);
+      return res.json({ success: true, config: saved });
+    }
+
+    res.status(400).json({ error: 'ratio + order veya config gövdesi gereklidir.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Bir oranın dizilimini gerçek algoritmayla önizler (ürün yüklemeye gerek yok)
+router.post('/mockup-order/preview', (req, res, next) => {
+  try {
+    const { ratio, order } = req.body || {};
+    if (!ratio) return res.status(400).json({ error: 'ratio gereklidir.' });
+
+    const items = previewRatioOrder(ratio, order || null);
+    res.json({ ratio, count: items.length, items });
   } catch (err) {
     next(err);
   }
@@ -88,6 +147,7 @@ router.delete('/:id', (req, res, next) => {
     const stmt = db.prepare('DELETE FROM templates WHERE id = ? AND shop_id = ?');
     stmt.run(id, activeShop.shop_id);
     exportTemplatesToSeed();
+    invalidateTemplateCache();
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -168,6 +228,7 @@ router.post('/copy', (req, res, next) => {
       }
       db.exec('COMMIT');
       exportTemplatesToSeed();
+    invalidateTemplateCache();
     } catch (txErr) {
       db.exec('ROLLBACK');
       throw txErr;
@@ -189,6 +250,7 @@ router.patch('/:id', (req, res, next) => {
     const stmt = db.prepare('UPDATE templates SET config = ? WHERE id = ? AND shop_id = ?');
     stmt.run(JSON.stringify(config), id, activeShop.shop_id);
     exportTemplatesToSeed();
+    invalidateTemplateCache();
     
     res.json({ success: true });
   } catch (err) {

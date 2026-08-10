@@ -4,6 +4,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import db, { getRawActiveShopify } from '../db/db.js';
 import { testConnection, getCollections, createProduct, createCollection } from '../services/ShopifyService.js';
+import { orderMockupFiles } from '../services/MockupOrder.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -353,7 +354,8 @@ router.post('/publish', async (req, res, next) => {
         const lower = f.toLowerCase();
         return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
       });
-      files.forEach(f => {
+      // Şablon Stüdyosu'ndaki oran bazlı dizilim (kapak görseli + galeri sırası)
+      orderMockupFiles(files).forEach(f => {
         imagePaths.push(join(mockupsDir, f));
       });
     }
