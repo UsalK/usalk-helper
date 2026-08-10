@@ -73,7 +73,7 @@ export default function Sidebar({
         </div>
         <div>
           <h1 className="font-bold text-lg leading-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent font-outfit">
-            Usalk Art
+            Usalk Helper
           </h1>
           <span className="text-[9px] text-slate-500 font-semibold tracking-wider uppercase">
             {appMode === 'etsy' ? 'Etsy SEO & Mockup' : 'Shopify Theme & CMS'}
