@@ -164,8 +164,14 @@ router.get('/status', async (req, res, next) => {
     }
 
     // Adım kilidi: her adım kendinden öncekiler bitmeden açılmaz.
+    //
+    // Bağlı bir mağaza varsa hosts adımı ONAY KUTUSU olmadan da tamamlanmış
+    // sayılır: OAuth callback'i dönebilmiş olması, alan adının 127.0.0.1'e
+    // çözüldüğünün ve callback'in Etsy app'inde kayıtlı olduğunun kanıtı.
+    // Aksi halde zaten çalışan bir kurulum, sihirbazı ilk kez gördüğünde
+    // .env'inde hazır duran bilgileri yeniden girmek zorunda kalırdı.
     status.steps = {
-      hosts: status.hostsConfirmed && status.etsyCredentials,
+      hosts: (status.hostsConfirmed || status.shopConnected) && status.etsyCredentials,
       shop: status.shopConnected,
       profiles: Boolean(status.defaults.default_shipping_profile_id && status.defaults.default_return_policy_id),
       ai: status.openRouterKey

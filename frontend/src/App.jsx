@@ -74,7 +74,9 @@ export default function App() {
   const checkSetupStatus = async () => {
     try {
       const res = await axios.get(`${API_BASE}/setup/status`);
-      setSetupCompleted(Boolean(res.data.completed));
+      // allDone: her adim zaten yapilandirilmis demek. Calisan bir kurulumu
+      // sirf 'tamamlandi' bayragi yok diye sihirbaza kilitlemiyoruz.
+      setSetupCompleted(Boolean(res.data.completed || res.data.allDone));
     } catch (err) {
       // Durum okunamazsa kullaniciyi sihirbaza hapsetmeyelim.
       console.error('Kurulum durumu alinamadi:', err);
