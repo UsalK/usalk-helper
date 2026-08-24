@@ -16,6 +16,7 @@ import mockupRouter from './routes/mockup.js';
 import shopifyRouter from './routes/shopify.js';
 import storageRouter from './routes/storage.js';
 import bulkJobsRouter from './routes/bulkjobs.js';
+import setupRouter from './routes/setup.js';
 import { resumePendingJobs } from './services/BulkJobService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +56,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Register routes
+app.use('/api/setup', setupRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/variations', variationsRouter);
 app.use('/api/settings', settingsRouter);

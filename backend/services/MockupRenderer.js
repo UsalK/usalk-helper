@@ -17,7 +17,7 @@ import { createCanvas, loadImage as loadCanvasImage } from '@napi-rs/canvas';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import db, { getProductStorageFolder } from '../db/db.js';
+import db, { getProductStorageFolder, DISABLED_PROFILE_IDS, isSetProfileId } from '../db/db.js';
 import { warpImageFast } from './warpFast.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -115,14 +115,31 @@ async function loadImage(relPath, { cache = false } = {}) {
   return out;
 }
 
-const parseRatio = (ratioStr) => {
-  if (!ratioStr) return 1;
-  const parts = ratioStr.split(':');
+/**
+ * Oran anahtarını panel oranı + panel sayısına ayırır.
+ * '2:3'    → { ratio: 0.667, panelCount: 1 }
+ * '1:2x2'  → { ratio: 0.5,   panelCount: 2 }   (her paneli 1:2 olan ikili set)
+ */
+const parseRatioKey = (ratioStr) => {
+  if (!ratioStr) return { ratio: 1, panelCount: 1 };
+  const [base, countPart] = String(ratioStr).split('x');
+  const panelCount = countPart ? Math.max(1, parseInt(countPart, 10) || 1) : 1;
+  const parts = base.split(':');
   if (parts.length === 2) {
-    return Number(parts[0]) / Number(parts[1]);
+    const w = Number(parts[0]);
+    const h = Number(parts[1]);
+    if (Number.isFinite(w) && Number.isFinite(h) && h !== 0) {
+      return { ratio: w / h, panelCount };
+    }
   }
-  return 1;
+  return { ratio: 1, panelCount };
 };
+
+/** Bir oran anahtarının tek panel en/boy oranı. */
+const parseRatio = (ratioStr) => parseRatioKey(ratioStr).ratio;
+
+/** Oran anahtarı çok panelli bir seti mi tanımlıyor? */
+const isSetRatioKey = (ratioStr) => parseRatioKey(ratioStr).panelCount > 1;
 
 const getLockedPlacement = (px, py, pw, ph, targetRatio) => {
   const currentRatio = pw / ph;
@@ -414,6 +431,51 @@ const drawCoverImage = (ctx, img, x, y, w, h) => {
   ctx.drawImage(srcImage, sx, sy, sw, sh, x, y, w, h);
 };
 
+const DEFAULT_PLACEMENT = { x: 0.25, y: 0.25, width: 0.5, height: 0.5 };
+const DEFAULT_CORNERS = {
+  tl: { x: 0.25, y: 0.25 }, tr: { x: 0.75, y: 0.25 },
+  br: { x: 0.75, y: 0.75 }, bl: { x: 0.25, y: 0.75 }
+};
+
+/**
+ * Şablonun panel yerleşimlerini döner.
+ *
+ * Set of 2 gibi çok panelli şablonlar config.slots dizisini kullanır
+ * ([{ placement }, { placement }] ya da [{ corners }, { corners }]).
+ * Tek panelli klasik şablonlarda config.placement / config.corners okunur,
+ * yani eski şablonlar hiç değişmeden çalışmaya devam eder.
+ */
+function getTemplateSlots(config) {
+  if (Array.isArray(config.slots) && config.slots.length > 0) return config.slots;
+  return [{ placement: config.placement, corners: config.corners }];
+}
+
+/**
+ * Set şablonlarında her panele hangi görselin gireceğini belirler.
+ *   'split'     → tek görsel panel sayısı kadar dikey dilime bölünür
+ *                 (soldaki dilim sol panele, sağdaki sağ panele)
+ *   'duplicate' → aynı görsel her panelde tekrarlanır
+ */
+function buildPanelSources(img, count, mode) {
+  if (count <= 1) return [img];
+  if (mode === 'duplicate') return new Array(count).fill(img);
+
+  const sliceW = Math.floor(img.width / count);
+  if (sliceW < 1) return new Array(count).fill(img);
+
+  const sources = [];
+  for (let i = 0; i < count; i++) {
+    const w = (i === count - 1) ? (img.width - sliceW * i) : sliceW;
+    const slice = createCanvas(w, img.height);
+    const sctx = slice.getContext('2d');
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(img, sliceW * i, 0, w, img.height, 0, 0, w, img.height);
+    sources.push(slice);
+  }
+  return sources;
+}
+
 /** Mockup'ı /api/mockup/save ile aynı yol mantığıyla diske yazar. */
 function saveMockupToDisk(productId, templateId, ratio, buffer) {
   const subPath = getProductStorageFolder(productId);
@@ -515,14 +577,13 @@ export async function generateMockupsForProduct(product, options = {}) {
       } catch {
         continue;
       }
-      const c = tpl.config.corners || {
-        tl: { x: 0.25, y: 0.25 }, tr: { x: 0.75, y: 0.25 },
-        br: { x: 0.75, y: 0.75 }, bl: { x: 0.25, y: 0.75 }
-      };
-      const xs = [c.tl.x, c.tr.x, c.br.x, c.bl.x].map(v => v * bg.width);
-      const ys = [c.tl.y, c.tr.y, c.br.y, c.bl.y].map(v => v * bg.height);
-      maxQuadW = Math.max(maxQuadW, Math.ceil(Math.max(...xs) - Math.min(...xs)));
-      maxQuadH = Math.max(maxQuadH, Math.ceil(Math.max(...ys) - Math.min(...ys)));
+      for (const slot of getTemplateSlots(tpl.config)) {
+        const c = slot.corners || DEFAULT_CORNERS;
+        const xs = [c.tl.x, c.tr.x, c.br.x, c.bl.x].map(v => v * bg.width);
+        const ys = [c.tl.y, c.tr.y, c.br.y, c.bl.y].map(v => v * bg.height);
+        maxQuadW = Math.max(maxQuadW, Math.ceil(Math.max(...xs) - Math.min(...xs)));
+        maxQuadH = Math.max(maxQuadH, Math.ceil(Math.max(...ys) - Math.min(...ys)));
+      }
     }
 
     const sharedPreScale = buildSharedPreScale(productImg, maxQuadW, maxQuadH);
@@ -542,6 +603,13 @@ export async function generateMockupsForProduct(product, options = {}) {
       const ratios = (tpl.config.compatible_ratios && tpl.config.compatible_ratios.length > 0)
         ? tpl.config.compatible_ratios
         : ['2:3'];
+
+      // Panel yerlesimleri ve her panele girecek gorsel. Tek panelli sablonlarda
+      // tek elemanli bir dizi oldugu icin akis eskisiyle birebir ayni kalir.
+      const slots = getTemplateSlots(tpl.config);
+      const setSource = tpl.config.set_source === 'duplicate' ? 'duplicate' : 'split';
+      const flatSources = buildPanelSources(productImg, slots.length, setSource);
+      const warpSources = buildPanelSources(sharedPreScale, slots.length, setSource);
 
       for (const ratio of ratios) {
         if (profile && ratio !== profile.ratio) continue;
@@ -566,72 +634,66 @@ export async function generateMockupsForProduct(product, options = {}) {
         ctx.drawImage(bgImg, 0, 0, W, H);
         add('bgDraw', tBg);
 
+        // Oran anahtari '1:2x2' gibi olabilir; kilitlenecek oran tek panelinkidir.
+        const targetRatioVal = parseRatio(ratio);
+
         if (tpl.type === 'flat') {
           const tFlat = tick();
           const editorWidth = tpl.config.editorWidth || 800;
           const scaleFactor = W / editorWidth;
-          const placement = tpl.config.placement || { x: 0.25, y: 0.25, width: 0.5, height: 0.5 };
-          const px = placement.x * W;
-          const py = placement.y * H;
-          const pw = placement.width * W;
-          const ph = placement.height * H;
-
-          const targetRatioVal = parseRatio(ratio);
-          const { x: finalX, y: finalY, width: finalW, height: finalH } =
-            getLockedPlacement(px, py, pw, ph, targetRatioVal);
-
           const shadow = tpl.config.shadow || { enabled: false };
-          if (shadow.enabled) {
-            ctx.save();
-            ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
-            ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
-            const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
-            if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
-            if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
-            if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
-            if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
-
-            const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-            const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
-            ctx.restore();
-          }
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(finalX, finalY, finalW, finalH);
-          ctx.clip();
-          drawCoverImage(ctx, productImg, finalX, finalY, finalW, finalH);
-          ctx.restore();
-
           const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-          if (frame.style !== 'stretched') {
-            const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
-            drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
-          }
+
+          slots.forEach((slot, slotIdx) => {
+            const placement = slot.placement || DEFAULT_PLACEMENT;
+            const px = placement.x * W;
+            const py = placement.y * H;
+            const pw = placement.width * W;
+            const ph = placement.height * H;
+
+            const { x: finalX, y: finalY, width: finalW, height: finalH } =
+              getLockedPlacement(px, py, pw, ph, targetRatioVal);
+
+            if (shadow.enabled) {
+              ctx.save();
+              ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
+              ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
+              const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
+              if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
+              if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
+              if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
+              if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
+
+              const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
+              ctx.restore();
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(finalX, finalY, finalW, finalH);
+            ctx.clip();
+            drawCoverImage(ctx, flatSources[slotIdx] || productImg, finalX, finalY, finalW, finalH);
+            ctx.restore();
+
+            if (frame.style !== 'stretched') {
+              const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
+              drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
+            }
+          });
           add('flat', tFlat);
         } else {
-          const corners = tpl.config.corners || {
-            tl: { x: 0.25, y: 0.25 },
-            tr: { x: 0.75, y: 0.25 },
-            br: { x: 0.75, y: 0.75 },
-            bl: { x: 0.25, y: 0.75 }
-          };
-          const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
-          const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
-          const br = { x: corners.br.x * W, y: corners.br.y * H };
-          const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
-
-          const xs = [tl.x, tr.x, br.x, bl.x];
-          const ys = [tl.y, tr.y, br.y, bl.y];
-          const minX = Math.min(...xs);
-          const maxX = Math.max(...xs);
-          const minY = Math.min(...ys);
-          const maxY = Math.max(...ys);
-          // Tüm perspektif şablonlar aynı ön-ölçeği paylaşır (yukarıda bir kez üretildi)
+          // Tum perspektif sablonlar ayni on-olcegi paylasir (yukarida bir kez uretildi)
           const tWarp = tick();
-          warpImageFast(ctx, sharedPreScale, [tl, tr, br, bl]);
+          slots.forEach((slot, slotIdx) => {
+            const corners = slot.corners || DEFAULT_CORNERS;
+            const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
+            const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
+            const br = { x: corners.br.x * W, y: corners.br.y * H };
+            const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
+            warpImageFast(ctx, warpSources[slotIdx] || sharedPreScale, [tl, tr, br, bl]);
+          });
           add('warp', tWarp);
         }
 
@@ -693,7 +755,11 @@ export async function matchProfileForImage(imageRelPath, shopId) {
   const img = await loadImage(imageRelPath);
   const imgRatio = img.width / img.height;
 
-  const profiles = db.prepare('SELECT id, ratio FROM variation_profiles WHERE shop_id = ?').all(shopId);
+  // Set profilleri (ikili panel vb.) otomatik eşleştirmeye girmez; oranları tek
+  // panelin oranıdır ve tek panelli profillerle çakışır. Kullanıcı bilerek seçer.
+  const profiles = db.prepare('SELECT id, ratio, kind FROM variation_profiles WHERE shop_id = ?').all(shopId)
+    .filter(p => !DISABLED_PROFILE_IDS.includes(p.id))
+    .filter(p => p.kind !== 'set' && !isSetProfileId(p.id) && !isSetRatioKey(p.ratio));
 
   let closestProfile = null;
   let minDiff = Infinity;
@@ -707,4 +773,4 @@ export async function matchProfileForImage(imageRelPath, shopId) {
   return closestProfile ? closestProfile.id : null;
 }
 
-export { parseRatio, getLockedPlacement, drawRealisticFrame };
+export { parseRatio, parseRatioKey, isSetRatioKey, getLockedPlacement, drawRealisticFrame };

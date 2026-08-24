@@ -4,17 +4,13 @@ import {
   Sparkles, RefreshCw, CheckCircle, UploadCloud, Trash, Play, Image as ImageIcon
 } from 'lucide-react';
 import { warpImage } from '../utils/homography';
+import { filterAutoMatchProfiles } from '../utils/profileFlags';
+import {
+  parseRatio, getTemplateSlots, buildPanelSources,
+  DEFAULT_PLACEMENT, DEFAULT_CORNERS
+} from '../utils/panels';
 
 const API_BASE = 'http://localhost:3001/api';
-
-const parseRatio = (ratioStr) => {
-  if (!ratioStr) return 1;
-  const parts = ratioStr.split(':');
-  if (parts.length === 2) {
-    return Number(parts[0]) / Number(parts[1]);
-  }
-  return 1;
-};
 
 const getAspectOfFile = (file) => {
   return new Promise((resolve) => {
@@ -32,7 +28,7 @@ const getAspectOfFile = (file) => {
 const findClosestProfileForRatio = (ratioVal, profiles) => {
   let closest = null;
   let minDiff = Infinity;
-  for (const p of profiles) {
+  for (const p of filterAutoMatchProfiles(profiles)) {
     const pRatio = parseRatio(p.ratio);
     const diff = Math.abs(ratioVal - pRatio);
     if (diff < minDiff) {
@@ -434,74 +430,80 @@ export default function ShopifyBulkUpload() {
           ? tpl.config.compatible_ratios
           : ['2:3'];
 
+        // Panel yerleşimleri ve her panele girecek görsel (Set of 2 vb.)
+        const slots = getTemplateSlots(tpl.config);
+        const setSource = tpl.config.set_source === 'duplicate' ? 'duplicate' : 'split';
+        const panelSources = buildPanelSources(productImg, slots.length, setSource);
+
         for (const ratio of ratios) {
           if (profile && ratio !== profile.ratio) continue;
-          
+
           const canvas = renderCanvasRef.current;
           const ctx = canvas.getContext('2d');
           const W = bgImg.width;
           const H = bgImg.height;
           canvas.width = W;
           canvas.height = H;
-          
+
           ctx.drawImage(bgImg, 0, 0, W, H);
-          
+
+          // Oran anahtarı '1:2x2' gibi olabilir; kilitlenecek oran tek panelinkidir.
+          const targetRatioVal = parseRatio(ratio);
+
           if (tpl.type === 'flat') {
             const editorWidth = tpl.config.editorWidth || 800;
             const scaleFactor = W / editorWidth;
-            const placement = tpl.config.placement || { x: 0.25, y: 0.25, width: 0.5, height: 0.5 };
-            const px = placement.x * W;
-            const py = placement.y * H;
-            const pw = placement.width * W;
-            const ph = placement.height * H;
-            
-            const targetRatioVal = parseRatio(ratio);
-            const { x: finalX, y: finalY, width: finalW, height: finalH } = getLockedPlacement(px, py, pw, ph, targetRatioVal);
-            
             const shadow = tpl.config.shadow || { enabled: false };
-            if (shadow.enabled) {
-              ctx.save();
-              ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
-              ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
-              const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
-              if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
-              if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
-              if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
-              if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
-              
-              const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-              const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
-              ctx.restore();
-            }
-            
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(finalX, finalY, finalW, finalH);
-            ctx.clip();
-            drawCoverImage(ctx, productImg, finalX, finalY, finalW, finalH);
-            ctx.restore();
-            
             const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-            if (frame.style !== 'stretched') {
-              const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
-              drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
-            }
+
+            slots.forEach((slot, slotIdx) => {
+              const placement = slot.placement || DEFAULT_PLACEMENT;
+              const px = placement.x * W;
+              const py = placement.y * H;
+              const pw = placement.width * W;
+              const ph = placement.height * H;
+
+              const { x: finalX, y: finalY, width: finalW, height: finalH } = getLockedPlacement(px, py, pw, ph, targetRatioVal);
+
+              if (shadow.enabled) {
+                ctx.save();
+                ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
+                ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
+                const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
+                if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
+                if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
+                if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
+                if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
+
+                const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
+                ctx.restore();
+              }
+
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(finalX, finalY, finalW, finalH);
+              ctx.clip();
+              drawCoverImage(ctx, panelSources[slotIdx] || productImg, finalX, finalY, finalW, finalH);
+              ctx.restore();
+
+              if (frame.style !== 'stretched') {
+                const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
+                drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
+              }
+            });
           } else {
-            const corners = tpl.config.corners || {
-              tl: { x: 0.25, y: 0.25 },
-              tr: { x: 0.75, y: 0.25 },
-              br: { x: 0.75, y: 0.75 },
-              bl: { x: 0.25, y: 0.75 }
-            };
-            const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
-            const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
-            const br = { x: corners.br.x * W, y: corners.br.y * H };
-            const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
-            warpImage(ctx, productImg, [tl, tr, br, bl], 24);
+            slots.forEach((slot, slotIdx) => {
+              const corners = slot.corners || DEFAULT_CORNERS;
+              const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
+              const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
+              const br = { x: corners.br.x * W, y: corners.br.y * H };
+              const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
+              warpImage(ctx, panelSources[slotIdx] || productImg, [tl, tr, br, bl], 24);
+            });
           }
-          
+
           const base64Data = canvas.toDataURL('image/jpeg', 0.9);
           await axios.post(`${API_BASE}/mockup/save`, {
             productId: p.id,

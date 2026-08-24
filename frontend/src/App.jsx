@@ -9,6 +9,7 @@ import DefaultSettings from './pages/DefaultSettings';
 import EtsyConnect from './pages/EtsyConnect';
 import PriceUpdate from './pages/PriceUpdate';
 import Analytics from './pages/Analytics';
+import SetupWizard from './pages/SetupWizard';
 
 // Shopify Pages
 import ShopifyConnect from './pages/ShopifyConnect';
@@ -23,7 +24,7 @@ const API_BASE = 'http://localhost:3001/api';
 const VALID_PAGES = {
   etsy: [
     'dashboard', 'analytics', 'price-update', 'bulk-upload',
-    'templates', 'variations', 'storage', 'settings', 'etsy-connect'
+    'templates', 'variations', 'storage', 'settings', 'etsy-connect', 'setup'
   ],
   shopify: [
     'dashboard', 'shopify-upload', 'templates', 'variations',
@@ -54,15 +55,32 @@ export default function App() {
   const [activeShop, setActiveShop] = useState(null);
   const [shops, setShops] = useState([]);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  // null = henuz bilinmiyor. Kurulum tamamlanmamissa sihirbaz tam ekran acilir;
+  // Etsy tarafinda hicbir sayfa magaza/kargo profili olmadan anlamli calismiyor.
+  const [setupCompleted, setSetupCompleted] = useState(null);
   const isFirstRouteSync = useRef(true);
 
   useEffect(() => {
     if (appMode === 'etsy') {
       checkEtsyAuth();
+      checkSetupStatus();
     } else {
       setCheckingAuth(false);
     }
   }, [appMode]);
+
+  // Kurulum durumu backend'de saklaniyor (settings tablosu), boylece tarayici
+  // verisi silinse de tamamlanmis kurulum tekrar sorulmuyor.
+  const checkSetupStatus = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/setup/status`);
+      setSetupCompleted(Boolean(res.data.completed));
+    } catch (err) {
+      // Durum okunamazsa kullaniciyi sihirbaza hapsetmeyelim.
+      console.error('Kurulum durumu alinamadi:', err);
+      setSetupCompleted(true);
+    }
+  };
 
   // Durum -> URL. Normal gezinmede hash ataması yapılır ki tarayıcı geri/ileri
   // tuşları çalışsın. İlk render ve geçersiz adres düzeltmelerinde ise replaceState
@@ -163,6 +181,8 @@ export default function App() {
         return <StorageCleanup />;
       case 'settings':
         return <DefaultSettings key={shopKey} appMode={appMode} etsyConnected={appMode === 'etsy' ? etsyConnected : false} activeShop={activeShop} />;
+      case 'setup':
+        return <SetupWizard onFinish={() => { setSetupCompleted(true); setCurrentPage('dashboard'); }} onShopChange={checkEtsyAuth} />;
       case 'etsy-connect':
         return (
           <EtsyConnect 
@@ -179,8 +199,19 @@ export default function App() {
     }
   };
 
+  // Kurulum tamamlanmadiysa Etsy tarafinda once sihirbaz acilir. setupCompleted
+  // null iken hicbir sey cizmiyoruz ki dashboard bir an gorunup kaybolmasin.
+  if (appMode === 'etsy' && !checkingAuth && setupCompleted === false) {
+    return (
+      <SetupWizard
+        onFinish={() => { setSetupCompleted(true); setCurrentPage('dashboard'); }}
+        onShopChange={checkEtsyAuth}
+      />
+    );
+  }
+
   // If checking authentication for Etsy
-  if (appMode === 'etsy' && checkingAuth) {
+  if (appMode === 'etsy' && (checkingAuth || setupCompleted === null)) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#0b0f19] text-amber-500 font-semibold text-sm">
         <div className="flex flex-col items-center space-y-4">

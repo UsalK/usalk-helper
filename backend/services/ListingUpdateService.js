@@ -16,7 +16,7 @@
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
+import db, { getActiveShop, getShopStorageName, getProductStorageFolder, getSetProfileInfo } from '../db/db.js';
 import * as EtsyService from './EtsyService.js';
 import { generateSEO } from './KimiService.js';
 import { getMockupPool } from './MockupPool.js';
@@ -109,7 +109,9 @@ export async function updateListingFromProduct(input) {
   }
 
   const imageAbs = join(PROJECT_ROOT, product.image_path);
-  const seo = await generateSEO(imageAbs, targetMarket, shopStyle, activeShop.shop_id, 'etsy', sections);
+  // Çok panelli profillerde SEO metni set diliyle yazılır
+  const setInfo = getSetProfileInfo(product.variation_profile_id, activeShop.shop_id);
+  const seo = await generateSEO(imageAbs, targetMarket, shopStyle, activeShop.shop_id, 'etsy', sections, setInfo);
 
   // Yerel kaydı da güncelle ki panelde doğru görünsün.
   // ID metin olarak saklanır: node:sqlite JS sayılarını REAL olarak bağlıyor

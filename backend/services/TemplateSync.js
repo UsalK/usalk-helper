@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import db from '../db/db.js';
+import db, { DISABLED_PROFILE_IDS } from '../db/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,7 +18,7 @@ export function exportTemplatesToSeed() {
     fs.writeFileSync(TEMPLATES_SEED_PATH, JSON.stringify(templates, null, 2), 'utf8');
     console.log(`[TemplateSync] ${templates.length} mockup şablonu ve koordinatları config/templates_seed.json dosyasına aktarıldı.`);
 
-    const profiles = db.prepare('SELECT id, shop_id, name, ratio, sizes, frames, combinations, template_ids, created_at FROM variation_profiles').all();
+    const profiles = db.prepare('SELECT id, shop_id, name, ratio, sizes, frames, combinations, template_ids, kind, panel_count, panel_ratio, created_at FROM variation_profiles').all();
     fs.writeFileSync(PROFILES_SEED_PATH, JSON.stringify(profiles, null, 2), 'utf8');
     console.log(`[TemplateSync] ${profiles.length} varyasyon profili config/profiles_seed.json dosyasına aktarıldı.`);
 
@@ -72,19 +72,25 @@ export function importTemplatesFromSeed() {
       const profiles = JSON.parse(content);
 
       const stmt = db.prepare(`
-        INSERT INTO variation_profiles (id, shop_id, name, ratio, sizes, frames, combinations, template_ids, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO variation_profiles
+          (id, shop_id, name, ratio, sizes, frames, combinations, template_ids, kind, panel_count, panel_ratio, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(shop_id, id) DO UPDATE SET
           name = excluded.name,
           ratio = excluded.ratio,
           sizes = excluded.sizes,
           frames = excluded.frames,
           combinations = excluded.combinations,
-          template_ids = excluded.template_ids
+          template_ids = excluded.template_ids,
+          kind = excluded.kind,
+          panel_count = excluded.panel_count,
+          panel_ratio = excluded.panel_ratio
       `);
 
       db.exec('BEGIN');
       for (const p of profiles) {
+        // Pasife alınmış profiller seed dosyasından geri yüklenmez
+        if (DISABLED_PROFILE_IDS.includes(p.id)) continue;
         stmt.run(
           p.id,
           p.shop_id || 'default_shop',
@@ -94,6 +100,9 @@ export function importTemplatesFromSeed() {
           typeof p.frames === 'object' ? JSON.stringify(p.frames) : p.frames,
           typeof p.combinations === 'object' ? JSON.stringify(p.combinations) : p.combinations,
           typeof p.template_ids === 'object' ? JSON.stringify(p.template_ids) : p.template_ids,
+          p.kind || 'single',
+          p.panel_count || 1,
+          p.panel_ratio || p.ratio,
           p.created_at || new Date().toISOString()
         );
         importedProfiles++;

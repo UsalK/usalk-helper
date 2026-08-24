@@ -45,8 +45,9 @@ export function parseMockupFilename(filename) {
   const underscoreIdx = base.lastIndexOf('_');
   if (underscoreIdx === -1) return { key: base, ratio: null };
 
+  // Oran anahtarı '2-3' ya da çok panelli setlerde '1-2x2' biçimindedir.
   const rawRatio = base.substring(underscoreIdx + 1);
-  const ratio = /^\d+-\d+$/.test(rawRatio) ? rawRatio.replace('-', ':') : null;
+  const ratio = /^\d+-\d+(x\d+)?$/.test(rawRatio) ? rawRatio.replace('-', ':') : null;
   if (!ratio) return { key: base, ratio: null };
 
   return { key: base.substring(0, underscoreIdx), ratio };

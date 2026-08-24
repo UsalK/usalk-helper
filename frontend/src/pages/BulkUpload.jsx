@@ -6,17 +6,14 @@ import {
   Wand2, Plus, ArrowLeft, Trash2, Eye, CheckCircle, Trash, Folder
 } from 'lucide-react';
 import { warpImage } from '../utils/homography';
+import { filterAutoMatchProfiles, isSetProfile } from '../utils/profileFlags';
+import {
+  parseRatio, parseRatioKey, ratioKeyLabel, sourceRatioLabel,
+  getTemplateSlots, buildPanelSources, composePanelsImage,
+  DEFAULT_PLACEMENT, DEFAULT_CORNERS
+} from '../utils/panels';
 
 const API_BASE = 'http://localhost:3001/api';
-
-const parseRatio = (ratioStr) => {
-  if (!ratioStr) return 1;
-  const parts = ratioStr.split(':');
-  if (parts.length === 2) {
-    return Number(parts[0]) / Number(parts[1]);
-  }
-  return 1;
-};
 
 const matchProfileForImage = (imageSrc, profiles) => {
   return new Promise((resolve) => {
@@ -26,7 +23,7 @@ const matchProfileForImage = (imageSrc, profiles) => {
       const imgRatio = img.width / img.height;
       let closestProfile = null;
       let minDiff = Infinity;
-      for (const profile of profiles) {
+      for (const profile of filterAutoMatchProfiles(profiles)) {
         const profileRatioVal = parseRatio(profile.ratio);
         const diff = Math.abs(imgRatio - profileRatioVal);
         if (diff < minDiff) {
@@ -303,6 +300,16 @@ export default function BulkUpload({ etsyConnected }) {
   const [defaultUploadSectionId, setDefaultUploadSectionId] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
+  // Yükleme modu: tekli ürün mü, çok panelli set mi
+  const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'set2' | 'set3'
+  const [setMethod, setSetMethod] = useState('auto');     // 'auto' | 'manual'
+  const [setProfileId, setSetProfileId] = useState('');
+  // Manuel eşleştirilmiş set ürünleri
+  const [pairQueue, setPairQueue] = useState([]);
+  // Manuel eşleştirme modalı
+  const [pairModal, setPairModal] = useState(null); // { files: File[], order: number[] }
+  const [pairBusy, setPairBusy] = useState(false);
+
   // Toast notifications state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -435,7 +442,7 @@ export default function BulkUpload({ etsyConnected }) {
   const findClosestProfileForRatio = (ratioVal) => {
     let closest = null;
     let minDiff = Infinity;
-    for (const p of variationProfiles) {
+    for (const p of filterAutoMatchProfiles(variationProfiles)) {
       const pRatio = parseRatio(p.ratio);
       const diff = Math.abs(ratioVal - pRatio);
       if (diff < minDiff) {
@@ -446,16 +453,206 @@ export default function BulkUpload({ etsyConnected }) {
     return closest;
   };
 
+  /* ---------------- Set (çok panelli) yükleme yardımcıları ---------------- */
+
+  // Panel sayısına göre kullanılabilir set profilleri
+  const setProfilesFor = (panelCount) =>
+    variationProfiles.filter(p => isSetProfile(p) && (p.panel_count || 2) === panelCount);
+
+  const activePanelCount = uploadMode === 'set3' ? 3 : 2;
+  const availableSetProfiles = setProfilesFor(activePanelCount);
+  const activeSetProfile = availableSetProfiles.find(p => p.id === setProfileId) || availableSetProfiles[0] || null;
+  const activePanelRatio = activeSetProfile ? parseRatio(activeSetProfile.panel_ratio || activeSetProfile.ratio) : 0.5;
+
+  // Set profili listesi geldiğinde varsayılanı seç
+  useEffect(() => {
+    if (!setProfileId && availableSetProfiles.length > 0) {
+      setSetProfileId(availableSetProfiles[0].id);
+    }
+  }, [variationProfiles, uploadMode]);
+
+  /**
+   * Seçilen set profilinin yüklemeye hazır olup olmadığını kontrol eder.
+   * Şablon ve fiyat eksikse kullanıcıya burada geri dönüş yapılır.
+   */
+  const setProfileReadiness = () => {
+    if (!activeSetProfile) {
+      return { ok: false, issues: ['Bu panel sayısı için tanımlı bir set profili yok.'], templateCount: 0, priceCount: 0 };
+    }
+
+    const matchedTemplates = templates.filter(t => {
+      if (activeSetProfile.template_ids && activeSetProfile.template_ids.includes(t.id)) return true;
+      const tplRatios = (t.config?.compatible_ratios && t.config.compatible_ratios.length > 0)
+        ? t.config.compatible_ratios
+        : ['2:3'];
+      return tplRatios.includes(activeSetProfile.ratio);
+    });
+
+    const panelTemplates = matchedTemplates.filter(
+      t => t.type === 'static' || (getTemplateSlots(t.config || {}).length === activePanelCount)
+    );
+
+    const combos = activeSetProfile.combinations || [];
+    const pricedCombos = combos.filter(c => Number(c.price) > 0);
+
+    const issues = [];
+    if (panelTemplates.filter(t => t.type !== 'static').length === 0) {
+      issues.push(`Bu profile bağlı ${activePanelCount} panelli mockup şablonu yok. Şablon Stüdyosu'ndan "${ratioKeyLabel(activeSetProfile.ratio)}" oranıyla bir şablon çizin.`);
+    }
+    if (pricedCombos.length === 0) {
+      issues.push('Profilde fiyatlandırılmış varyasyon yok. Varyasyon Profilleri sayfasından boyut, çerçeve ve fiyatları girin.');
+    }
+
+    return {
+      ok: issues.length === 0,
+      issues,
+      templateCount: panelTemplates.filter(t => t.type !== 'static').length,
+      staticCount: panelTemplates.filter(t => t.type === 'static').length,
+      priceCount: pricedCombos.length
+    };
+  };
+
+  /** Manuel eşleştirme modalını açar. */
+  const handlePairFilesSelected = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    if (files.length < activePanelCount) {
+      showToast(`${activePanelCount} panelli set için en az ${activePanelCount} görsel seçmelisiniz.`, 'error');
+      return;
+    }
+
+    const picked = files.slice(0, activePanelCount);
+    setPairModal({
+      files: picked,
+      order: picked.map((_, i) => i),
+      urls: picked.map(f => URL.createObjectURL(f))
+    });
+  };
+
+  /** Modaldaki iki paneli yer değiştirir. */
+  const swapPairOrder = (a, b) => {
+    setPairModal(prev => {
+      if (!prev) return prev;
+      const order = [...prev.order];
+      [order[a], order[b]] = [order[b], order[a]];
+      return { ...prev, order };
+    });
+  };
+
+  /** Modaldaki eşleştirmeyi onaylar ve kuyruğa ekler. */
+  const confirmPair = async () => {
+    if (!pairModal || !activeSetProfile) return;
+    setPairBusy(true);
+    try {
+      const ordered = pairModal.order.map(i => pairModal.files[i]);
+      const composed = await composePanelsImage(ordered, activePanelRatio);
+      const aspects = await Promise.all(ordered.map(getAspectOfFile));
+
+      setPairQueue(prev => [...prev, {
+        id: Math.random().toString(36).substring(7),
+        panels: ordered.map((f, i) => ({
+          name: f.name,
+          size: formatBytes(f.size),
+          url: URL.createObjectURL(f),
+          ratioVal: aspects[i],
+          // Panel oranından belirgin sapma varsa mockup'ta kırpılacak
+          cropped: Math.abs(aspects[i] - activePanelRatio) > 0.02
+        })),
+        file: composed,
+        profileId: activeSetProfile.id,
+        sectionId: defaultUploadSectionId || ''
+      }]);
+
+      pairModal.urls.forEach(u => URL.revokeObjectURL(u));
+      setPairModal(null);
+      showToast('Set ürünü kuyruğa eklendi.', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Görseller birleştirilirken hata oluştu.', 'error');
+    } finally {
+      setPairBusy(false);
+    }
+  };
+
+  const closePairModal = () => {
+    if (pairModal) pairModal.urls.forEach(u => URL.revokeObjectURL(u));
+    setPairModal(null);
+  };
+
+  /** Manuel eşleştirilmiş set ürünlerini yükler. */
+  const handleUploadPairs = async () => {
+    if (pairQueue.length === 0) return;
+    setLoading(true);
+
+    const formData = new FormData();
+    pairQueue.forEach(pair => formData.append('images', pair.file));
+
+    try {
+      const res = await axios.post(`${API_BASE}/products/upload?platform=etsy`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      for (let i = 0; i < res.data.length; i++) {
+        const productRecord = res.data[i];
+        const pair = pairQueue[i];
+        if (!pair) continue;
+        await axios.put(`${API_BASE}/products/${productRecord.id}`, {
+          ...productRecord,
+          variation_profile_id: pair.profileId || null,
+          shop_section_id: pair.sectionId || null
+        });
+      }
+
+      showToast(`${pairQueue.length} set ürünü taslağa eklendi.`, 'success');
+      pairQueue.forEach(p => p.panels.forEach(panel => URL.revokeObjectURL(panel.url)));
+      setPairQueue([]);
+      await fetchProducts();
+      setView('drafts');
+    } catch (err) {
+      console.error(err);
+      showToast('Set ürünleri yüklenirken hata oluştu.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleQueueFiles = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+    // Otomatik set modunda profil sabittir: görsel panel sayısı kadar dilime
+    // bölüneceği için kaynağın oranı, panellerin yan yana dizilmiş halidir.
+    const autoSet = uploadMode !== 'single' && setMethod === 'auto' && activeSetProfile;
+    const expectedAspect = autoSet ? activePanelRatio * activePanelCount : null;
 
     const newQueueItems = [];
     for (const file of files) {
       const id = Math.random().toString(36).substring(7);
       const ratioVal = await getAspectOfFile(file);
-      const closestProfile = findClosestProfileForRatio(ratioVal);
 
+      if (autoSet) {
+        newQueueItems.push({
+          id,
+          file,
+          name: file.name,
+          size: formatBytes(file.size),
+          ratioVal,
+          profileId: activeSetProfile.id,
+          profileName: activeSetProfile.name,
+          ratioName: ratioKeyLabel(activeSetProfile.ratio),
+          isSet: true,
+          panelCount: activePanelCount,
+          // Beklenen kaynak oranı (1:2 × 2 panel → 1:1). Sapma varsa uyarılır.
+          aspectOk: Math.abs(ratioVal - expectedAspect) <= 0.02,
+          expectedAspect,
+          sectionId: defaultUploadSectionId || ''
+        });
+        continue;
+      }
+
+      const closestProfile = findClosestProfileForRatio(ratioVal);
       newQueueItems.push({
         id,
         file,
@@ -465,6 +662,7 @@ export default function BulkUpload({ etsyConnected }) {
         profileId: closestProfile ? closestProfile.id : '',
         profileName: closestProfile ? closestProfile.name : 'Belirlenemedi',
         ratioName: closestProfile ? closestProfile.ratio : '2:3',
+        isSet: false,
         sectionId: defaultUploadSectionId || ''
       });
     }
@@ -630,90 +828,93 @@ export default function BulkUpload({ etsyConnected }) {
           ? tpl.config.compatible_ratios
           : ['2:3'];
 
+        // Panel yerleşimleri ve her panele girecek görsel. Tek panelli şablonlarda
+        // tek elemanlı bir dizi olduğu için akış eskisiyle birebir aynı kalır.
+        const slots = getTemplateSlots(tpl.config);
+        const setSource = tpl.config.set_source === 'duplicate' ? 'duplicate' : 'split';
+        const panelSources = buildPanelSources(productImg, slots.length, setSource);
+
         for (const ratio of ratios) {
           if (profile && ratio !== profile.ratio) continue;
-          
+
           const canvas = renderCanvasRef.current;
           const ctx = canvas.getContext('2d');
           const W = bgImg.width;
           const H = bgImg.height;
           canvas.width = W;
           canvas.height = H;
-          
+
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          
+
           ctx.drawImage(bgImg, 0, 0, W, H);
-          
+
+          // Oran anahtarı '1:2x2' gibi olabilir; kilitlenecek oran tek panelinkidir.
+          const targetRatioVal = parseRatio(ratio);
+
           if (tpl.type === 'flat') {
             const editorWidth = tpl.config.editorWidth || 800;
             const scaleFactor = W / editorWidth;
-            const placement = tpl.config.placement || { x: 0.25, y: 0.25, width: 0.5, height: 0.5 };
-            const px = placement.x * W;
-            const py = placement.y * H;
-            const pw = placement.width * W;
-            const ph = placement.height * H;
-            
-            const targetRatioVal = parseRatio(ratio);
-            const { x: finalX, y: finalY, width: finalW, height: finalH } = getLockedPlacement(px, py, pw, ph, targetRatioVal);
-            
             const shadow = tpl.config.shadow || { enabled: false };
-            if (shadow.enabled) {
-              ctx.save();
-              ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
-              ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
-              const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
-              if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
-              if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
-              if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
-              if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
-              
-              const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-              const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
-              ctx.fillStyle = '#ffffff';
-              ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
-              ctx.restore();
-            }
-            
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(finalX, finalY, finalW, finalH);
-            ctx.clip();
-            drawCoverImage(ctx, productImg, finalX, finalY, finalW, finalH);
-            ctx.restore();
-            
             const frame = tpl.config.frame || { style: 'stretched', thickness: 3 };
-            if (frame.style !== 'stretched') {
-              const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
-              drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
-            }
+
+            slots.forEach((slot, slotIdx) => {
+              const placement = slot.placement || DEFAULT_PLACEMENT;
+              const px = placement.x * W;
+              const py = placement.y * H;
+              const pw = placement.width * W;
+              const ph = placement.height * H;
+
+              const { x: finalX, y: finalY, width: finalW, height: finalH } = getLockedPlacement(px, py, pw, ph, targetRatioVal);
+
+              if (shadow.enabled) {
+                ctx.save();
+                ctx.shadowColor = `rgba(0, 0, 0, ${(parseFloat(shadow.opacity) || 3) / 10})`;
+                ctx.shadowBlur = (parseFloat(shadow.blur) || 5) * scaleFactor;
+                const dist = (parseFloat(shadow.distance) || 5) * scaleFactor;
+                if (shadow.sides === 'all' || shadow.sides === 'bottom') ctx.shadowOffsetY = dist;
+                if (shadow.sides === 'all' || shadow.sides === 'right') ctx.shadowOffsetX = dist;
+                if (shadow.sides === 'left') ctx.shadowOffsetX = -dist;
+                if (shadow.sides === 'top') ctx.shadowOffsetY = -dist;
+
+                const t = (frame.style !== 'stretched') ? (parseFloat(frame.thickness) || 3) * scaleFactor : 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(finalX - t, finalY - t, finalW + 2 * t, finalH + 2 * t);
+                ctx.restore();
+              }
+
+              ctx.save();
+              ctx.beginPath();
+              ctx.rect(finalX, finalY, finalW, finalH);
+              ctx.clip();
+              drawCoverImage(ctx, panelSources[slotIdx] || productImg, finalX, finalY, finalW, finalH);
+              ctx.restore();
+
+              if (frame.style !== 'stretched') {
+                const thickness = (parseFloat(frame.thickness) || 3) * scaleFactor;
+                drawRealisticFrame(ctx, finalX, finalY, finalW, finalH, frame.style, thickness);
+              }
+            });
           } else {
-            const corners = tpl.config.corners || {
-              tl: { x: 0.25, y: 0.25 },
-              tr: { x: 0.75, y: 0.25 },
-              br: { x: 0.75, y: 0.75 },
-              bl: { x: 0.25, y: 0.75 }
-            };
-            const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
-            const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
-            const br = { x: corners.br.x * W, y: corners.br.y * H };
-            const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
-            
-            // Calculate destination quad bounding box size
-            const xs = [tl.x, tr.x, br.x, bl.x];
-            const ys = [tl.y, tr.y, br.y, bl.y];
-            const minX = Math.min(...xs);
-            const maxX = Math.max(...xs);
-            const minY = Math.min(...ys);
-            const maxY = Math.max(...ys);
-            const targetW = Math.max(10, Math.ceil(maxX - minX));
-            const targetH = Math.max(10, Math.ceil(maxY - minY));
-            
-            // Pre-scale the high-res product image to target quad dimensions
-            const preScaledImg = getStepScaledCanvas(productImg, targetW, targetH);
-            warpImage(ctx, preScaledImg, [tl, tr, br, bl], 24);
+            slots.forEach((slot, slotIdx) => {
+              const corners = slot.corners || DEFAULT_CORNERS;
+              const tl = { x: corners.tl.x * W, y: corners.tl.y * H };
+              const tr = { x: corners.tr.x * W, y: corners.tr.y * H };
+              const br = { x: corners.br.x * W, y: corners.br.y * H };
+              const bl = { x: corners.bl.x * W, y: corners.bl.y * H };
+
+              // Calculate destination quad bounding box size
+              const xs = [tl.x, tr.x, br.x, bl.x];
+              const ys = [tl.y, tr.y, br.y, bl.y];
+              const targetW = Math.max(10, Math.ceil(Math.max(...xs) - Math.min(...xs)));
+              const targetH = Math.max(10, Math.ceil(Math.max(...ys) - Math.min(...ys)));
+
+              // Pre-scale the high-res panel image to target quad dimensions
+              const src = panelSources[slotIdx] || productImg;
+              const preScaledImg = getStepScaledCanvas(src, targetW, targetH);
+              warpImage(ctx, preScaledImg, [tl, tr, br, bl], 24);
+            });
           }
-          
           const base64Data = canvas.toDataURL('image/jpeg', 0.95);
           await axios.post(`${API_BASE}/mockup/save`, {
             productId: p.id,
@@ -1200,7 +1401,7 @@ export default function BulkUpload({ etsyConnected }) {
                     >
                       <option value="">Profil Yok</option>
                       {variationProfiles.map(vp => (
-                        <option key={vp.id} value={vp.id}>{vp.ratio} Oranı ({vp.name})</option>
+                        <option key={vp.id} value={vp.id}>{ratioKeyLabel(vp.ratio)} ({vp.name})</option>
                       ))}
                     </select>
                   </div>
@@ -1226,7 +1427,7 @@ export default function BulkUpload({ etsyConnected }) {
                           <tbody>
                             {displayedCombos.map((c, idx) => (
                               <tr key={idx} className="border-b border-[#1e293b]/50 hover:bg-[#151f32]/20 text-slate-300">
-                                <td className="px-4 py-2.5 font-medium">{c.dimension}</td>
+                                <td className="px-4 py-2.5 font-medium">{c.size}</td>
                                 <td className="px-4 py-2.5">{c.frame}</td>
                                 <td className="px-4 py-2.5 text-right font-semibold text-emerald-400">${c.price ? Number(c.price).toFixed(2) : '0.00'}</td>
                               </tr>
@@ -1667,11 +1868,266 @@ export default function BulkUpload({ etsyConnected }) {
           )}
 
           {/* VIEW: UPLOAD */}
-          {view === 'upload' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {view === 'upload' && (() => {
+            const isSetMode = uploadMode !== 'single';
+            const readiness = isSetMode ? setProfileReadiness() : null;
+            const expectedAspect = activePanelRatio * activePanelCount;
+            const expectedLabel = activeSetProfile
+              ? (sourceRatioLabel(activeSetProfile.panel_ratio || activeSetProfile.ratio, activePanelCount) || expectedAspect.toFixed(2))
+              : expectedAspect.toFixed(2);
+
+            return (
+            <div className="space-y-6">
+              {/* Yükleme modu seçici */}
+              <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-5 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: 'single', label: 'Tekli Ürün', desc: 'Tek görsel = tek ürün' },
+                    { id: 'set2', label: 'Set of 2', desc: '2 panelli set ürün' },
+                    { id: 'set3', label: 'Set of 3', desc: 'Yakında', disabled: true }
+                  ].map(mode => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      disabled={mode.disabled}
+                      onClick={() => {
+                        if (mode.disabled || uploadMode === mode.id) return;
+                        // Kuyruktaki öğeler önceki modun profiline göre hazırlandı
+                        setFilesQueue([]);
+                        pairQueue.forEach(pr => pr.panels.forEach(panel => URL.revokeObjectURL(panel.url)));
+                        setPairQueue([]);
+                        setUploadMode(mode.id);
+                      }}
+                      title={mode.desc}
+                      className={`px-5 py-3 rounded-xl text-xs font-bold border transition-all flex flex-col items-start ${
+                        mode.disabled
+                          ? 'bg-[#0b1220] border-[#1e293b] text-slate-600 cursor-not-allowed'
+                          : uploadMode === mode.id
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+                          : 'bg-[#151f32] border-[#1e293b] text-slate-400 hover:text-white hover:border-[#334155]'
+                      }`}
+                    >
+                      <span>{mode.label}</span>
+                      <span className="text-[9px] font-medium opacity-70 mt-0.5">{mode.desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {isSetMode && (
+                  <div className="space-y-4 border-t border-[#1e293b] pt-4">
+                    {/* Yöntem seçimi */}
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'auto', label: 'Otomatik', desc: 'Tek görseli ortadan böl' },
+                        { id: 'manual', label: 'Manuel', desc: 'İki görseli elle eşle' }
+                      ].map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            if (setMethod === m.id) return;
+                            setFilesQueue([]);
+                            setSetMethod(m.id);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-[11px] font-bold border transition-all ${
+                            setMethod === m.id
+                              ? 'bg-amber-500 text-slate-950 border-amber-500'
+                              : 'bg-[#151f32] border-[#1e293b] text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {m.label} — <span className="font-medium opacity-80">{m.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Mockup / varyasyon profili */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Mockup & Varyasyon Profili
+                        </label>
+                        <select
+                          value={activeSetProfile?.id || ''}
+                          onChange={(e) => setSetProfileId(e.target.value)}
+                          disabled={availableSetProfiles.length === 0}
+                          className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+                        >
+                          {availableSetProfiles.length === 0 && <option value="">Tanımlı set profili yok</option>}
+                          {availableSetProfiles.map(sp => (
+                            <option key={sp.id} value={sp.id}>
+                              {ratioKeyLabel(sp.ratio)} — {sp.name}
+                            </option>
+                          ))}
+                        </select>
+                        {activeSetProfile && (
+                          <p className="text-[10px] text-slate-500">
+                            Panel başına {activeSetProfile.panel_ratio || '1:2'} · {activePanelCount} panel
+                            {setMethod === 'auto' && ` · beklenen kaynak oranı ${expectedLabel}`}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Profil hazırlık kontrolü */}
+                      <div className={`rounded-xl border p-3 space-y-1.5 ${
+                        readiness?.ok
+                          ? 'bg-emerald-500/5 border-emerald-500/20'
+                          : 'bg-rose-500/5 border-rose-500/20'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          {readiness?.ok
+                            ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                            : <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />}
+                          <span className={`text-[11px] font-bold ${readiness?.ok ? 'text-emerald-300' : 'text-rose-300'}`}>
+                            {readiness?.ok ? 'Profil yüklemeye hazır' : 'Profil eksik yapılandırılmış'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          {readiness?.templateCount || 0} mockup şablonu · {readiness?.staticCount || 0} statik görsel · {readiness?.priceCount || 0} fiyatlı varyasyon
+                        </p>
+                        {readiness?.issues?.map((iss, i) => (
+                          <p key={i} className="text-[10px] text-rose-300 leading-snug">• {iss}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* MANUEL SET: eşleştirme arayüzü */}
+              {isSetMode && setMethod === 'manual' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-[#0e1726] border-2 border-dashed border-[#1e293b] hover:border-slate-800 rounded-3xl p-10 text-center transition-all">
+                      <Layers className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                      <h3 className="text-base font-bold text-white mb-2">Set ürünü oluştur</h3>
+                      <p className="text-xs text-slate-500 mb-6">
+                        {activePanelCount} görsel seçin; hangisinin sol hangisinin sağ panel olacağını
+                        açılacak pencerede belirleyin. Görsellerin oranı serbesttir.
+                      </p>
+                      <label className={`bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-8 rounded-xl shadow-lg shadow-amber-500/10 transition-colors text-xs ${
+                        activeSetProfile ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                      }`}>
+                        Ürün Ekle ({activePanelCount} Görsel Seç)
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handlePairFilesSelected}
+                          disabled={!activeSetProfile}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Varsayılan bölüm */}
+                    <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Varsayılan Mağaza Bölümü</h4>
+                      <select
+                        value={defaultUploadSectionId}
+                        onChange={(e) => {
+                          const newSection = e.target.value;
+                          setDefaultUploadSectionId(newSection);
+                          setPairQueue(prev => prev.map(item => ({ ...item, sectionId: newSection })));
+                        }}
+                        className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none"
+                      >
+                        <option value="">Bölüm Yok (Bölümsüz)</option>
+                        {shopSections.map(s => (
+                          <option key={s.shop_section_id} value={s.shop_section_id.toString()}>
+                            {s.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleUploadPairs}
+                      disabled={loading || pairQueue.length === 0}
+                      className="w-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 disabled:opacity-50 text-slate-950 font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-amber-500/10 text-xs flex items-center justify-center space-x-2"
+                    >
+                      <Upload className="w-4 h-4 text-slate-950" />
+                      <span>{pairQueue.length} set ürünü yükle</span>
+                    </button>
+                  </div>
+
+                  {/* Eşleştirilmiş set listesi */}
+                  <div className="lg:col-span-5">
+                    <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 space-y-4">
+                      <h4 className="text-sm font-bold text-white border-b border-[#1e293b] pb-3">
+                        Hazırlanan Setler ({pairQueue.length})
+                      </h4>
+
+                      <div className="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                        {pairQueue.map(pair => (
+                          <div key={pair.id} className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center space-x-2">
+                                {pair.panels.map((panel, pi) => (
+                                  <div key={pi} className="text-center">
+                                    <div className="w-12 h-16 rounded-lg bg-slate-950 border border-[#1e293b] overflow-hidden">
+                                      <img src={panel.url} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                    <span className="text-[9px] text-slate-500 block mt-1">
+                                      {pi === 0 ? 'SOL' : 'SAĞ'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  pair.panels.forEach(panel => URL.revokeObjectURL(panel.url));
+                                  setPairQueue(prev => prev.filter(x => x.id !== pair.id));
+                                }}
+                                className="text-slate-500 hover:text-rose-400 transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-1">
+                              {pair.panels.map((panel, pi) => (
+                                <p key={pi} className="text-[10px] text-slate-400 truncate">
+                                  <span className="text-slate-500">{pi === 0 ? 'Sol:' : 'Sağ:'}</span> {panel.name}
+                                  {panel.cropped && (
+                                    <span className="text-amber-500 ml-1">· panel oranına kırpıldı</span>
+                                  )}
+                                </p>
+                              ))}
+                            </div>
+
+                            <select
+                              value={pair.sectionId}
+                              onChange={(e) => {
+                                const newSec = e.target.value;
+                                setPairQueue(prev => prev.map(q => q.id === pair.id ? { ...q, sectionId: newSec } : q));
+                              }}
+                              className="w-full bg-[#0e1726] border border-[#1e293b] rounded-lg px-2 py-1.5 text-[10px] text-slate-400 focus:outline-none"
+                            >
+                              <option value="">Bölüm Yok</option>
+                              {shopSections.map(s => (
+                                <option key={s.shop_section_id} value={s.shop_section_id.toString()}>
+                                  {s.title}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+
+                        {pairQueue.length === 0 && (
+                          <p className="text-xs text-slate-500 italic text-center py-10">
+                            Henüz set oluşturulmadı. Soldaki "Ürün Ekle" ile başlayın.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+              /* TEKLI ve OTOMATIK SET: klasik dropzone akışı */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Dropzone & default section */}
               <div className="lg:col-span-7 space-y-6">
-                <div 
+                <div
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
@@ -1682,17 +2138,21 @@ export default function BulkUpload({ etsyConnected }) {
                 >
                   <Upload className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-base font-bold text-white mb-2">Görselleri buraya sürükleyip bırakın</h3>
-                  <p className="text-xs text-slate-500 mb-6">veya dosyaları seçmek için tıklayın</p>
+                  <p className="text-xs text-slate-500 mb-6">
+                    {isSetMode
+                      ? `${expectedLabel} oranındaki görseller ortadan ${activePanelCount} panele bölünür`
+                      : 'veya dosyaları seçmek için tıklayın'}
+                  </p>
                   <span className="block text-[10px] text-slate-500 mb-6 uppercase tracking-wider">Desteklenen: JPEG, JPG, PNG, WEBP • Görseller orijinal kalitesinde yüklenecektir.</span>
-                  
+
                   <label className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-8 rounded-xl shadow-lg shadow-amber-500/10 transition-colors cursor-pointer text-xs">
                     Dosyaları Seç
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept="image/*" 
-                      onChange={handleQueueFiles} 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleQueueFiles}
+                      className="hidden"
                     />
                   </label>
                 </div>
@@ -1759,6 +2219,12 @@ export default function BulkUpload({ etsyConnected }) {
                             <span className="text-xs font-semibold text-white block truncate max-w-[150px] sm:max-w-[200px]">{item.name}</span>
                             <span className="text-[10px] text-slate-500 block">{item.size}</span>
                             <span className="inline-flex mt-1 text-[9px] font-bold text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">Profil: {item.ratioName} ({item.profileName})</span>
+                            {item.isSet && !item.aspectOk && (
+                              <span className="flex items-center mt-1 text-[9px] font-bold text-rose-400">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Oran {item.ratioVal.toFixed(2)} · beklenen {item.expectedAspect.toFixed(2)} — panellerde kırpılır
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1798,8 +2264,104 @@ export default function BulkUpload({ etsyConnected }) {
                   </div>
                 </div>
               </div>
+              </div>
+              )}
             </div>
-          )}
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Manuel set eşleştirme modalı */}
+      {pairModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl w-full max-w-3xl p-8 space-y-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Panel Sırasını Belirleyin</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Görsellerin sette hangi tarafta duracağını seçin. Aşağıdaki önizleme,
+                  mockup'ta çıkacak yerleşimin aynısıdır.
+                </p>
+              </div>
+              <button
+                onClick={closePairModal}
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Panel önizlemeleri */}
+            <div className="flex items-stretch justify-center gap-4">
+              {pairModal.order.map((fileIdx, slotIdx) => (
+                <React.Fragment key={slotIdx}>
+                  <div className="flex-1 max-w-[220px] space-y-2">
+                    <div className="flex items-center justify-center">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1">
+                        {slotIdx === 0 ? 'Sol Panel' : slotIdx === 1 ? 'Sağ Panel' : `Panel ${slotIdx + 1}`}
+                      </span>
+                    </div>
+                    <div
+                      className="bg-slate-950 border-2 border-amber-500/40 rounded-xl overflow-hidden mx-auto"
+                      style={{ aspectRatio: String(activePanelRatio), maxHeight: '320px' }}
+                    >
+                      <img
+                        src={pairModal.urls[fileIdx]}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 text-center truncate px-2">
+                      {pairModal.files[fileIdx].name}
+                    </p>
+                  </div>
+
+                  {slotIdx < pairModal.order.length - 1 && (
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => swapPairOrder(slotIdx, slotIdx + 1)}
+                        title="Panelleri yer değiştir"
+                        className="bg-[#151f32] hover:bg-slate-700 border border-[#334155] text-slate-300 hover:text-white rounded-xl p-2.5 transition-colors"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="bg-[#151f32] border border-[#1e293b] rounded-2xl p-4 text-[11px] text-slate-400 space-y-1">
+              <p>
+                <span className="text-slate-300 font-semibold">Profil:</span>{' '}
+                {activeSetProfile ? `${ratioKeyLabel(activeSetProfile.ratio)} — ${activeSetProfile.name}` : 'Seçilmedi'}
+              </p>
+              <p>
+                Görseller panel oranına ({activeSetProfile?.panel_ratio || '1:2'}) göre merkezden
+                kırpılıp tek kaynak görselde birleştirilir; mockup üretiminde tekrar sol/sağ olarak ayrılır.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closePairModal}
+                disabled={pairBusy}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-6 rounded-xl border border-[#334155] text-xs transition-colors"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={confirmPair}
+                disabled={pairBusy || !activeSetProfile}
+                className="flex items-center space-x-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-bold py-3 px-6 rounded-xl text-xs shadow-lg shadow-amber-500/10 transition-colors"
+              >
+                {pairBusy ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                <span>{pairBusy ? 'Birleştiriliyor...' : 'Seti Kuyruğa Ekle'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

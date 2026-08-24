@@ -9,7 +9,8 @@ import {
   Shuffle,
   Coins,
   BarChart3,
-  HardDrive
+  HardDrive,
+  Wrench
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -27,13 +28,14 @@ export default function Sidebar({
   const menuItems = appMode === 'etsy' ? [
     { id: 'dashboard', name: 'Ürün Paneli', icon: LayoutDashboard },
     { id: 'analytics', name: 'Analiz & Optimizasyon', icon: BarChart3 },
-    { id: 'price-update', name: 'LİSTİNG FİYAT GÜNCELLE', icon: Coins },
+    { id: 'price-update', name: 'Listing Fiyat Güncelle', icon: Coins },
     { id: 'bulk-upload', name: 'Toplu Yükleme Sihirbazı', icon: UploadCloud },
     { id: 'templates', name: 'Şablon Stüdyosu', icon: Layers },
     { id: 'variations', name: 'Varyasyon Profilleri', icon: Tag },
     { id: 'storage', name: 'Depolama Temizliği', icon: HardDrive },
     { id: 'settings', name: 'Genel Ayarlar', icon: Settings },
-    { id: 'etsy-connect', name: 'Etsy Bağlantısı', icon: Link }
+    { id: 'etsy-connect', name: 'Etsy Bağlantısı', icon: Link },
+    { id: 'setup', name: 'Kurulum Sihirbazı', icon: Wrench }
   ] : [
 
     { id: 'dashboard', name: 'Ürün Paneli', icon: LayoutDashboard },

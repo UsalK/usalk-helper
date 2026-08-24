@@ -18,7 +18,7 @@ import fs from 'fs';
 import { join, dirname, extname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
-import db, { getActiveShop, getPlatformUploadPath } from '../db/db.js';
+import db, { getActiveShop, getPlatformUploadPath, getSetProfileInfo } from '../db/db.js';
 import { matchProfileForImage } from './MockupRenderer.js';
 import { getMockupPool } from './MockupPool.js';
 import { generateSEO } from './KimiService.js';
@@ -379,13 +379,17 @@ async function processItem(job, item, config) {
     }
   }
 
+  // Çok panelli profillerde SEO metni set diliyle yazılır
+  const setInfo = getSetProfileInfo(product.variation_profile_id, shopId);
+
   const seo = await generateSEO(
     imageAbs,
     config.target_market || 'US/UK',
     config.shop_style || 'vintage poster, art deco',
     shopId,
     'etsy',
-    sections
+    sections,
+    setInfo
   );
 
   // AI bir bölüm seçtiyse ürüne yaz; yükleme adımı bunu kullanır

@@ -40,6 +40,8 @@ desktop.ini
 .vscode/
 .idea/
 .claude/
+.obsidian/
+**/.obsidian/
 
 # Log Dosyaları (Logs)
 *.log

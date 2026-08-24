@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import db, { getActiveShop } from '../db/db.js';
+import db, { getActiveShop, getSetProfileInfo } from '../db/db.js';
 import { generateSEO } from '../services/KimiService.js';
 
 const router = express.Router();
@@ -35,8 +35,11 @@ router.post('/generate', async (req, res, next) => {
     
     const platform = product.shop_id.includes('.myshopify.com') ? 'shopify' : 'etsy';
     
+    // Çok panelli profillerde SEO metni set diliyle yazılır
+    const setInfo = getSetProfileInfo(product.variation_profile_id, product.shop_id);
+
     // Call Kimi service for physical wall art SEO
-    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id, platform);
+    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id, platform, null, setInfo);
     
     // Extract info
     const title = seoData.title || '';

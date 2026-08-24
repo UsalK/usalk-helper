@@ -5,10 +5,11 @@ import {
   HelpCircle, Sparkles, AlertTriangle, Layers, RefreshCw
 } from 'lucide-react';
 import RECOMMENDED_DATA from './recommended_data.json';
+import { filterActiveProfiles, isSetProfile } from '../utils/profileFlags';
 
 const API_BASE = 'http://localhost:3001/api';
 
-const DEFAULT_PROFILES = [
+const DEFAULT_PROFILES = filterActiveProfiles([
   { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
   { id: 'ratio_3_2', name: '3:2 Oranı (Yatay)', ratio: '3:2' },
   { id: 'ratio_1_1', name: '1:1 Oranı (Kare)', ratio: '1:1' },
@@ -16,8 +17,28 @@ const DEFAULT_PROFILES = [
   { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' },
   { id: 'ratio_12_5', name: '12:5 Oranı (Panoramik)', ratio: '12:5' },
   { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' },
-  { id: 'double_1_2', name: 'İkili Set (1:2)', ratio: '1:2' }
-];
+  {
+    id: 'set_of_2_1_2',
+    name: 'Set of 2 (1:2) — İkili Panel',
+    ratio: '1:2x2',
+    kind: 'set',
+    panel_count: 2,
+    panel_ratio: '1:2'
+  },
+  {
+    id: 'set_of_2_2_3',
+    name: 'Set of 2 (2:3) — İkili Panel',
+    ratio: '2:3x2',
+    kind: 'set',
+    panel_count: 2,
+    panel_ratio: '2:3'
+  }
+]);
+
+// Önerilen boyut/fiyat tablosunda profilin hangi anahtarla arandığı.
+// Set profilleri kendi ID'leriyle, tek panelli profiller oranlarıyla eşleşir.
+const recommendedKey = (profile) =>
+  isSetProfile(profile) ? profile.id : profile.ratio;
 
 export default function VariationProfiles() {
   const [profiles, setProfiles] = useState([]);
@@ -55,7 +76,7 @@ export default function VariationProfiles() {
     setLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/variations`);
-      setProfiles(res.data);
+      setProfiles(filterActiveProfiles(res.data));
     } catch (err) {
       console.error('Profiller yüklenemedi:', err);
     } finally {
@@ -93,7 +114,7 @@ export default function VariationProfiles() {
   };
 
   const loadRecommendedSizesAndFrames = () => {
-    const key = selectedProfile.id === 'double_1_2' ? 'double_1_2' : selectedProfile.ratio;
+    const key = recommendedKey(selectedProfile);
     const config = RECOMMENDED_DATA[key];
     if (config) {
       setSizes(config.sizes);
@@ -103,7 +124,7 @@ export default function VariationProfiles() {
 
   const isRecommendedConfig = () => {
     if (!selectedProfile) return false;
-    const key = selectedProfile.id === 'double_1_2' ? 'double_1_2' : selectedProfile.ratio;
+    const key = recommendedKey(selectedProfile);
     const config = RECOMMENDED_DATA[key];
     if (!config) return false;
     
@@ -123,7 +144,7 @@ export default function VariationProfiles() {
   };
 
   const loadRecommendedPrices = () => {
-    const key = selectedProfile.id === 'double_1_2' ? 'double_1_2' : selectedProfile.ratio;
+    const key = recommendedKey(selectedProfile);
     const config = RECOMMENDED_DATA[key];
     if (config && config.prices) {
       const newMap = { ...priceMap };
@@ -312,11 +333,16 @@ export default function VariationProfiles() {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-900 border border-[#334155] flex items-center justify-center font-bold text-white text-md">
-                        {defProf.ratio}
+                      <div className="w-12 h-12 rounded-xl bg-slate-900 border border-[#334155] flex flex-col items-center justify-center font-bold text-white text-md leading-none">
+                        <span>{String(defProf.ratio).split('x')[0]}</span>
+                        {isSetProfile(defProf) && (
+                          <span className="text-[9px] text-amber-500 font-bold mt-0.5">
+                            ×{defProf.panel_count || 2}
+                          </span>
+                        )}
                       </div>
                       <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                        {defProf.id === 'double_1_2' ? 'Özel Set' : 'Oran Sayfası'}
+                        {isSetProfile(defProf) ? 'Özel Set' : 'Oran Sayfası'}
                       </span>
                     </div>
 
@@ -365,9 +391,15 @@ export default function VariationProfiles() {
               </button>
               <div>
                 <h2 className="text-2xl font-bold text-white tracking-tight">
-                  {selectedProfile.id === 'double_1_2' ? 'İkili Set (1:2) Ayarları' : `${selectedProfile.ratio} Oranı Ayarları`}
+                  {isSetProfile(selectedProfile)
+                    ? `${selectedProfile.name} Ayarları`
+                    : `${selectedProfile.ratio} Oranı Ayarları`}
                 </h2>
-                <p className="text-slate-400 text-sm mt-0.5">Boyut, Çerçeve, Mockup Şablonları ve Fiyatlandırma.</p>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  {isSetProfile(selectedProfile)
+                    ? `Panel başına ${selectedProfile.panel_ratio || '1:2'} · ${selectedProfile.panel_count || 2} panel · Boyutlar panel başınadır.`
+                    : 'Boyut, Çerçeve, Mockup Şablonları ve Fiyatlandırma.'}
+                </p>
               </div>
             </div>
 
@@ -384,7 +416,7 @@ export default function VariationProfiles() {
             )}
           </div>
 
-          {selectedProfile?.id === 'double_1_2' && (
+          {isSetProfile(selectedProfile) && (
             <div className="flex space-x-4 border-b border-[#1e293b] pb-2">
               <button
                 type="button"
@@ -414,7 +446,7 @@ export default function VariationProfiles() {
           {editorTab === 'upload' ? (
             <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-8 space-y-6 max-w-2xl mx-auto animate-fade-in">
               <div className="text-center space-y-2">
-                <h3 className="text-lg font-bold text-white">Özel Dosya Yükleme (İkili Set)</h3>
+                <h3 className="text-lg font-bold text-white">Özel Dosya Yükleme ({selectedProfile.name})</h3>
                 <p className="text-slate-400 text-xs">
                   Mockup görsellerini manuel yükleyin. Bu işlem başlık, açıklama ve etiketler olmadan, sadece bu varyasyon şablonunu ve fiyatlarını kullanarak doğrudan Etsy'ye <strong>taslak (draft)</strong> olarak yükler.
                 </p>

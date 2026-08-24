@@ -1,5 +1,5 @@
-' run_tray.vbs
-' start_tray.ps1 dosyasini konsol penceresi acmadan calistirir.
+' run_hidden.vbs
+' start_hidden.ps1 dosyasini konsol penceresi acmadan calistirir.
 ' Yolu kendi bulundugu klasorden turetir, sabit yol yoktur.
 
 Dim fso, shell, scriptDir, target
@@ -7,10 +7,10 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 Set shell = CreateObject("WScript.Shell")
 
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-target = fso.BuildPath(scriptDir, "start_tray.ps1")
+target = fso.BuildPath(scriptDir, "start_hidden.ps1")
 
 If Not fso.FileExists(target) Then
-    MsgBox "start_tray.ps1 bulunamadi:" & vbCrLf & target, vbCritical, "Usalk Helper"
+    MsgBox "start_hidden.ps1 bulunamadi:" & vbCrLf & target, vbCritical, "Usalk Helper"
     WScript.Quit 1
 End If
 

@@ -191,6 +191,103 @@ export async function getReturnPolicies(forceRefresh = false) {
   return res.data.results;
 }
 
+/**
+ * Kurulum sihirbazinin kullandigi ortak POST yardimcisi.
+ * Etsy bu uc ucu da form-encoded bekliyor; boolean'lar 'true'/'false' string'i
+ * olarak gitmeli, aksi halde API 400 doner.
+ */
+async function postForm(path, payload) {
+  const { access_token, client_id, client_secret, shop_id } = await getValidToken();
+  const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}${path}`;
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === null || value === undefined || value === '') continue;
+    params.append(key, typeof value === 'boolean' ? String(value) : String(value));
+  }
+
+  const res = await axios.post(url, params, {
+    headers: {
+      'x-api-key': `${client_id}:${client_secret}`,
+      'Authorization': `Bearer ${access_token}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+  return res.data;
+}
+
+/**
+ * Kargo sablonu olusturur (createShopShippingProfile).
+ * Zorunlu: title, origin_country_iso, primary_cost, secondary_cost.
+ * primary_cost = ilk urunun kargosu, secondary_cost = ayni siparisteki her ek urun.
+ */
+export async function createShippingProfile(input) {
+  const data = await postForm('/shipping-profiles', {
+    title: input.title,
+    origin_country_iso: input.origin_country_iso,
+    primary_cost: input.primary_cost,
+    secondary_cost: input.secondary_cost,
+    min_processing_time: input.min_processing_time,
+    max_processing_time: input.max_processing_time,
+    processing_time_unit: input.processing_time_unit || 'business_days',
+    destination_country_iso: input.destination_country_iso,
+    destination_region: input.destination_region || 'none',
+    origin_postal_code: input.origin_postal_code,
+    min_delivery_days: input.min_delivery_days,
+    max_delivery_days: input.max_delivery_days
+  });
+  cache.shippingProfiles = null;
+  cache.timestamps.shippingProfiles = 0;
+  return data;
+}
+
+/**
+ * Iade politikasi olusturur (createShopReturnPolicy).
+ * return_deadline yalnizca iade veya degisim kabul ediliyorsa anlamli; Etsy
+ * 14/21/30/45/60/90 gun degerlerini kabul ediyor.
+ */
+export async function createReturnPolicy(input) {
+  const accepts_returns = Boolean(input.accepts_returns);
+  const accepts_exchanges = Boolean(input.accepts_exchanges);
+  const data = await postForm('/policies/return', {
+    accepts_returns,
+    accepts_exchanges,
+    return_deadline: (accepts_returns || accepts_exchanges) ? input.return_deadline : null
+  });
+  cache.returnPolicies = null;
+  cache.timestamps.returnPolicies = 0;
+  return data;
+}
+
+/**
+ * Isleme suresi tanimi olusturur (createShopReadinessStateDefinition).
+ * readiness_state: 'made_to_order' (siparise ozel uretim) | 'ready_to_ship'.
+ * Baski-siparis modelinde dogru deger made_to_order'dir.
+ */
+export async function createReadinessStateDefinition(input) {
+  const data = await postForm('/readiness-state-definitions', {
+    readiness_state: input.readiness_state || 'made_to_order',
+    min_processing_time: input.min_processing_time,
+    max_processing_time: input.max_processing_time,
+    processing_time_unit: input.processing_time_unit || 'days'
+  });
+  cache.readinessStates = null;
+  cache.timestamps.readinessStates = 0;
+  return data;
+}
+
+// Etsy tags/materials alanlarini virgulle ayrilmis TEK bir string olarak aliyor.
+// Bu yuzden bir tag'in icindeki virgul ayirici sayilir ve tag ikiye bolunur:
+// 13 tag 14 gorunur, istek "tags_too_many" ile 400 doner. Birlestirmeden once
+// her ogenin icindeki virgulu bosluga ceviriyoruz.
+function joinCsvField(value) {
+  const items = Array.isArray(value) ? value : [value];
+  return items
+    .map(v => String(v).replace(/,/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(',');
+}
+
 export async function createListing(listingData) {
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings`;
@@ -199,10 +296,8 @@ export async function createListing(listingData) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(listingData)) {
     if (key === 'tags' || key === 'materials') {
-      if (Array.isArray(value)) {
-        params.append(key, value.join(','));
-      } else if (value !== null && value !== undefined) {
-        params.append(key, value.toString());
+      if (value !== null && value !== undefined) {
+        params.append(key, joinCsvField(value));
       }
     } else if (Array.isArray(value)) {
       value.forEach(v => params.append(key, v));
@@ -380,11 +475,7 @@ export async function updateListing(listing_id, listingData) {
     }
 
     if (key === 'tags' || key === 'materials') {
-      if (Array.isArray(value)) {
-        params.append(key, value.join(','));
-      } else {
-        params.append(key, value.toString());
-      }
+      params.append(key, joinCsvField(value));
     } else if (Array.isArray(value)) {
       value.forEach(v => params.append(key, v));
     } else {

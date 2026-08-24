@@ -3,8 +3,14 @@ import axios from 'axios';
 import {
   Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle,
   Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square,
-  GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Pin, Eye, ListOrdered
+  GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Unlock, Pin, Eye, ListOrdered
 } from 'lucide-react';
+
+import {
+  parseRatio, parseRatioKey, isSetRatioKey, ratioKeyLabel,
+  layoutPanels, placementToCorners,
+  DEFAULT_PLACEMENT, DEFAULT_CORNERS
+} from '../utils/panels';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -35,15 +41,6 @@ const FRAME_OPTIONS = [
   { id: 'natural_wood', name: 'Natural Wood (Doğal Ahşap)' },
   { id: 'walnut', name: 'Walnut (Ceviz)' }
 ];
-
-const parseRatio = (ratioStr) => {
-  if (!ratioStr) return 1;
-  const parts = ratioStr.split(':');
-  if (parts.length === 2) {
-    return Number(parts[0]) / Number(parts[1]);
-  }
-  return 1;
-};
 
 const drawRealisticFrame = (ctx, x, y, w, h, style, thickness) => {
   if (!style || style === 'stretched') return;
@@ -331,10 +328,126 @@ export default function TemplateStudio() {
   const [isThumbnail, setIsThumbnail] = useState(false);
   const [isStaticThumbnail, setIsStaticThumbnail] = useState(false);
   
-  // Flat Mode coordinates (normalized 0-1)
-  const [flatPlacement, setFlatPlacement] = useState({
-    x: 0.25, y: 0.25, width: 0.5, height: 0.5
-  });
+  // Panel yerleşimleri (normalize 0-1).
+  // Tek panelli klasik şablonlarda dizi tek elemanlıdır; Set of 2 gibi çok
+  // panelli şablonlarda her panel ayrı bir slot olur (0 = sol, 1 = sağ).
+  const [slots, setSlots] = useState([
+    { placement: DEFAULT_PLACEMENT, corners: DEFAULT_CORNERS }
+  ]);
+  const [activeSlot, setActiveSlot] = useState(0);
+
+  // Set şablonlarında panellere görselin nasıl dağıtılacağı
+  const [setSource, setSetSource] = useState('split'); // 'split' | 'duplicate'
+  const [panelGap, setPanelGap] = useState(0.03);      // panel arası boşluk (0-1)
+
+  // Aktif panelin yerleşimi. Aşağıdaki setter'lar sayesinde tüm mevcut
+  // sürükleme/klavye mantığı tek panelliymiş gibi çalışmaya devam eder.
+  const flatPlacement = slots[activeSlot]?.placement || DEFAULT_PLACEMENT;
+  const corners = slots[activeSlot]?.corners || DEFAULT_CORNERS;
+
+  // Panel kilitleri (yalnızca çok panelli düz/flat şablonlarda).
+  // Referans her zaman sol paneldir; kilitli özellik diğer panellere ondan
+  // yansır ve diğer panellerde tek başına değiştirilemez.
+  const [panelLocks, setPanelLocks] = useState({ x: true, y: true, size: true });
+  const REF_SLOT = 0;
+
+  const placementOf = (slot) => slot?.placement || DEFAULT_PLACEMENT;
+
+  /** Panelleri, aralarındaki mevcut boşlukları koruyarak yan yana yeniden dizer. */
+  const respaceKeepingGaps = (source, target) => {
+    for (let i = 1; i < target.length; i++) {
+      const gap = placementOf(source[i]).x
+        - (placementOf(source[i - 1]).x + placementOf(source[i - 1]).width);
+      target[i].placement.x = target[i - 1].placement.x + target[i - 1].placement.width + gap;
+    }
+  };
+
+  /** Kilitli özellikleri referans panelden diğerlerine yansıtır. */
+  const alignSlotsToReference = (list, locks) => {
+    if (list.length < 2) return list;
+    const ref = placementOf(list[REF_SLOT]);
+    const out = list.map(s => ({ ...s, placement: { ...placementOf(s) } }));
+
+    out.forEach((slot, idx) => {
+      if (idx === REF_SLOT) return;
+      if (locks.y) slot.placement.y = ref.y;
+      if (locks.size) {
+        slot.placement.width = ref.width;
+        slot.placement.height = ref.height;
+      }
+    });
+
+    if (locks.size) respaceKeepingGaps(list, out);
+    return out;
+  };
+
+  /**
+   * Bir panel değiştikten sonra kilit kurallarını uygular.
+   *  - X kilidi  : sol panelin yatay hareketi diğerlerine aynen taşınır
+   *                (aradaki boşluk sabit kalır), diğer paneller yatayda kilitli
+   *  - Y kilidi  : diğer paneller sol panelin Y'sine hizalanır
+   *  - Boyut kilidi: diğer paneller sol panelin ölçüsünü alır, boşluklar korunur
+   */
+  const applyPanelLocks = (prevSlots, nextSlots, changedIdx) => {
+    if (type !== 'flat' || nextSlots.length < 2) return nextSlots;
+    if (!panelLocks.x && !panelLocks.y && !panelLocks.size) return nextSlots;
+
+    const out = nextSlots.map(s => ({ ...s, placement: { ...placementOf(s) } }));
+    const refNext = placementOf(nextSlots[REF_SLOT]);
+    const refPrev = placementOf(prevSlots[REF_SLOT]);
+
+    if (changedIdx === REF_SLOT) {
+      const dx = refNext.x - refPrev.x;
+      const sizeChanged = refNext.width !== refPrev.width || refNext.height !== refPrev.height;
+
+      out.forEach((slot, idx) => {
+        if (idx === REF_SLOT) return;
+        if (panelLocks.x) slot.placement.x = placementOf(prevSlots[idx]).x + dx;
+        if (panelLocks.y) slot.placement.y = refNext.y;
+        if (panelLocks.size) {
+          slot.placement.width = refNext.width;
+          slot.placement.height = refNext.height;
+        }
+      });
+
+      // Ölçü değiştiyse paneller boşluk korunacak şekilde yeniden dizilir
+      if (panelLocks.size && sizeChanged) respaceKeepingGaps(prevSlots, out);
+    } else {
+      // Referans olmayan panelde kilitli özellikler değiştirilemez
+      const slot = out[changedIdx];
+      if (panelLocks.x) slot.placement.x = placementOf(prevSlots[changedIdx]).x;
+      if (panelLocks.y) slot.placement.y = refNext.y;
+      if (panelLocks.size) {
+        slot.placement.width = refNext.width;
+        slot.placement.height = refNext.height;
+      }
+    }
+
+    return out;
+  };
+
+  const updateActiveSlot = (field, fallback, updater) => {
+    setSlots(prev => {
+      const next = prev.map((slot, idx) => {
+        if (idx !== activeSlot) return slot;
+        const current = slot[field] || fallback;
+        return { ...slot, [field]: typeof updater === 'function' ? updater(current) : updater };
+      });
+      return field === 'placement' ? applyPanelLocks(prev, next, activeSlot) : next;
+    });
+  };
+
+  /** Kilidi açıp kapatır; açarken panelleri hemen referansa hizalar. */
+  const togglePanelLock = (key) => {
+    const nextLocks = { ...panelLocks, [key]: !panelLocks[key] };
+    setPanelLocks(nextLocks);
+    if (nextLocks[key] && type === 'flat') {
+      setSlots(prev => alignSlotsToReference(prev, nextLocks));
+    }
+  };
+
+  const setFlatPlacement = (updater) => updateActiveSlot('placement', DEFAULT_PLACEMENT, updater);
+  const setCorners = (updater) => updateActiveSlot('corners', DEFAULT_CORNERS, updater);
 
   // Flat styling
   const [frameStyle, setFrameStyle] = useState('black_frame');
@@ -345,13 +458,6 @@ export default function TemplateStudio() {
   const [shadowDistance, setShadowDistance] = useState(5.0);
   const [shadowBlur, setShadowBlur] = useState(6.0);
 
-  // Perspective Mode 4 corners (normalized 0-1, TL, TR, BR, BL order)
-  const [corners, setCorners] = useState({
-    tl: { x: 0.25, y: 0.25 },
-    tr: { x: 0.75, y: 0.25 },
-    br: { x: 0.75, y: 0.75 },
-    bl: { x: 0.25, y: 0.75 }
-  });
 
   // Editor Interaction State
   const [activeHandle, setActiveHandle] = useState(null); // null | 'tl' | 'tr' | 'br' | 'bl' | 'center' (flat) | 'corner-tl' | 'corner-tr' | 'corner-br' | 'corner-bl' (perspective)
@@ -494,6 +600,57 @@ export default function TemplateStudio() {
       setOrderRatio(ratioPresets[0]);
     }
   }, [variationProfiles]);
+
+  /* ---------------- Panel (Set of 2 vb.) yardımcıları ---------------- */
+
+  // Çizim oranı anahtarı panel sayısını da taşır: '1:2x2' → 1:2 oranında 2 panel
+  const { ratio: activePanelRatio, panelCount: activePanelCount } = parseRatioKey(activeRatio);
+  const isSetTemplate = activePanelCount > 1;
+
+  const panelLabel = (idx, total) => {
+    if (total <= 1) return 'Sanat Eseri Yerleşim Alanı';
+    if (total === 2) return idx === 0 ? 'Sol Panel' : 'Sağ Panel';
+    return `Panel ${idx + 1}`;
+  };
+
+  /** Panelleri arka plan üzerinde simetrik, eşit aralıklı dizer. */
+  const buildAutoLayout = (count = activePanelCount, gap = panelGap) => {
+    const bgRatio = bgImage ? bgImage.width / bgImage.height : 1;
+
+    // Paneller tuvale sığmıyorsa yüksekliği küçültüp orana sadık kal
+    let height = 0.5;
+    const widthAt = (hh) => (hh * activePanelRatio) / bgRatio;
+    const totalAt = (hh) => count * widthAt(hh) + (count - 1) * gap;
+    if (totalAt(height) > 0.9) height *= 0.9 / totalAt(height);
+
+    return layoutPanels(activePanelRatio, count, gap, height, 0.5, bgRatio)
+      .map(item => ({
+        placement: item.placement,
+        corners: placementToCorners(item.placement)
+      }));
+  };
+
+  const applyAutoLayout = () => {
+    if (!bgImage) return;
+    setSlots(buildAutoLayout());
+    setActiveSlot(0);
+  };
+
+  // Çizim oranı değişince panel sayısını eşitle
+  useEffect(() => {
+    setSlots(prev => {
+      if (prev.length === activePanelCount) return prev;
+      if (!bgImage) {
+        const next = [...prev];
+        while (next.length < activePanelCount) {
+          next.push({ placement: DEFAULT_PLACEMENT, corners: DEFAULT_CORNERS });
+        }
+        return next.slice(0, activePanelCount);
+      }
+      return buildAutoLayout();
+    });
+    setActiveSlot(0);
+  }, [activeRatio, bgImage]);
 
   /* ---------------- Mockup dizilim yardımcıları ---------------- */
 
@@ -640,7 +797,7 @@ export default function TemplateStudio() {
     if (view === 'editor' && bgImage) {
       drawEditor();
     }
-  }, [view, bgImage, type, flatPlacement, corners, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle]);
+  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle]);
 
   const handleCreateNew = () => {
     setBgImage(null);
@@ -649,13 +806,12 @@ export default function TemplateStudio() {
     setName('');
     setType('flat');
     setCompatibleRatios(['2:3']);
-    setFlatPlacement({ x: 0.25, y: 0.25, width: 0.5, height: 0.5 });
-    setCorners({
-      tl: { x: 0.25, y: 0.25 },
-      tr: { x: 0.75, y: 0.25 },
-      br: { x: 0.75, y: 0.75 },
-      bl: { x: 0.25, y: 0.75 }
-    });
+    setActiveRatio('2:3');
+    setSlots([{ placement: DEFAULT_PLACEMENT, corners: DEFAULT_CORNERS }]);
+    setActiveSlot(0);
+    setSetSource('split');
+    setPanelGap(0.03);
+    setPanelLocks({ x: true, y: true, size: true });
     setFrameStyle('black_frame');
     setFrameThickness(3.0);
     setShadowEnabled(true);
@@ -721,104 +877,133 @@ export default function TemplateStudio() {
   };
 
   const drawFlatOverlay = (ctx, w, h) => {
-    const px = flatPlacement.x * w;
-    const py = flatPlacement.y * h;
-    const pw = flatPlacement.width * w;
-    const ph = flatPlacement.height * h;
+    const rects = slots.map(slot => {
+      const p = slot.placement || DEFAULT_PLACEMENT;
+      return { x: p.x * w, y: p.y * h, w: p.width * w, h: p.height * h };
+    });
 
-    // Draw dark backing tint outside placement area
+    // Panellerin dışında kalan alanı karart, panel içlerinde arka planı geri getir
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    // Top
-    ctx.fillRect(0, 0, w, py);
-    // Bottom
-    ctx.fillRect(0, py + ph, w, h - (py + ph));
-    // Left
-    ctx.fillRect(0, py, px, ph);
-    // Right
-    ctx.fillRect(px + pw, py, w - (px + pw), ph);
+    ctx.fillRect(0, 0, w, h);
+    rects.forEach(r => {
+      ctx.drawImage(
+        bgImage,
+        (r.x / w) * bgImage.width, (r.y / h) * bgImage.height,
+        (r.w / w) * bgImage.width, (r.h / h) * bgImage.height,
+        r.x, r.y, r.w, r.h
+      );
+    });
 
-    // Draw shadow if enabled
-    if (shadowEnabled) {
-      ctx.save();
-      ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity / 10})`;
-      ctx.shadowBlur = shadowBlur;
-      
-      if (shadowSides === 'all' || shadowSides === 'bottom') {
-        ctx.shadowOffsetY = shadowDistance;
+    rects.forEach((r, idx) => {
+      const isActive = idx === activeSlot;
+
+      // Draw shadow if enabled
+      if (shadowEnabled) {
+        ctx.save();
+        ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity / 10})`;
+        ctx.shadowBlur = shadowBlur;
+
+        if (shadowSides === 'all' || shadowSides === 'bottom') {
+          ctx.shadowOffsetY = shadowDistance;
+        }
+        if (shadowSides === 'all' || shadowSides === 'right') {
+          ctx.shadowOffsetX = shadowDistance;
+        }
+        if (shadowSides === 'left') {
+          ctx.shadowOffsetX = -shadowDistance;
+        }
+        if (shadowSides === 'top') {
+          ctx.shadowOffsetY = -shadowDistance;
+        }
+
+        const t = (frameStyle !== 'stretched') ? parseFloat(frameThickness) || 0 : 0;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(r.x - t, r.y - t, r.w + 2 * t, r.h + 2 * t);
+        ctx.restore();
       }
-      if (shadowSides === 'all' || shadowSides === 'right') {
-        ctx.shadowOffsetX = shadowDistance;
+
+      // Draw Mockup placeholder background
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+
+      // Draw borders & frame thickness
+      if (frameStyle !== 'stretched') {
+        drawRealisticFrame(ctx, r.x, r.y, r.w, r.h, frameStyle, frameThickness);
       }
-      if (shadowSides === 'left') {
-        ctx.shadowOffsetX = -shadowDistance;
+
+      // Outer bounding border — pasif paneller kesikli çizilir
+      ctx.strokeStyle = isActive ? '#f59e0b' : 'rgba(245, 158, 11, 0.45)';
+      ctx.lineWidth = isActive ? 1.5 : 1;
+      ctx.setLineDash(isActive ? [] : [5, 4]);
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+      ctx.setLineDash([]);
+
+      if (isActive) {
+        // Draw center indicator
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(r.x + r.w / 2, r.y + r.h / 2, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw resize handles (TL, TR, BR, BL)
+        drawHandle(ctx, r.x, r.y);
+        drawHandle(ctx, r.x + r.w, r.y);
+        drawHandle(ctx, r.x + r.w, r.y + r.h);
+        drawHandle(ctx, r.x, r.y + r.h);
       }
-      if (shadowSides === 'top') {
-        ctx.shadowOffsetY = -shadowDistance;
-      }
 
-      const t = (frameStyle !== 'stretched') ? parseFloat(frameThickness) || 0 : 0;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(px - t, py - t, pw + 2 * t, ph + 2 * t);
-      ctx.restore();
-    }
-
-    // Draw Mockup placeholder background
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-    ctx.fillRect(px, py, pw, ph);
-
-    // Draw borders & frame thickness
-    if (frameStyle !== 'stretched') {
-      drawRealisticFrame(ctx, px, py, pw, ph, frameStyle, frameThickness);
-    }
-
-    // Outer bounding border
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(px, py, pw, ph);
-
-    // Draw center indicator
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(px + pw / 2, py + ph / 2, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw resize handles (TL, TR, BR, BL)
-    drawHandle(ctx, px, py);
-    drawHandle(ctx, px + pw, py);
-    drawHandle(ctx, px + pw, py + ph);
-    drawHandle(ctx, px, py + ph);
-
-    // Bounding dimensions text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '10px Inter';
-    ctx.fillText('Sanat Eseri Yerleşim Alanı', px + 6, py + 16);
+      // Bounding dimensions text
+      ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)';
+      ctx.font = '10px Inter';
+      // Kilit aktifken referans panel ve kilitli paneller ayırt edilsin
+      const anyLock = panelLocks.x || panelLocks.y || panelLocks.size;
+      const suffix = (rects.length > 1 && anyLock)
+        ? (idx === REF_SLOT ? ' · referans' : ' · kilitli')
+        : '';
+      ctx.fillText(panelLabel(idx, rects.length) + suffix, r.x + 6, r.y + 16);
+    });
   };
 
   const drawPerspectiveOverlay = (ctx, w, h) => {
-    const tl = { x: corners.tl.x * w, y: corners.tl.y * h };
-    const tr = { x: corners.tr.x * w, y: corners.tr.y * h };
-    const br = { x: corners.br.x * w, y: corners.br.y * h };
-    const bl = { x: corners.bl.x * w, y: corners.bl.y * h };
+    slots.forEach((slot, idx) => {
+      const c = slot.corners || DEFAULT_CORNERS;
+      const isActive = idx === activeSlot;
 
-    // Draw quad polygon
-    ctx.beginPath();
-    ctx.moveTo(tl.x, tl.y);
-    ctx.lineTo(tr.x, tr.y);
-    ctx.lineTo(br.x, br.y);
-    ctx.lineTo(bl.x, bl.y);
-    ctx.closePath();
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      const tl = { x: c.tl.x * w, y: c.tl.y * h };
+      const tr = { x: c.tr.x * w, y: c.tr.y * h };
+      const br = { x: c.br.x * w, y: c.br.y * h };
+      const bl = { x: c.bl.x * w, y: c.bl.y * h };
 
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-    ctx.fill();
+      // Draw quad polygon
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.closePath();
+      ctx.strokeStyle = isActive ? '#f59e0b' : 'rgba(245, 158, 11, 0.45)';
+      ctx.lineWidth = isActive ? 2 : 1;
+      ctx.setLineDash(isActive ? [] : [5, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-    // Draw corners as glowing circles
-    drawPerspectiveHandle(ctx, tl.x, tl.y, 'Sol Üst (TL)', selectedHandle === 'corner-tl');
-    drawPerspectiveHandle(ctx, tr.x, tr.y, 'Sağ Üst (TR)', selectedHandle === 'corner-tr');
-    drawPerspectiveHandle(ctx, br.x, br.y, 'Sağ Alt (BR)', selectedHandle === 'corner-br');
-    drawPerspectiveHandle(ctx, bl.x, bl.y, 'Sol Alt (BL)', selectedHandle === 'corner-bl');
+      ctx.fillStyle = isActive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.07)';
+      ctx.fill();
+
+      if (slots.length > 1) {
+        ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)';
+        ctx.font = '10px Inter';
+        ctx.fillText(panelLabel(idx, slots.length), tl.x + 6, tl.y + 16);
+      }
+
+      // Draw corners as glowing circles — sadece aktif panelde
+      if (isActive) {
+        drawPerspectiveHandle(ctx, tl.x, tl.y, 'Sol Üst (TL)', selectedHandle === 'corner-tl');
+        drawPerspectiveHandle(ctx, tr.x, tr.y, 'Sağ Üst (TR)', selectedHandle === 'corner-tr');
+        drawPerspectiveHandle(ctx, br.x, br.y, 'Sağ Alt (BR)', selectedHandle === 'corner-br');
+        drawPerspectiveHandle(ctx, bl.x, bl.y, 'Sol Alt (BL)', selectedHandle === 'corner-bl');
+      }
+    });
   };
 
   const drawHandle = (ctx, x, y) => {
@@ -870,6 +1055,24 @@ export default function TemplateStudio() {
   };
 
   // Canvas Mouse interaction handlers
+  /** Bir noktanın dörtgenin içinde olup olmadığı (panel seçimi için). */
+  const pointInQuad = (x, y, quad, w, h) => {
+    const pts = [quad.tl, quad.tr, quad.br, quad.bl].map(pt => ({ x: pt.x * w, y: pt.y * h }));
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const intersects = (pts[i].y > y) !== (pts[j].y > y) &&
+        x < ((pts[j].x - pts[i].x) * (y - pts[i].y)) / (pts[j].y - pts[i].y) + pts[i].x;
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  };
+
+  /** Panelleri aktif olan önce gelecek şekilde sırala (üstte duran önce yakalanır). */
+  const hitTestOrder = () => [
+    activeSlot,
+    ...slots.map((_, i) => i).filter(i => i !== activeSlot)
+  ].filter(i => slots[i]);
+
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -882,56 +1085,68 @@ export default function TemplateStudio() {
     const h = canvas.height;
 
     if (type === 'flat') {
-      const px = flatPlacement.x * w;
-      const py = flatPlacement.y * h;
-      const pw = flatPlacement.width * w;
-      const ph = flatPlacement.height * h;
-
-      // Check corners for resizing
       const hitRadius = 10;
-      if (Math.abs(x - px) < hitRadius && Math.abs(y - py) < hitRadius) {
-        setActiveHandle('tl');
-        setSelectedHandle('tl');
-        return;
-      }
-      if (Math.abs(x - (px + pw)) < hitRadius && Math.abs(y - py) < hitRadius) {
-        setActiveHandle('tr');
-        setSelectedHandle('tr');
-        return;
-      }
-      if (Math.abs(x - (px + pw)) < hitRadius && Math.abs(y - (py + ph)) < hitRadius) {
-        setActiveHandle('br');
-        setSelectedHandle('br');
-        return;
-      }
-      if (Math.abs(x - px) < hitRadius && Math.abs(y - (py + ph)) < hitRadius) {
-        setActiveHandle('bl');
-        setSelectedHandle('bl');
-        return;
-      }
 
-      // Check center dragging
-      if (x > px && x < px + pw && y > py && y < py + ph) {
-        setActiveHandle('center');
-        setSelectedHandle('center');
-        setDragOffset({ x: x - px, y: y - py });
-        return;
+      for (const idx of hitTestOrder()) {
+        const placement = slots[idx].placement || DEFAULT_PLACEMENT;
+        const px = placement.x * w;
+        const py = placement.y * h;
+        const pw = placement.width * w;
+        const ph = placement.height * h;
+
+        // Check corners for resizing
+        const nearCorner = (cx, cy) => Math.abs(x - cx) < hitRadius && Math.abs(y - cy) < hitRadius;
+        let handle = null;
+        if (nearCorner(px, py)) handle = 'tl';
+        else if (nearCorner(px + pw, py)) handle = 'tr';
+        else if (nearCorner(px + pw, py + ph)) handle = 'br';
+        else if (nearCorner(px, py + ph)) handle = 'bl';
+
+        if (handle) {
+          setActiveSlot(idx);
+          setActiveHandle(handle);
+          setSelectedHandle(handle);
+          return;
+        }
+
+        // Check center dragging
+        if (x > px && x < px + pw && y > py && y < py + ph) {
+          setActiveSlot(idx);
+          setActiveHandle('center');
+          setSelectedHandle('center');
+          setDragOffset({ x: x - px, y: y - py });
+          return;
+        }
       }
     } else {
       // Perspective mode corners
       const hitRadius = 15;
-      const cornersCoords = {
-        'corner-tl': { x: corners.tl.x * w, y: corners.tl.y * h },
-        'corner-tr': { x: corners.tr.x * w, y: corners.tr.y * h },
-        'corner-br': { x: corners.br.x * w, y: corners.br.y * h },
-        'corner-bl': { x: corners.bl.x * w, y: corners.bl.y * h }
-      };
 
-      for (const [key, coord] of Object.entries(cornersCoords)) {
-        if (Math.sqrt((x - coord.x) ** 2 + (y - coord.y) ** 2) < hitRadius) {
-          setActiveHandle(key);
-          setSelectedHandle(key);
-          setZoomPoint({ x: coord.x, y: coord.y });
+      for (const idx of hitTestOrder()) {
+        const c = slots[idx].corners || DEFAULT_CORNERS;
+        const cornersCoords = {
+          'corner-tl': { x: c.tl.x * w, y: c.tl.y * h },
+          'corner-tr': { x: c.tr.x * w, y: c.tr.y * h },
+          'corner-br': { x: c.br.x * w, y: c.br.y * h },
+          'corner-bl': { x: c.bl.x * w, y: c.bl.y * h }
+        };
+
+        for (const [key, coord] of Object.entries(cornersCoords)) {
+          if (Math.sqrt((x - coord.x) ** 2 + (y - coord.y) ** 2) < hitRadius) {
+            setActiveSlot(idx);
+            setActiveHandle(key);
+            setSelectedHandle(key);
+            setZoomPoint({ x: coord.x, y: coord.y });
+            return;
+          }
+        }
+      }
+
+      // Köşeye denk gelmediyse dörtgenin içine tıklamak paneli seçer
+      for (const idx of hitTestOrder()) {
+        if (idx !== activeSlot && pointInQuad(x, y, slots[idx].corners || DEFAULT_CORNERS, w, h)) {
+          setActiveSlot(idx);
+          setSelectedHandle(null);
           return;
         }
       }
@@ -1073,14 +1288,34 @@ export default function TemplateStudio() {
       return;
     }
 
+    // Çok panelli şablonun uyumlu oranları da çok panelli olmalı; aksi halde
+    // şablon tek panelli bir profile bağlanır ve ikinci panel boşa gider.
+    if (slots.length > 1 && !compatibleRatios.some(isSetRatioKey)) {
+      alert(`Bu şablon ${slots.length} panelli. "Uyumlu Oranlar" listesinden çok panelli bir oran (ör. ${ratioKeyLabel(activeRatio)}) seçmelisiniz.`);
+      return;
+    }
+    if (slots.length === 1 && compatibleRatios.some(isSetRatioKey)) {
+      alert('Seçtiğiniz uyumlu oranlardan biri çok panelli bir set. Çizim oranını o sete ayarlayıp panelleri yerleştirin.');
+      return;
+    }
+
     const config = {
       compatible_ratios: compatibleRatios,
       editorWidth: canvasRef.current?.width || 800,
-      is_thumbnail: isThumbnail
+      is_thumbnail: isThumbnail,
+      panel_count: slots.length
     };
 
+    if (slots.length > 1) {
+      config.set_source = setSource;
+      config.panel_gap = panelGap;
+    }
+
     if (type === 'flat') {
-      config.placement = flatPlacement;
+      config.slots = slots.map(slot => ({ placement: slot.placement || DEFAULT_PLACEMENT }));
+      // Tek panelli şablonları eski sürümlerle uyumlu tutmak için ilk panel
+      // ayrıca config.placement olarak da yazılır.
+      config.placement = slots[0]?.placement || DEFAULT_PLACEMENT;
       config.frame = {
         style: frameStyle,
         thickness: frameThickness
@@ -1093,7 +1328,8 @@ export default function TemplateStudio() {
         blur: shadowBlur
       };
     } else {
-      config.corners = corners;
+      config.slots = slots.map(slot => ({ corners: slot.corners || DEFAULT_CORNERS }));
+      config.corners = slots[0]?.corners || DEFAULT_CORNERS;
     }
 
     const formData = new FormData();
@@ -1449,7 +1685,7 @@ export default function TemplateStudio() {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span>{ratio}</span>
+                <span>{ratioKeyLabel(ratio)}</span>
                 {cfg?.enabled && (
                   <span className={`w-1.5 h-1.5 rounded-full ${orderRatio === ratio ? 'bg-slate-950' : 'bg-emerald-500'}`} />
                 )}
@@ -1811,7 +2047,7 @@ export default function TemplateStudio() {
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      {ratio === 'All' ? 'Tüm Oranlar' : `${ratio} Oranı`}
+                      {ratio === 'All' ? 'Tüm Oranlar' : (isSetRatioKey(ratio) ? `${ratioKeyLabel(ratio)} (Set)` : `${ratio} Oranı`)}
                     </button>
                   ))}
                 </div>
@@ -2044,7 +2280,250 @@ export default function TemplateStudio() {
                     {type === 'flat' 
                       ? 'Düz modda: Çerçevenin kenarlarını sürükleyerek boyutlandırabilir, merkezinden tutarak konumlandırabilirsiniz.'
                       : 'Perspektif modda: Çerçevenin eğik duracağı 4 köşeyi sırasıyla işaretleyin. Sürüklerken büyüteç yardımıyla hassas ayar yapın.'}
+                    {isSetTemplate && ` ${activePanelCount} panelli set: düzenlemek istediğiniz panele tıklayın, tutamaçlar o panele geçer.`}
                   </span>
+                </div>
+              )}
+              {/* Yerleşim ve stil kartları — sağ paneli şişirmemek için tuvalin altında */}
+              {(isSetTemplate || (type === 'flat' && bgImage)) && (
+                <div className={`grid grid-cols-1 gap-4 items-start ${
+                  isSetTemplate && type === 'flat' && bgImage ? 'xl:grid-cols-2' : ''
+                }`}>
+                  {isSetTemplate && (
+                    <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-4">
+                      <h3 className="text-sm font-semibold text-white flex items-center space-x-2 border-b border-[#1e293b] pb-3">
+                        <Layers className="w-4 h-4 text-amber-500" />
+                        <span>Panel Düzeni ({activePanelCount} Panel)</span>
+                      </h3>
+
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Düzenlenen Panel
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {slots.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveSlot(idx)}
+                              className={`py-2.5 px-3 border rounded-xl font-semibold text-[11px] transition-all ${
+                                activeSlot === idx
+                                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+                                  : 'bg-[#151f32] border-[#1e293b] text-slate-400'
+                              }`}
+                            >
+                              {panelLabel(idx, slots.length)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Panel kilitleri — yalnızca düz (flat) şablonlarda */}
+                      {type === 'flat' && (
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Panel Kilitleri (Referans: Sol Panel)
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { key: 'x', label: 'X Kilidi' },
+                              { key: 'y', label: 'Y Kilidi' },
+                              { key: 'size', label: 'Boyut' }
+                            ].map(lock => (
+                              <button
+                                key={lock.key}
+                                type="button"
+                                onClick={() => togglePanelLock(lock.key)}
+                                className={`flex items-center justify-center space-x-1.5 py-2.5 px-2 border rounded-xl font-semibold text-[11px] transition-all ${
+                                  panelLocks[lock.key]
+                                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+                                    : 'bg-[#151f32] border-[#1e293b] text-slate-500'
+                                }`}
+                              >
+                                {panelLocks[lock.key] ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                                <span>{lock.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-slate-500">
+                            {panelLocks.x || panelLocks.y || panelLocks.size
+                              ? 'Kilitli özellik sol panelden yansır; diğer panelde tek başına değişmez.'
+                              : 'Tüm kilitler kapalı — paneller bağımsız hareket eder.'}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Görselin Panellere Dağılımı
+                        </label>
+                        <select
+                          value={setSource}
+                          onChange={(e) => setSetSource(e.target.value)}
+                          className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="split">Böl — tek görsel panellere paylaştırılır</option>
+                          <option value="duplicate">Tekrarla — aynı görsel her panelde</option>
+                        </select>
+                        <p className="text-[10px] text-slate-500">
+                          {setSource === 'split'
+                            ? `Görsel soldan sağa ${activePanelCount} dilime bölünür; kaynak, setin tamamının oranında olmalı.`
+                            : 'Aynı görsel her panelde tekrar eder.'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-slate-400">
+                          <span>Paneller Arası Boşluk</span>
+                          <span>{Math.round(panelGap * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.2"
+                          step="0.005"
+                          value={panelGap}
+                          onChange={(e) => setPanelGap(Number(e.target.value))}
+                          className="w-full accent-amber-500"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={applyAutoLayout}
+                        disabled={!bgImage}
+                        className="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-semibold py-2.5 px-4 rounded-xl border border-[#334155] text-xs transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Panelleri Simetrik Yerleştir</span>
+                      </button>
+                    </div>
+                  )}
+                  {/* Only show styling tools in Flat mode */}
+                  {type === 'flat' && bgImage && (
+                    <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-6">
+                      <h3 className="text-sm font-semibold text-white flex items-center space-x-2 border-b border-[#1e293b] pb-3">
+                        <Frame className="w-4 h-4 text-amber-500" />
+                        <span>Çerçeve & Gölge Efektleri</span>
+                      </h3>
+
+                      {/* Frame selection */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                          Çerçeve Türü
+                        </label>
+                        <select
+                          value={frameStyle}
+                          onChange={(e) => setFrameStyle(e.target.value)}
+                          className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                        >
+                          {FRAME_OPTIONS.map(opt => (
+                            <option key={opt.id} value={opt.id}>{opt.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {frameStyle !== 'stretched' && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-slate-400">
+                            <span>Çerçeve Kalınlığı</span>
+                            <span>{frameThickness}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="15"
+                            step="0.5"
+                            value={frameThickness}
+                            onChange={(e) => setFrameThickness(Number(e.target.value))}
+                            className="w-full accent-amber-500"
+                          />
+                        </div>
+                      )}
+
+                      {/* Shadow settings */}
+                      <div className="border-t border-[#1e293b] pt-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">Derinlik Gölgesi</span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={shadowEnabled} 
+                              onChange={(e) => setShadowEnabled(e.target.checked)} 
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+                          </label>
+                        </div>
+
+                        {shadowEnabled && (
+                          <div className="space-y-3 pt-2">
+                            <div className="space-y-1.5">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Gölge Kenarı (Direction)
+                              </label>
+                              <select
+                                value={shadowSides}
+                                onChange={(e) => setShadowSides(e.target.value)}
+                                className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none"
+                              >
+                                <option value="all">Her Yöne (All)</option>
+                                <option value="bottom">Alt Kenara (Bottom)</option>
+                                <option value="right">Sağ Kenara (Right)</option>
+                                <option value="left">Sol Kenara (Left)</option>
+                                <option value="top">Üst Kenara (Top)</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-slate-400">
+                                <span>Yoğunluk (Opacity)</span>
+                                <span>{shadowOpacity / 10}</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.5"
+                                max="9"
+                                step="0.5"
+                                value={shadowOpacity}
+                                onChange={(e) => setShadowOpacity(Number(e.target.value))}
+                                className="w-full accent-amber-500"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-slate-400">
+                                <span>Mesafe (Offset)</span>
+                                <span>{shadowDistance}px</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1"
+                                max="25"
+                                value={shadowDistance}
+                                onChange={(e) => setShadowDistance(Number(e.target.value))}
+                                className="w-full accent-amber-500"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-slate-400">
+                                <span>Yayılma & Bulanıklık</span>
+                                <span>{shadowBlur}px</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1"
+                                max="25"
+                                value={shadowBlur}
+                                onChange={(e) => setShadowBlur(Number(e.target.value))}
+                                className="w-full accent-amber-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2054,7 +2533,7 @@ export default function TemplateStudio() {
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-5">
                 <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
                   <Compass className="w-4 h-4 text-amber-500" />
-                  <span>1. Şablon Tipi</span>
+                  <span>Şablon Tipi</span>
                 </h3>
 
                 <div className="space-y-2">
@@ -2114,10 +2593,14 @@ export default function TemplateStudio() {
                             : 'bg-[#151f32] border-[#1e293b] text-slate-400'
                         }`}
                       >
-                        {ratio}
+                        {ratioKeyLabel(ratio)}
                       </button>
                     ))}
                   </div>
+                  <p className="text-[10px] text-slate-500">
+                    Çok panelli set oranları "× N panel" olarak gösterilir ve yalnızca
+                    aynı panel sayısına çizilmiş şablonlarla eşleşir.
+                  </p>
                 </div>
 
                 {/* Thumbnail Seçeneği */}
@@ -2137,167 +2620,62 @@ export default function TemplateStudio() {
                   </label>
                 </div>
 
-                {type === 'flat' && (
-                  <div className="space-y-2 pt-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Çizim Oranı (Oran Kilidi)
-                    </label>
-                    <select
-                      value={activeRatio}
-                      onChange={(e) => {
-                        const newRatio = e.target.value;
-                        setActiveRatio(newRatio);
-                        if (bgImage) {
-                          const canvas = canvasRef.current;
-                          const w = canvas.width;
-                          const h = canvas.height;
-                          const px = flatPlacement.x * w;
-                          const py = flatPlacement.y * h;
-                          const pw = flatPlacement.width * w;
-                          const rVal = parseRatio(newRatio);
-                          const ph = pw / rVal;
-                          setFlatPlacement(prev => ({
-                            ...prev,
-                            height: ph / h
-                          }));
-                        }
-                      }}
-                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                    >
-                      {ratioPresets.map(r => (
-                        <option key={r} value={r}>{r} Oranı</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div className="space-y-2 pt-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Çizim Oranı (Oran Kilidi)
+                  </label>
+                  <select
+                    value={activeRatio}
+                    onChange={(e) => {
+                      const newRatio = e.target.value;
+                      const nextCount = parseRatioKey(newRatio).panelCount;
+                      setActiveRatio(newRatio);
+
+                      // Çok panelli bir şablon yalnızca aynı set oranına hizmet
+                      // edebilir; uyumlu oranları buna göre otomatik düzelt ki
+                      // kullanıcı kaydederken çıkmaza girmesin.
+                      if (nextCount > 1) {
+                        setCompatibleRatios([newRatio]);
+                      } else {
+                        setCompatibleRatios(prev => {
+                          const singles = prev.filter(r => !isSetRatioKey(r));
+                          return singles.length > 0 ? singles : [newRatio];
+                        });
+                      }
+
+                      // Çok panelli bir orana geçişte paneller otomatik dizilir
+                      // (useEffect halleder). Tek panelde mevcut yerleşimin
+                      // yalnızca yüksekliği yeni orana göre düzeltilir.
+                      if (bgImage && nextCount === 1 && slots.length === 1 && type === 'flat') {
+                        const canvas = canvasRef.current;
+                        const w = canvas.width;
+                        const h = canvas.height;
+                        const pw = flatPlacement.width * w;
+                        const rVal = parseRatio(newRatio);
+                        const ph = pw / rVal;
+                        setFlatPlacement(prev => ({
+                          ...prev,
+                          height: ph / h
+                        }));
+                      }
+                    }}
+                    className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  >
+                    {ratioPresets.map(r => (
+                      <option key={r} value={r}>
+                        {isSetRatioKey(r) ? `${ratioKeyLabel(r)} (Set)` : `${r} Oranı`}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-500">
+                    {isSetTemplate
+                      ? `Set şablonu: her paneli ${String(activeRatio).split('x')[0]} oranında ${activePanelCount} panel çizilir.`
+                      : 'Tek panelli şablon. Çok panelli set için listeden bir "Set" oranı seçin.'}
+                  </p>
+                </div>
+
               </div>
 
-              {/* Only show styling tools in Flat mode */}
-              {type === 'flat' && bgImage && (
-                <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-6">
-                  <h3 className="text-sm font-semibold text-white flex items-center space-x-2 border-b border-[#1e293b] pb-3">
-                    <Frame className="w-4 h-4 text-amber-500" />
-                    <span>2. Çerçeve & Gölge Efektleri</span>
-                  </h3>
-
-                  {/* Frame selection */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Çerçeve Türü
-                    </label>
-                    <select
-                      value={frameStyle}
-                      onChange={(e) => setFrameStyle(e.target.value)}
-                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                    >
-                      {FRAME_OPTIONS.map(opt => (
-                        <option key={opt.id} value={opt.id}>{opt.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {frameStyle !== 'stretched' && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-400">
-                        <span>Çerçeve Kalınlığı</span>
-                        <span>{frameThickness}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="15"
-                        step="0.5"
-                        value={frameThickness}
-                        onChange={(e) => setFrameThickness(Number(e.target.value))}
-                        className="w-full accent-amber-500"
-                      />
-                    </div>
-                  )}
-
-                  {/* Shadow settings */}
-                  <div className="border-t border-[#1e293b] pt-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">Derinlik Gölgesi</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={shadowEnabled} 
-                          onChange={(e) => setShadowEnabled(e.target.checked)} 
-                          className="sr-only peer"
-                        />
-                        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
-                      </label>
-                    </div>
-
-                    {shadowEnabled && (
-                      <div className="space-y-3 pt-2">
-                        <div className="space-y-1.5">
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Gölge Kenarı (Direction)
-                          </label>
-                          <select
-                            value={shadowSides}
-                            onChange={(e) => setShadowSides(e.target.value)}
-                            className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none"
-                          >
-                            <option value="all">Her Yöne (All)</option>
-                            <option value="bottom">Alt Kenara (Bottom)</option>
-                            <option value="right">Sağ Kenara (Right)</option>
-                            <option value="left">Sol Kenara (Left)</option>
-                            <option value="top">Üst Kenara (Top)</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-slate-400">
-                            <span>Yoğunluk (Opacity)</span>
-                            <span>{shadowOpacity / 10}</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0.5"
-                            max="9"
-                            step="0.5"
-                            value={shadowOpacity}
-                            onChange={(e) => setShadowOpacity(Number(e.target.value))}
-                            className="w-full accent-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-slate-400">
-                            <span>Mesafe (Offset)</span>
-                            <span>{shadowDistance}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="25"
-                            value={shadowDistance}
-                            onChange={(e) => setShadowDistance(Number(e.target.value))}
-                            className="w-full accent-amber-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-slate-400">
-                            <span>Yayılma & Bulanıklık</span>
-                            <span>{shadowBlur}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="25"
-                            value={shadowBlur}
-                            onChange={(e) => setShadowBlur(Number(e.target.value))}
-                            className="w-full accent-amber-500"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

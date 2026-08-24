@@ -10,6 +10,14 @@ const __dirname = dirname(__filename);
 const dbPath = join(__dirname, 'database.db');
 const db = new DatabaseSync(dbPath);
 
+// Default export'u BURADA veriyoruz, dosyanin sonunda degil. services/TemplateSync.js
+// bu modulu default import'la geri cagiriyor (dairesel bagimlilik) ve seed importu
+// bu dosyanin en altina gelmeden, satir ~529'da calisiyor. Export en sonda kalirsa
+// o an binding hala TDZ'de olur ve seed yuklemesi her aciliista
+// "Cannot access 'db' before initialization" ile sessizce dusser: mockup sablonlari
+// ve varsayilan varyasyon profilleri hic yuklenmez.
+export default db;
+
 // Enable foreign keys
 db.exec('PRAGMA foreign_keys = ON');
 db.exec('PRAGMA busy_timeout = 5000');
@@ -217,6 +225,18 @@ try {
   // Column already exists, ignore
 }
 
+// Ensure reasoning_tokens column exists in ai_usage.
+// Sağlayıcılar "düşünme" tokenlarını completion_tokens içinde faturalar ama
+// ayrıca completion_tokens_details.reasoning_tokens olarak da raporlar.
+// Bunu ayrı saklamak, bir modelin düşünmeyi kapatma isteğini gerçekten
+// uygulayıp uygulamadığını tahmin etmek yerine ölçmemizi sağlar.
+try {
+  db.exec("ALTER TABLE ai_usage ADD COLUMN reasoning_tokens INTEGER DEFAULT 0");
+  console.log("[Schema Upgrade] Added reasoning_tokens column to ai_usage table.");
+} catch (err) {
+  // Column already exists, ignore
+}
+
 // Ensure etsy_analytics_cache table exists
 try {
   db.exec(`
@@ -246,6 +266,23 @@ try {
   `);
 } catch (err) {
   console.error("Failed to ensure etsy_analytics_cache table:", err);
+}
+
+// Çok panelli (set) varyasyon profilleri için ek kolonlar.
+// kind: 'single' (tek panel, klasik oran profili) | 'set' (birden fazla panel)
+// panel_count: sette kaç panel var (tek panelde 1)
+// panel_ratio: her bir panelin kendi oranı, ör. '1:2'
+for (const [col, ddl] of [
+  ['kind', "ALTER TABLE variation_profiles ADD COLUMN kind TEXT DEFAULT 'single'"],
+  ['panel_count', 'ALTER TABLE variation_profiles ADD COLUMN panel_count INTEGER DEFAULT 1'],
+  ['panel_ratio', 'ALTER TABLE variation_profiles ADD COLUMN panel_ratio TEXT']
+]) {
+  try {
+    db.exec(ddl);
+    console.log(`[Schema Upgrade] Added ${col} column to variation_profiles table.`);
+  } catch (err) {
+    // Kolon zaten var, yoksay
+  }
 }
 
 // Global helper: Get current active shop
@@ -316,35 +353,154 @@ export function getProductStorageFolder(productId) {
 }
 
 
+// Pasife alınan varyasyon profilleri.
+// Bu listedeki profiller seed edilmez, API listesinde dönmez ve otomatik
+// oran eşleştirmesine girmez. Tekrar aktif etmek için listeden çıkarmak yeterli.
+//
+// 'double_1_2' eski ikili set yapılandırmasıdır: tek panelli 1:2 profiliyle aynı
+// oran anahtarını ('1:2') kullandığı için şablonları ve mockup dizilim ayarını
+// onunla paylaşıyordu. Yerine ayrı oran anahtarlı 'set_of_2_1_2' geldi.
+export const DISABLED_PROFILE_IDS = ['double_1_2'];
+
+// Çok panelli set profilleri. Bunlar otomatik oran eşleştirmesine girmez;
+// kullanıcı ürün için bilerek seçer.
+export const SET_PROFILE_IDS = ['set_of_2_1_2', 'set_of_2_2_3'];
+
+export const isSetProfileId = (id) => SET_PROFILE_IDS.includes(id);
+
+/**
+ * Bir ürünün varyasyon profili çok panelli bir set mi?
+ * Set ise SEO/metin üretiminde kullanılacak panel bilgisini döner, değilse null.
+ *
+ * @returns {{panelCount:number, panelRatio:string, profileName:string}|null}
+ */
+export function getSetProfileInfo(variationProfileId, shopId) {
+  if (!variationProfileId) return null;
+  try {
+    const row = db.prepare('SELECT name, ratio, kind, panel_count, panel_ratio FROM variation_profiles WHERE id = ? AND shop_id = ?')
+      .get(variationProfileId, shopId);
+    if (!row) return null;
+
+    const isSet = row.kind === 'set' || isSetProfileId(variationProfileId);
+    const panelCount = Number(row.panel_count) || 1;
+    if (!isSet || panelCount < 2) return null;
+
+    return {
+      panelCount,
+      panelRatio: row.panel_ratio || row.ratio || '',
+      profileName: row.name || variationProfileId
+    };
+  } catch (err) {
+    console.error('Set profil bilgisi okunamadı:', err.message);
+    return null;
+  }
+}
+
+// Varsayılan varyasyon profilleri.
+// ratio alanı hem şablon eşleştirmesinde hem mockup dosya adında anahtar olarak
+// kullanılır; set profillerinde '<panel oranı>x<panel sayısı>' biçimindedir
+// ('1:2x2'), böylece tek panelli 1:2 profiliyle karışmaz.
+const DEFAULT_PROFILE_DEFS = [
+  { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
+  { id: 'ratio_3_2', name: '3:2 Oranı (Yatay)', ratio: '3:2' },
+  { id: 'ratio_1_1', name: '1:1 Oranı (Kare)', ratio: '1:1' },
+  { id: 'ratio_12_7', name: '12:7 Oranı (Geniş)', ratio: '12:7' },
+  { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' },
+  { id: 'ratio_12_5', name: '12:5 Oranı (Panoramik)', ratio: '12:5' },
+  { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' },
+  {
+    id: 'set_of_2_1_2',
+    name: 'Set of 2 (1:2) — İkili Panel',
+    ratio: '1:2x2',
+    kind: 'set',
+    panel_count: 2,
+    panel_ratio: '1:2'
+  },
+  {
+    id: 'set_of_2_2_3',
+    name: 'Set of 2 (2:3) — İkili Panel',
+    ratio: '2:3x2',
+    kind: 'set',
+    panel_count: 2,
+    panel_ratio: '2:3'
+  }
+];
+
+export const DEFAULT_PROFILES = DEFAULT_PROFILE_DEFS.filter(
+  d => !DISABLED_PROFILE_IDS.includes(d.id)
+);
+
 // Global helper: Seed variation profiles for a specific shop
 export function seedDefaultProfilesForShop(shopId) {
   const seedStmt = db.prepare(`
-    INSERT INTO variation_profiles (id, shop_id, name, ratio, sizes, frames, combinations, template_ids)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO variation_profiles
+      (id, shop_id, name, ratio, sizes, frames, combinations, template_ids, kind, panel_count, panel_ratio)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(shop_id, id) DO NOTHING
   `);
-  const defaults = [
-    { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
-    { id: 'ratio_3_2', name: '3:2 Oranı (Yatay)', ratio: '3:2' },
-    { id: 'ratio_1_1', name: '1:1 Oranı (Kare)', ratio: '1:1' },
-    { id: 'ratio_12_7', name: '12:7 Oranı (Geniş)', ratio: '12:7' },
-    { id: 'ratio_7_12', name: '7:12 Oranı (Uzun)', ratio: '7:12' },
-    { id: 'ratio_12_5', name: '12:5 Oranı (Panoramik)', ratio: '12:5' },
-    { id: 'ratio_1_2', name: '1:2 Oranı (Uzun Panoramik)', ratio: '1:2' },
-    { id: 'double_1_2', name: 'İkili Set (1:2)', ratio: '1:2' }
-  ];
-  defaults.forEach(d => {
+  // Set profillerinin panel bilgisi kod tarafında tanımlıdır; eski satırlarda
+  // eksik olabileceği için her açılışta tazelenir.
+  const syncStmt = db.prepare(`
+    UPDATE variation_profiles
+    SET name = ?, ratio = ?, kind = ?, panel_count = ?, panel_ratio = ?
+    WHERE id = ? AND shop_id = ?
+  `);
+
+  // Yeni baglanan bir magaza bos fiyat tablosuyla acilmasin: 'default_shop'
+  // satirlari config/profiles_seed.json'dan gelen referans olcu/cerceve/fiyat
+  // setini tasiyor ve yeni magazaya baslangic degeri olarak kopyalaniyor.
+  // template_ids KOPYALANMAZ - mockup sablonlari magazaya ozel, baska bir
+  // magazanin sablon ID'lerini tasimak kirik referans olur.
+  const referenceStmt = db.prepare(
+    'SELECT sizes, frames, combinations FROM variation_profiles WHERE shop_id = ? AND id = ?'
+  );
+
+  DEFAULT_PROFILES.forEach(d => {
+    const kind = d.kind || 'single';
+    const panelCount = d.panel_count || 1;
+    const panelRatio = d.panel_ratio || d.ratio;
+
+    let reference = null;
+    if (shopId !== 'default_shop') {
+      try {
+        reference = referenceStmt.get('default_shop', d.id) || null;
+      } catch (err) {
+        reference = null;
+      }
+    }
+
     seedStmt.run(
       d.id,
       shopId,
       d.name,
       d.ratio,
+      reference?.sizes || JSON.stringify([]),
+      reference?.frames || JSON.stringify([]),
+      reference?.combinations || JSON.stringify([]),
       JSON.stringify([]),
-      JSON.stringify([]),
-      JSON.stringify([]),
-      JSON.stringify([])
+      kind,
+      panelCount,
+      panelRatio
     );
+    if (kind === 'set') {
+      syncStmt.run(d.name, d.ratio, kind, panelCount, panelRatio, d.id, shopId);
+    }
   });
+}
+
+// Pasife alınan profilleri veritabanından da temizle.
+// Eski 'double_1_2' kaydı silinmezse şablon/fiyat listelerinde ölü veri kalıyor.
+try {
+  const purge = db.prepare('DELETE FROM variation_profiles WHERE id = ?');
+  DISABLED_PROFILE_IDS.forEach(id => {
+    const before = db.prepare('SELECT COUNT(*) as count FROM variation_profiles WHERE id = ?').get(id);
+    if (before && before.count > 0) {
+      purge.run(id);
+      console.log(`[Schema Upgrade] Pasif varyasyon profili '${id}' (${before.count} kayıt) temizlendi.`);
+    }
+  });
+} catch (err) {
+  console.error('Pasif varyasyon profilleri temizlenemedi:', err.message);
 }
 
 // Global helper: Copy general settings template to a new shop
@@ -454,5 +610,3 @@ async function seedDefaultShopifyAuth() {
 
 // Trigger Shopify seeding asynchronously so it doesn't block server start
 seedDefaultShopifyAuth();
-
-export default db;
