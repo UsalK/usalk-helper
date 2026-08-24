@@ -174,9 +174,41 @@ export async function uploadProductToEtsy(input) {
         .slice(0, 13);
     }
     
-    console.log(`Creating draft listing on Etsy for product ${productId}...`);
-    const createdListing = await EtsyService.createListing(listingData);
-    const listing_id = createdListing.listing_id;
+    // Yarım kalan bir yüklemeyi DEVAM ETTİR, yeniden oluşturma.
+    //
+    // createListing basarili olup sonraki adimlardan biri patladiginda (tipik
+    // olarak Etsy hiz limiti) urune bir etsy_listing_id yaziliyor. Bu ID
+    // okunmazsa "tekrar dene" Etsy'de ikinci bir taslak acardi; kullanici da
+    // duplicate'i elle silmek zorunda kalirdi.
+    let listing_id;
+    const existingListingId = product.etsy_listing_id
+      ? String(product.etsy_listing_id).split('.')[0]
+      : null;
+
+    const isResume = Boolean(existingListingId && product.status === 'error');
+
+    if (isResume) {
+      listing_id = Number(existingListingId);
+      console.log(`[Upload] Product ${productId} icin yarim kalan listing ${listing_id} bulundu, yeniden olusturulmuyor.`);
+
+      // Metin alanlari ilk denemeden bu yana degismis olabilir, tazeliyoruz.
+      // Ama PATCH'e create'e ozgu alanlar GONDERILMEZ: price/quantity/
+      // readiness_state_id updateListing semasinda yok (400 doner) ve 'state'
+      // burada gonderilirse listing gorseller yuklenmeden aktiflesir —
+      // aktiflestirme akisin sonunda, envanter kurulduktan sonra yapiliyor.
+      const { price, quantity, readiness_state_id: _rs, state: _st, ...resumeData } = listingData;
+      try {
+        await EtsyService.updateListing(listing_id, resumeData);
+      } catch (err) {
+        // Guncelleme basarisiz olsa bile listing duruyor; devam etmek
+        // duplicate acmaktan iyidir.
+        console.warn(`[Upload] Devam eden listing ${listing_id} guncellenemedi (${err.response?.data?.error || err.message}); mevcut icerikle devam ediliyor.`);
+      }
+    } else {
+      console.log(`Creating draft listing on Etsy for product ${productId}...`);
+      const createdListing = await EtsyService.createListing(listingData);
+      listing_id = createdListing.listing_id;
+    }
     createdListingId = listing_id;
 
     // Listing ID'yi hemen kaydet: sonraki adımlardan biri patlarsa bile
@@ -272,6 +304,23 @@ export async function uploadProductToEtsy(input) {
       }
     }
     
+    // Devam eden bir yuklemede listing'de onceki denemeden kalan gorseller
+    // olabilir; temizlenmezse ayni mockup'lar ikinci kez eklenir ve siralama
+    // bozulur. Silme basarisiz olursa yukleme durmuyor, sadece uyariliyor.
+    if (isResume) {
+      try {
+        const existingImages = await EtsyService.getListingImages(listing_id);
+        if (existingImages?.length) {
+          console.log(`[Upload] Devam: listing ${listing_id} uzerindeki ${existingImages.length} eski gorsel siliniyor.`);
+          for (const img of existingImages) {
+            await EtsyService.deleteListingImage(listing_id, img.listing_image_id);
+          }
+        }
+      } catch (err) {
+        console.warn(`[Upload] Eski gorseller silinemedi (${err.message}); gorseller tekrarlanabilir.`);
+      }
+    }
+
     let uploadedMockups = false;
     if (fs.existsSync(mockupsDir)) {
       const files = fs.readdirSync(mockupsDir).filter(f => f.toLowerCase().endsWith('.jpg') || f.toLowerCase().endsWith('.jpeg') || f.toLowerCase().endsWith('.png'));

@@ -3,6 +3,75 @@ import axios from 'axios';
 import fs from 'fs';
 import { basename } from 'path';
 
+/**
+ * Etsy hiz limiti: saniyede 10 istek (ve gunde 10.000).
+ *
+ * Tek bir urun yuklemesi bu limite tek basina dayaniyor: createListing + 5
+ * taksonomi ozelligi + N mockup gorseli + envanter + aktiflestirme, hepsi
+ * arka arkaya. Iki urun ayni anda yayinlaninca limit kesin asiliyor ve Etsy
+ * 429 "Exceeded per second rate limit" donuyor. Listing OLUSMUS oluyor ama
+ * sonraki adimlar dusuyor, yani yarim yuklenmis bir ilan kaliyor.
+ *
+ * Cozum iki katmanli:
+ *   1) Her istek bir zaman slotu bekliyor, boylece istekler ARALIKLI baslatiliyor.
+ *      Slot sayaci modul seviyesinde tutuluyor ki es zamanli yuklemeler de ayni
+ *      butceyi paylassin.
+ *   2) Buna ragmen 429 gelirse ustel geri cekilme ile tekrar deneniyor.
+ */
+const ETSY_MIN_INTERVAL_MS = 150;   // ~6.6 istek/sn — 10'luk limitin altinda guvenli pay
+const ETSY_MAX_RETRIES = 4;
+
+let nextSlotAt = 0;
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Siradaki bos zaman slotunu ayirir ve o ana kadar bekler.
+ * Istekleri birbirine zincirlemez (paralellik korunur), sadece BASLAMA
+ * zamanlarini araliyor.
+ */
+async function takeRateLimitSlot() {
+  const now = Date.now();
+  const slot = Math.max(now, nextSlotAt);
+  nextSlotAt = slot + ETSY_MIN_INTERVAL_MS;
+  if (slot > now) await delay(slot - now);
+}
+
+const etsyHttp = axios.create();
+
+etsyHttp.interceptors.request.use(async (config) => {
+  await takeRateLimitSlot();
+  return config;
+});
+
+etsyHttp.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    const status = error.response?.status;
+
+    // Sadece 429'u tekrar deniyoruz. 4xx'in geri kalani (gecersiz tag, eksik
+    // kargo sablonu vb.) tekrar denemekle duzelmez, kullaniciya donmeli.
+    if (status !== 429 || !config) throw error;
+
+    config._retryCount = (config._retryCount || 0) + 1;
+    if (config._retryCount > ETSY_MAX_RETRIES) throw error;
+
+    // Etsy Retry-After gonderirse ona uyuyoruz, yoksa 1s/2s/4s/8s.
+    const retryAfter = Number(error.response?.headers?.['retry-after']);
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : 1000 * Math.pow(2, config._retryCount - 1);
+
+    console.warn(`[Etsy Rate Limit] 429 alindi, ${waitMs}ms bekleniyor (deneme ${config._retryCount}/${ETSY_MAX_RETRIES}): ${config.url}`);
+    await delay(waitMs);
+
+    // Geri cekilme suresince acilan slotlar eskimis olabilir; sayaci ileri al.
+    nextSlotAt = Math.max(nextSlotAt, Date.now());
+    return etsyHttp(config);
+  }
+);
+
 // In-memory caching for metadata to avoid 429 rate limit
 const cache = {
   sections: null,
@@ -90,7 +159,7 @@ export async function getValidToken() {
     const refreshPromise = (async () => {
       console.log(`Etsy token expired or expiring soon for shop ${auth.shop_id}, refreshing...`);
       try {
-        const response = await axios.post('https://api.etsy.com/v3/public/oauth/token', 
+        const response = await etsyHttp.post('https://api.etsy.com/v3/public/oauth/token', 
           new URLSearchParams({
             grant_type: 'refresh_token',
             client_id: client_id,
@@ -147,7 +216,7 @@ export async function getShopSections(forceRefresh = false) {
   }
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/sections`;
-  const res = await axios.get(url, {
+  const res = await etsyHttp.get(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -164,7 +233,7 @@ export async function getShippingProfiles(forceRefresh = false) {
   }
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/shipping-profiles`;
-  const res = await axios.get(url, {
+  const res = await etsyHttp.get(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -181,7 +250,7 @@ export async function getReturnPolicies(forceRefresh = false) {
   }
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/policies/return`;
-  const res = await axios.get(url, {
+  const res = await etsyHttp.get(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -206,7 +275,7 @@ async function postForm(path, payload) {
     params.append(key, typeof value === 'boolean' ? String(value) : String(value));
   }
 
-  const res = await axios.post(url, params, {
+  const res = await etsyHttp.post(url, params, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
@@ -306,7 +375,7 @@ export async function createListing(listingData) {
     }
   }
 
-  const res = await axios.post(url, params, {
+  const res = await etsyHttp.post(url, params, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
@@ -333,7 +402,7 @@ export async function uploadListingImage(listing_id, imagePath, rank = 1, altTex
     formData.append('alt_text', altText);
   }
 
-  const res = await axios.post(url, formData, {
+  const res = await etsyHttp.post(url, formData, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -345,7 +414,7 @@ export async function uploadListingImage(listing_id, imagePath, rank = 1, altTex
 export async function getListingImages(listing_id) {
   const { access_token, client_id, client_secret } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/listings/${listing_id}/images`;
-  const res = await axios.get(url, {
+  const res = await etsyHttp.get(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -357,7 +426,7 @@ export async function getListingImages(listing_id) {
 export async function deleteListingImage(listing_id, listing_image_id) {
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings/${listing_id}/images/${listing_image_id}`;
-  await axios.delete(url, {
+  await etsyHttp.delete(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -369,7 +438,7 @@ export async function updateListingInventory(listing_id, inventoryData) {
   const { access_token, client_id, client_secret } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/listings/${listing_id}/inventory`;
 
-  const res = await axios.put(url, inventoryData, {
+  const res = await etsyHttp.put(url, inventoryData, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
@@ -383,7 +452,7 @@ export async function updateListingProperty(listing_id, property_id, propertyDat
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/listings/${listing_id}/properties/${property_id}`;
 
-  const res = await axios.put(url, propertyData, {
+  const res = await etsyHttp.put(url, propertyData, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
@@ -400,7 +469,7 @@ export async function getReadinessStates(forceRefresh = false) {
   }
   const { access_token, client_id, client_secret, shop_id } = await getValidToken();
   const url = `https://openapi.etsy.com/v3/application/shops/${shop_id}/readiness-state-definitions`;
-  const res = await axios.get(url, {
+  const res = await etsyHttp.get(url, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -422,7 +491,7 @@ export async function uploadListingFile(listing_id, filePath, name = '') {
   formData.append('file', blob, fileName);
   formData.append('name', fileName);
   
-  const res = await axios.post(url, formData, {
+  const res = await etsyHttp.post(url, formData, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`
@@ -438,7 +507,7 @@ export async function createShopSection(title) {
   const params = new URLSearchParams();
   params.append('title', title);
   
-  const res = await axios.post(url, params, {
+  const res = await etsyHttp.post(url, params, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
@@ -483,7 +552,7 @@ export async function updateListing(listing_id, listingData) {
     }
   }
 
-  const res = await axios.patch(url, params, {
+  const res = await etsyHttp.patch(url, params, {
     headers: {
       'x-api-key': `${client_id}:${client_secret}`,
       'Authorization': `Bearer ${access_token}`,
