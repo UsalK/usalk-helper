@@ -1,14 +1,5 @@
 [
   {
-    "id": "39423527-8a76-4bba-8578-720c57424bf1",
-    "shop_id": "65571647",
-    "name": "d1",
-    "type": "flat",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.30100006103515625,\"y\":0.01579998779296875,\"width\":0.410199951171875,\"height\":0.6152999267578125},\"frame\":{\"style\":\"black_frame\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":7,\"blur\":8}}",
-    "background_path": "storage/usalkArtHouse/templates/template-1781526725485-518719208.png",
-    "created_at": "2026-06-15 12:32:05"
-  },
-  {
     "id": "82572b82-ba3b-4c0a-8b19-be197c358042",
     "shop_id": "65571647",
     "name": "d3",
@@ -25,24 +16,6 @@
     "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"placement\":{\"x\":0.228,\"y\":0.1365,\"width\":0.5669332682291667,\"height\":0.6377999267578125},\"frame\":{\"style\":\"natural_wood\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
     "background_path": "storage/usalkArtHouse/templates/template-1781526877261-896414663.png",
     "created_at": "2026-06-15 12:34:37"
-  },
-  {
-    "id": "87c1b0a0-14f1-4652-bcab-adf8f815f5be",
-    "shop_id": "65571647",
-    "name": "d5",
-    "type": "perspective",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3214067858255698,\"y\":0.028834931507892576},\"tr\":{\"x\":0.7358631138113092,\"y\":0.028628157889354255},\"br\":{\"x\":0.7363087466098832,\"y\":0.6155194234865025},\"bl\":{\"x\":0.32142817619990105,\"y\":0.6159543610979104}}}",
-    "background_path": "storage/usalkArtHouse/templates/template-1781526905047-590941287.png",
-    "created_at": "2026-06-15 12:35:05"
-  },
-  {
-    "id": "891c3d3d-0a6f-4a47-80c2-530672525e24",
-    "shop_id": "65571647",
-    "name": "d6",
-    "type": "perspective",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.3175041706232733,\"y\":0.09867347455946777},\"tr\":{\"x\":0.7712979091131444,\"y\":0.09825634748764453},\"br\":{\"x\":0.7704728630726289,\"y\":0.5837812093660975},\"bl\":{\"x\":0.31713952973929554,\"y\":0.5836513751119532}}}",
-    "background_path": "storage/usalkArtHouse/templates/template-1781526936922-117928317.png",
-    "created_at": "2026-06-15 12:35:36"
   },
   {
     "id": "c6b82eb9-57f5-47c9-8755-24ee3345c538",
@@ -351,24 +324,6 @@
     "created_at": "2026-06-17 17:44:00"
   },
   {
-    "id": "dae431f0-874c-40df-9a2b-70ebaf16e6a0",
-    "shop_id": "66531013",
-    "name": "d6 (Kopya)",
-    "type": "perspective",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.3175041706232733,\"y\":0.09867347455946777},\"tr\":{\"x\":0.7712979091131444,\"y\":0.09825634748764453},\"br\":{\"x\":0.7704728630726289,\"y\":0.5837812093660975},\"bl\":{\"x\":0.31713952973929554,\"y\":0.5836513751119532}}}",
-    "background_path": "storage/usalkStudio/templates/template-copy-1781718240655-543806864.png",
-    "created_at": "2026-06-17 17:44:00"
-  },
-  {
-    "id": "5562b575-98f2-42b2-b4d9-bf45d1eee618",
-    "shop_id": "66531013",
-    "name": "d5 (Kopya)",
-    "type": "perspective",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3214067858255698,\"y\":0.028834931507892576},\"tr\":{\"x\":0.7358631138113092,\"y\":0.028628157889354255},\"br\":{\"x\":0.7363087466098832,\"y\":0.6155194234865025},\"bl\":{\"x\":0.32142817619990105,\"y\":0.6159543610979104}}}",
-    "background_path": "storage/usalkStudio/templates/template-copy-1781718240660-406457784.png",
-    "created_at": "2026-06-17 17:44:00"
-  },
-  {
     "id": "6f5de058-af26-4b37-ab38-c9aad152f6a0",
     "shop_id": "66531013",
     "name": "d4 (Kopya)",
@@ -384,15 +339,6 @@
     "type": "perspective",
     "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3068012881240966,\"y\":0.11360254573061516},\"tr\":{\"x\":0.719585977119312,\"y\":0.07040637348181134},\"br\":{\"x\":0.7195987362899658,\"y\":0.7811974420623536},\"bl\":{\"x\":0.3040165991288812,\"y\":0.768798717979419}}}",
     "background_path": "storage/usalkStudio/templates/template-copy-1781718240672-500856315.png",
-    "created_at": "2026-06-17 17:44:00"
-  },
-  {
-    "id": "6ba6e2b2-425e-497d-b4de-83e31aeea54c",
-    "shop_id": "66531013",
-    "name": "d1 (Kopya)",
-    "type": "flat",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.30100006103515625,\"y\":0.01579998779296875,\"width\":0.410199951171875,\"height\":0.6152999267578125},\"frame\":{\"style\":\"black_frame\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":7,\"blur\":8}}",
-    "background_path": "storage/usalkStudio/templates/template-copy-1781718240686-44410361.png",
     "created_at": "2026-06-17 17:44:00"
   },
   {
@@ -1629,15 +1575,6 @@
     "created_at": "2026-07-15 15:06:06"
   },
   {
-    "id": "38c6d35c-d416-4a33-a0c8-75c22996bdc3",
-    "shop_id": "66531013",
-    "name": "thumbHOR5",
-    "type": "flat",
-    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.123,\"y\":0.117,\"width\":0.773,\"height\":0.5153333333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":1,\"distance\":5,\"blur\":6}}",
-    "background_path": "storage/usalkStudio/templates/template-1784128118148-183610027.png",
-    "created_at": "2026-07-15 15:08:38"
-  },
-  {
     "id": "be7430e4-716a-4944-b7a9-171d81f1406b",
     "shop_id": "66531013",
     "name": "thumbHORZ4 (Kopya)",
@@ -1753,15 +1690,6 @@
     "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.2597543859649123,\"y\":0.08175438596491229},\"tr\":{\"x\":0.628,\"y\":0.15449122807017543},\"br\":{\"x\":0.6651228070175439,\"y\":0.8246315789473684},\"bl\":{\"x\":0.29712280701754384,\"y\":0.9075087719298246}}}",
     "background_path": "storage/usalkArtHouse/templates/template-copy-1784128344849-880131000.jpg",
     "created_at": "2026-07-15 15:12:24"
-  },
-  {
-    "id": "e5419c01-36e1-421f-a5a4-01640934796f",
-    "shop_id": "65571647",
-    "name": "thumbHOR5 (Kopya)",
-    "type": "flat",
-    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.123,\"y\":0.117,\"width\":0.773,\"height\":0.5153333333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":1,\"distance\":5,\"blur\":6}}",
-    "background_path": "storage/usalkArtHouse/templates/template-copy-1784128360239-340360912.png",
-    "created_at": "2026-07-15 15:12:40"
   },
   {
     "id": "622b187d-da7b-4328-90e9-86c8f0288dac",
@@ -2041,5 +1969,1130 @@
     "config": "{\"compatible_ratios\":[\"2:3x2\",\"1:2x2\"],\"is_thumbnail\":false}",
     "background_path": "storage/usalkStudio/templates/template-1787573796787-356606276.png",
     "created_at": "2026-08-24 12:16:36"
+  },
+  {
+    "id": "c1274ae1-d56f-410b-aa16-c0d7c0d7cac8",
+    "shop_id": "67708124",
+    "name": "23setoftwo3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.264,\"y\":0.19888888888888892},\"tr\":{\"x\":0.47666666666666657,\"y\":0.19866666666666669},\"br\":{\"x\":0.4766666666666668,\"y\":0.510888888888889},\"bl\":{\"x\":0.26377777777777744,\"y\":0.5104444444444445}}},{\"corners\":{\"tl\":{\"x\":0.5242222222222221,\"y\":0.19866666666666669},\"tr\":{\"x\":0.736,\"y\":0.19933333333333333},\"br\":{\"x\":0.737111111111111,\"y\":0.5106666666666668},\"bl\":{\"x\":0.5237777777777779,\"y\":0.51}}}],\"corners\":{\"tl\":{\"x\":0.264,\"y\":0.19888888888888892},\"tr\":{\"x\":0.47666666666666657,\"y\":0.19866666666666669},\"br\":{\"x\":0.4766666666666668,\"y\":0.510888888888889},\"bl\":{\"x\":0.26377777777777744,\"y\":0.5104444444444445}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492337-737732962.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "3db8d90d-c771-4562-b79b-255408ea1636",
+    "shop_id": "67708124",
+    "name": "23setoftwo8 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.2170234375,\"y\":0.262046875},\"tr\":{\"x\":0.47346484375,\"y\":0.26151171875},\"br\":{\"x\":0.47351171875,\"y\":0.64039453125},\"bl\":{\"x\":0.21751171875,\"y\":0.639953125}}},{\"corners\":{\"tl\":{\"x\":0.55458203125,\"y\":0.261953125},\"tr\":{\"x\":0.81,\"y\":0.261859375},\"br\":{\"x\":0.81,\"y\":0.639953125},\"bl\":{\"x\":0.554,\"y\":0.63951171875}}}],\"corners\":{\"tl\":{\"x\":0.2170234375,\"y\":0.262046875},\"tr\":{\"x\":0.47346484375,\"y\":0.26151171875},\"br\":{\"x\":0.47351171875,\"y\":0.64039453125},\"bl\":{\"x\":0.21751171875,\"y\":0.639953125}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492342-823865316.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "765c4739-fa50-4750-9dcf-1a514b63f53e",
+    "shop_id": "67708124",
+    "name": "23setoftwo7 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.1770234375,\"y\":0.226},\"tr\":{\"x\":0.47751171875,\"y\":0.22653515625},\"br\":{\"x\":0.4769765625,\"y\":0.6749765625},\"bl\":{\"x\":0.17658203125,\"y\":0.6749765625}}},{\"corners\":{\"tl\":{\"x\":0.536,\"y\":0.22653515625},\"tr\":{\"x\":0.836,\"y\":0.22644140625},\"br\":{\"x\":0.836046875,\"y\":0.6750703125},\"bl\":{\"x\":0.536,\"y\":0.67448828125}}}],\"corners\":{\"tl\":{\"x\":0.1770234375,\"y\":0.226},\"tr\":{\"x\":0.47751171875,\"y\":0.22653515625},\"br\":{\"x\":0.4769765625,\"y\":0.6749765625},\"bl\":{\"x\":0.17658203125,\"y\":0.6749765625}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492344-132370239.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "64c256df-550b-4ffc-a5c0-1d1dd236c9b6",
+    "shop_id": "67708124",
+    "name": "23setoftwo6 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.13248828125,\"y\":0.2410703125},\"tr\":{\"x\":0.474,\"y\":0.2409765625},\"br\":{\"x\":0.473953125,\"y\":0.75848828125},\"bl\":{\"x\":0.13253515625,\"y\":0.75848828125}}},{\"corners\":{\"tl\":{\"x\":0.5270703125,\"y\":0.2411171875},\"tr\":{\"x\":0.868,\"y\":0.2409765625},\"br\":{\"x\":0.868,\"y\":0.75844140625},\"bl\":{\"x\":0.528046875,\"y\":0.758}}}],\"corners\":{\"tl\":{\"x\":0.13248828125,\"y\":0.2410703125},\"tr\":{\"x\":0.474,\"y\":0.2409765625},\"br\":{\"x\":0.473953125,\"y\":0.75848828125},\"bl\":{\"x\":0.13253515625,\"y\":0.75848828125}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492346-821792422.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "a145b132-24e0-446c-a438-9d525ea46f19",
+    "shop_id": "67708124",
+    "name": "23setoftwo5 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.005,\"slots\":[{\"placement\":{\"x\":0.07566666666666669,\"y\":0.098,\"width\":0.3963333333333333,\"height\":0.5945}},{\"placement\":{\"x\":0.5019999999999999,\"y\":0.098,\"width\":0.3963333333333333,\"height\":0.5945}}],\"placement\":{\"x\":0.07566666666666669,\"y\":0.098,\"width\":0.3963333333333333,\"height\":0.5945},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6,\"distance\":7,\"blur\":8}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492348-737596268.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "9bb7d685-39b2-4107-b768-81e02daf3dc2",
+    "shop_id": "67708124",
+    "name": "23setoftwo2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.17422222222222222,\"y\":0.15866666666666665},\"tr\":{\"x\":0.46533333333333343,\"y\":0.15866666666666668},\"br\":{\"x\":0.4651111111111111,\"y\":0.5906666666666666},\"bl\":{\"x\":0.174,\"y\":0.5908888888888889}}},{\"corners\":{\"tl\":{\"x\":0.5122222222222224,\"y\":0.15888888888888889},\"tr\":{\"x\":0.8022222222222222,\"y\":0.15866666666666668},\"br\":{\"x\":0.8022222222222224,\"y\":0.5906666666666668},\"bl\":{\"x\":0.512,\"y\":0.5904444444444444}}}],\"corners\":{\"tl\":{\"x\":0.17422222222222222,\"y\":0.15866666666666665},\"tr\":{\"x\":0.46533333333333343,\"y\":0.15866666666666668},\"br\":{\"x\":0.4651111111111111,\"y\":0.5906666666666666},\"bl\":{\"x\":0.174,\"y\":0.5908888888888889}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492350-454785052.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "64fa15e9-f8a4-40c0-9eb2-e37d6e86e756",
+    "shop_id": "67708124",
+    "name": "23setoftwo4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.13111111111111112,\"y\":0.2242222222222222},\"tr\":{\"x\":0.43422222222222234,\"y\":0.22355555555555556},\"br\":{\"x\":0.4337777777777779,\"y\":0.6604444444444445},\"bl\":{\"x\":0.13133333333333333,\"y\":0.6606666666666668}}},{\"corners\":{\"tl\":{\"x\":0.4993333333333334,\"y\":0.22355555555555556},\"tr\":{\"x\":0.8037777777777779,\"y\":0.22333333333333333},\"br\":{\"x\":0.8035555555555556,\"y\":0.6602222222222224},\"bl\":{\"x\":0.49911111111111106,\"y\":0.6604444444444445}}}],\"corners\":{\"tl\":{\"x\":0.13111111111111112,\"y\":0.2242222222222222},\"tr\":{\"x\":0.43422222222222234,\"y\":0.22355555555555556},\"br\":{\"x\":0.4337777777777779,\"y\":0.6604444444444445},\"bl\":{\"x\":0.13133333333333333,\"y\":0.6606666666666668}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492352-113464163.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "e3009215-b7b9-4f40-9dda-fa53589c67bd",
+    "shop_id": "67708124",
+    "name": "SoT6 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.1542456140350877,\"y\":0.14712280701754385},\"tr\":{\"x\":0.4770701754385965,\"y\":0.1470701754385965},\"br\":{\"x\":0.4768771929824561,\"y\":0.711754385964912},\"bl\":{\"x\":0.15380701754385964,\"y\":0.711561403508772}}},{\"corners\":{\"tl\":{\"x\":0.524438596491228,\"y\":0.14712280701754385},\"tr\":{\"x\":0.847315789473684,\"y\":0.14712280701754385},\"br\":{\"x\":0.8473684210526319,\"y\":0.7118070175438599},\"bl\":{\"x\":0.523561403508772,\"y\":0.712438596491228}}}],\"corners\":{\"tl\":{\"x\":0.1542456140350877,\"y\":0.14712280701754385},\"tr\":{\"x\":0.4770701754385965,\"y\":0.1470701754385965},\"br\":{\"x\":0.4768771929824561,\"y\":0.711754385964912},\"bl\":{\"x\":0.15380701754385964,\"y\":0.711561403508772}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492354-461308038.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "28cec904-7aaa-4e51-87ec-76fae71301c0",
+    "shop_id": "67708124",
+    "name": "SoT5 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"placement\":{\"x\":0.2355,\"y\":0.059,\"width\":0.2405,\"height\":0.481}},{\"placement\":{\"x\":0.512,\"y\":0.059,\"width\":0.2405,\"height\":0.481}}],\"placement\":{\"x\":0.2355,\"y\":0.059,\"width\":0.2405,\"height\":0.481},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":4,\"distance\":5,\"blur\":13}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492357-926565710.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "85c7b0c5-b7bd-4f7a-8e6f-3c748b437964",
+    "shop_id": "67708124",
+    "name": "SoT4 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"placement\":{\"x\":0.201,\"y\":0.096,\"width\":0.295,\"height\":0.59}},{\"placement\":{\"x\":0.552,\"y\":0.096,\"width\":0.295,\"height\":0.59}}],\"placement\":{\"x\":0.201,\"y\":0.096,\"width\":0.295,\"height\":0.59},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":5.5,\"distance\":6,\"blur\":11}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492360-721406030.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "b7b65fd1-c186-42cf-bf72-89270a2ec766",
+    "shop_id": "67708124",
+    "name": "SoT2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.23687719298245613,\"y\":0.17380701754385963},\"tr\":{\"x\":0.4808771929824561,\"y\":0.174},\"br\":{\"x\":0.4806315789473684,\"y\":0.6041929824561401},\"bl\":{\"x\":0.23531578947368423,\"y\":0.6048245614035082}}},{\"corners\":{\"tl\":{\"x\":0.518,\"y\":0.174},\"tr\":{\"x\":0.7617543859649121,\"y\":0.174},\"br\":{\"x\":0.762245614035088,\"y\":0.6041929824561401},\"bl\":{\"x\":0.517561403508772,\"y\":0.603754385964912}}}],\"corners\":{\"tl\":{\"x\":0.23687719298245613,\"y\":0.17380701754385963},\"tr\":{\"x\":0.4808771929824561,\"y\":0.174},\"br\":{\"x\":0.4806315789473684,\"y\":0.6041929824561401},\"bl\":{\"x\":0.23531578947368423,\"y\":0.6048245614035082}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492362-205520112.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "74b86013-b10e-4626-96da-b1111832b03f",
+    "shop_id": "67708124",
+    "name": "SoT3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.19556140350877194,\"y\":0.11112280701754386},\"tr\":{\"x\":0.47443859649122805,\"y\":0.11131578947368422},\"br\":{\"x\":0.474,\"y\":0.6335087719298241},\"bl\":{\"x\":0.19556140350877194,\"y\":0.6337543859649121}}},{\"corners\":{\"tl\":{\"x\":0.526684210526316,\"y\":0.11156140350877193},\"tr\":{\"x\":0.8053157894736841,\"y\":0.1110701754385965},\"br\":{\"x\":0.8044385964912281,\"y\":0.6341929824561401},\"bl\":{\"x\":0.526245614035088,\"y\":0.633315789473684}}}],\"corners\":{\"tl\":{\"x\":0.19556140350877194,\"y\":0.11112280701754386},\"tr\":{\"x\":0.47443859649122805,\"y\":0.11131578947368422},\"br\":{\"x\":0.474,\"y\":0.6335087719298241},\"bl\":{\"x\":0.19556140350877194,\"y\":0.6337543859649121}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492365-650466825.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "75d4da5f-c440-458c-b7e7-330b474bb6c0",
+    "shop_id": "67708124",
+    "name": "SoT1 (Kopya) (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.22756140350877194,\"y\":0.1266842105263158},\"tr\":{\"x\":0.47643859649122805,\"y\":0.17663157894736842},\"br\":{\"x\":0.4768771929824561,\"y\":0.6548771929824561},\"bl\":{\"x\":0.22756140350877194,\"y\":0.6701929824561401}}},{\"corners\":{\"tl\":{\"x\":0.516,\"y\":0.1822456140350877},\"tr\":{\"x\":0.707315789473684,\"y\":0.22024561403508772},\"br\":{\"x\":0.706877192982456,\"y\":0.6406315789473681},\"bl\":{\"x\":0.514438596491228,\"y\":0.653122807017544}}}],\"corners\":{\"tl\":{\"x\":0.22756140350877194,\"y\":0.1266842105263158},\"tr\":{\"x\":0.47643859649122805,\"y\":0.17663157894736842},\"br\":{\"x\":0.4768771929824561,\"y\":0.6548771929824561},\"bl\":{\"x\":0.22756140350877194,\"y\":0.6701929824561401}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492367-188838212.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "1807cafe-21e6-4750-83a7-c53b20930f56",
+    "shop_id": "67708124",
+    "name": "SoT1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2x2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":2,\"set_source\":\"split\",\"panel_gap\":0.03,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.22756140350877194,\"y\":0.1266842105263158},\"tr\":{\"x\":0.47643859649122805,\"y\":0.17663157894736842},\"br\":{\"x\":0.4768771929824561,\"y\":0.6548771929824561},\"bl\":{\"x\":0.22756140350877194,\"y\":0.6701929824561401}}},{\"corners\":{\"tl\":{\"x\":0.516,\"y\":0.1822456140350877},\"tr\":{\"x\":0.707315789473684,\"y\":0.22024561403508772},\"br\":{\"x\":0.706877192982456,\"y\":0.6406315789473681},\"bl\":{\"x\":0.514438596491228,\"y\":0.653122807017544}}}],\"corners\":{\"tl\":{\"x\":0.22756140350877194,\"y\":0.1266842105263158},\"tr\":{\"x\":0.47643859649122805,\"y\":0.17663157894736842},\"br\":{\"x\":0.4768771929824561,\"y\":0.6548771929824561},\"bl\":{\"x\":0.22756140350877194,\"y\":0.6701929824561401}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492370-348136984.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "fdfe35d4-11de-4bc7-b18d-733f520c14bd",
+    "shop_id": "67708124",
+    "name": "thumbLARGE5 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.13333333333333333,\"y\":0.15844444444444444},\"tr\":{\"x\":0.8931111111111111,\"y\":0.15844444444444444},\"br\":{\"x\":0.8937777777777777,\"y\":0.6075555555555555},\"bl\":{\"x\":0.13311111111111112,\"y\":0.6068888888888889}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492373-960798592.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "be6c2a86-c550-4eb8-abd2-bbc31c98dd96",
+    "shop_id": "67708124",
+    "name": "thumbLARGE4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1771111111111111,\"y\":0.3364444444444445},\"tr\":{\"x\":0.8528888888888889,\"y\":0.24888888888888888},\"br\":{\"x\":0.8528888888888889,\"y\":0.7804444444444445},\"bl\":{\"x\":0.1771111111111111,\"y\":0.7106666666666666}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492375-783961853.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "ee67af8c-3eb9-49cb-830d-4e4286c8bd8b",
+    "shop_id": "67708124",
+    "name": "thumbLARGE3 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.077,\"y\":0.127,\"width\":0.883,\"height\":0.5150833333333333},\"frame\":{\"style\":\"stretched\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492381-161996069.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "db9dfe15-aa6b-4101-8aa0-08d61e8b08a9",
+    "shop_id": "67708124",
+    "name": "thumbLARGE1 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"placement\":{\"x\":0.03854580707707222,\"y\":0.236,\"width\":0.912,\"height\":0.532},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492385-330251107.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "2eaa4aed-038f-4d38-9d0a-59d4a6c877f2",
+    "shop_id": "67708124",
+    "name": "thumbHORZ4 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.13379166666666664,\"y\":0.210125,\"width\":0.7462083333333334,\"height\":0.4974722222222222},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492388-285568370.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "87236581-9af7-4d17-b83c-38a829419fef",
+    "shop_id": "67708124",
+    "name": "thumbHORZ2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.12346627565982404,\"y\":0.252},\"tr\":{\"x\":0.8489325513196481,\"y\":0.30253372434017595},\"br\":{\"x\":0.8775112414467253,\"y\":0.7869775171065494},\"bl\":{\"x\":0.13902248289345065,\"y\":0.85}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492391-561413041.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "590501c8-fe3d-4d31-826b-70ae43d31835",
+    "shop_id": "67708124",
+    "name": "thumbHORZ3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":622,\"corners\":{\"tl\":{\"x\":0.17148905166529152,\"y\":0.2751103202846975},\"tr\":{\"x\":0.7927837752735648,\"y\":0.1951103202846975},\"br\":{\"x\":0.792604501607717,\"y\":0.7764448398576512},\"bl\":{\"x\":0.1720257234726688,\"y\":0.7648896797153024}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492394-809362959.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "3662106f-10e3-4b71-b240-92bcb6d44409",
+    "shop_id": "67708124",
+    "name": "thumbHORZ1 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.127,\"y\":0.201,\"width\":0.749,\"height\":0.4993333333333333},\"frame\":{\"style\":\"black_frame\",\"thickness\":9},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":2.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492397-220180276.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "8f9c555c-74f9-432d-bcf9-6fe2e0462b5b",
+    "shop_id": "67708124",
+    "name": "thumbHALF4 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2858598130841121,\"y\":0.03804672897196258,\"width\":0.42614018691588784,\"height\":0.8522803738317757},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492402-406641048.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "7d225dc6-194c-4b69-a705-374ff0a71b98",
+    "shop_id": "67708124",
+    "name": "thumbHALF3 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.305,\"y\":0.059,\"width\":0.403,\"height\":0.806},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492403-808489606.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "4b75d5d1-2c76-40f6-a0fa-dad69f320997",
+    "shop_id": "67708124",
+    "name": "thumbHALF1 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.318,\"y\":0.068,\"width\":0.404,\"height\":0.808},\"frame\":{\"style\":\"stretched\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":4.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492405-484514112.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "1855c3cc-d499-45a3-90bd-72477dec14a6",
+    "shop_id": "67708124",
+    "name": "thumbHALF2 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.284,\"y\":0.12,\"width\":0.38,\"height\":0.76},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3.5,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492407-619390956.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "8e0f55c2-da22-4866-803d-87fa7587ac7d",
+    "shop_id": "67708124",
+    "name": "thumbHALF5 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.343,\"y\":0.172,\"width\":0.325,\"height\":0.65},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6.5,\"distance\":6,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492408-404158263.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "432e2a33-2b81-4a67-bc73-b1ac173e9abe",
+    "shop_id": "67708124",
+    "name": "thumbSQR5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.314,\"y\":0.1431111111111111},\"tr\":{\"x\":0.7175555555555555,\"y\":0.1431111111111111},\"br\":{\"x\":0.7173333333333334,\"y\":0.5471111111111111},\"bl\":{\"x\":0.31355555555555553,\"y\":0.5475555555555556}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492410-188422878.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "ad5f5f91-4632-4bcb-bc41-c0b1dfe07551",
+    "shop_id": "67708124",
+    "name": "thumbVERT7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"corners\":{\"tl\":{\"x\":0.2597543859649123,\"y\":0.08175438596491229},\"tr\":{\"x\":0.628,\"y\":0.15449122807017543},\"br\":{\"x\":0.6651228070175439,\"y\":0.8246315789473684},\"bl\":{\"x\":0.29712280701754384,\"y\":0.9075087719298246}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492413-593397625.jpg",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "2529f4c5-5966-4bec-91f3-325a8645fb08",
+    "shop_id": "67708124",
+    "name": "thumbVERT6 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"placement\":{\"x\":0.285,\"y\":0.109,\"width\":0.427,\"height\":0.6405},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492413-67900020.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "73ed8050-e543-4c94-944c-6136331a2454",
+    "shop_id": "67708124",
+    "name": "thumbPAN5 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.027,\"y\":0.257,\"width\":0.933,\"height\":0.38875},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492416-448557485.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "1fbd2cd8-e8b2-41f6-ab61-6c649159ee6d",
+    "shop_id": "67708124",
+    "name": "thumbPAN3 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.105,\"y\":0.323,\"width\":0.797,\"height\":0.3320833333333334},\"frame\":{\"style\":\"stretched\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3.5,\"distance\":9,\"blur\":9},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492418-552146299.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "c9cb444b-2a12-43b6-89a0-8a062f4b76b0",
+    "shop_id": "67708124",
+    "name": "thumbPAN1 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"placement\":{\"x\":0.094,\"y\":0.14,\"width\":0.822,\"height\":0.3425},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492421-770035183.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "71b73048-6741-4702-a9f8-3332471bd686",
+    "shop_id": "67708124",
+    "name": "thumbPAN2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.06422222222222221,\"y\":0.33355555555555555},\"tr\":{\"x\":0.9415555555555555,\"y\":0.29733333333333317},\"br\":{\"x\":0.9417777777777778,\"y\":0.6797777777777779},\"bl\":{\"x\":0.06511111111111112,\"y\":0.6673333333333334}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492423-90266540.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "b93acaae-3b1d-4865-a5cc-4fe6718f1786",
+    "shop_id": "67708124",
+    "name": "thumbPAN4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.08266666666666668,\"y\":0.24466666666666667},\"tr\":{\"x\":0.9186666666666666,\"y\":0.24422222222222223},\"br\":{\"x\":0.9184444444444445,\"y\":0.5968888888888889},\"bl\":{\"x\":0.0817777777777778,\"y\":0.5975555555555555}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492426-677753055.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "fb1270dd-d542-46e4-aaf8-d72f7f033a10",
+    "shop_id": "67708124",
+    "name": "thumbSQR3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.19822222222222222,\"y\":0.18133333333333332},\"tr\":{\"x\":0.7995555555555556,\"y\":0.182},\"br\":{\"x\":0.8002222222222224,\"y\":0.7944444444444445},\"bl\":{\"x\":0.19822222222222224,\"y\":0.7942222222222224}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492429-946851479.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "f80c6416-76c3-4a27-8076-c10eb3c2ff8e",
+    "shop_id": "67708124",
+    "name": "thumbSQR1 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.22355555555555556,\"y\":0.22511111111111112},\"tr\":{\"x\":0.756,\"y\":0.13444444444444445},\"br\":{\"x\":0.7586666666666668,\"y\":0.806},\"bl\":{\"x\":0.22422222222222224,\"y\":0.794}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492431-547045630.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "291648cb-9095-4537-accb-b48f39355e7a",
+    "shop_id": "67708124",
+    "name": "thumbSQR2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18755555555555556,\"y\":0.18466666666666667},\"tr\":{\"x\":0.8053333333333335,\"y\":0.12355555555555556},\"br\":{\"x\":0.8055555555555558,\"y\":0.8464444444444444},\"bl\":{\"x\":0.18844444444444444,\"y\":0.8284444444444444}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492433-376300369.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "3d062b1a-fa5f-43bb-97e1-ae041e7df92e",
+    "shop_id": "67708124",
+    "name": "thumbSQR4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16955555555555557,\"y\":0.2},\"tr\":{\"x\":0.8284444444444444,\"y\":0.2},\"br\":{\"x\":0.8284444444444444,\"y\":0.8588888888888889},\"bl\":{\"x\":0.16955555555555557,\"y\":0.8591111111111113}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492435-104855026.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "470e9675-d6cf-4bfa-b89e-ee386b7ebdfc",
+    "shop_id": "67708124",
+    "name": "thumbVERT1 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30751526902569076,\"y\":0.15109161415414443},\"tr\":{\"x\":0.7090305380513815,\"y\":0.124},\"br\":{\"x\":0.679938923897237,\"y\":0.8910305380513815},\"bl\":{\"x\":0.2595152690256908,\"y\":0.842}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492437-287531547.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "dd04a918-7328-4b7d-a1f7-5c48a48795df",
+    "shop_id": "67708124",
+    "name": "thumbVERT2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.21822816399286993,\"y\":0.08510873440285205},\"tr\":{\"x\":0.782663101604278,\"y\":0.08444563279857398},\"br\":{\"x\":0.7846737967914441,\"y\":0.9377825311942961},\"bl\":{\"x\":0.21244563279857398,\"y\":0.9373368983957221}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492439-899399120.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "2d34e517-d3fa-448b-918f-6d0ea3b334e8",
+    "shop_id": "67708124",
+    "name": "thumbVERT3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2637835241965274,\"y\":0.1505223494643517},\"tr\":{\"x\":0.7152611747321758,\"y\":0.08163058736608793},\"br\":{\"x\":0.7047388252678242,\"y\":0.93},\"bl\":{\"x\":0.228,\"y\":0.8854776505356484}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492442-405314530.jpg",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "99684679-f971-4a6f-bbff-c7e9305b50ba",
+    "shop_id": "67708124",
+    "name": "thumbVERT4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.24266666666666664,\"y\":0.12466666666666669},\"tr\":{\"x\":0.7510000000000001,\"y\":0.12533333333333335},\"br\":{\"x\":0.7583333333333333,\"y\":0.9023333333333333},\"bl\":{\"x\":0.23833333333333337,\"y\":0.9043333333333333}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492443-453740104.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "7c6b250b-4fc7-4161-b7bc-910da3a86b83",
+    "shop_id": "67708124",
+    "name": "thumbVERT5 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.278,\"y\":0.10348533196088522},\"tr\":{\"x\":0.7375440041173444,\"y\":0.13445599588265572},\"br\":{\"x\":0.7365733401955741,\"y\":0.868},\"bl\":{\"x\":0.277941327843541,\"y\":0.8790293360782296}},\"is_thumbnail\":true}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492450-215538523.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "9466f7be-34dc-47d5-b8e7-7e9ecd8d85ea",
+    "shop_id": "67708124",
+    "name": "t13 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.354,\"y\":0.086,\"width\":0.30320001220703124,\"height\":0.6064000244140625},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":7,\"blur\":7},\"is_thumbnail\":false}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492452-694712691.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "6ad0f0ba-8992-4d3c-b239-35ba79ac9278",
+    "shop_id": "67708124",
+    "name": "t12 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.404,\"y\":0.098,\"width\":0.273529426724303,\"height\":0.547058853448606},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":6},\"is_thumbnail\":false}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492454-273166095.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "adcd4d51-7fe1-4b19-ab34-a6fe16f6ae7e",
+    "shop_id": "67708124",
+    "name": "t10 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.3983590526091747,\"y\":0.14031808080428665,\"width\":0.2688409595978566,\"height\":0.5376819191957132},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":8,\"blur\":8}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492455-703249440.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "258cb911-c02d-4f99-9d8b-c62114b0742b",
+    "shop_id": "67708124",
+    "name": "t9 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.32520001220703126,\"y\":0.1074000244140625,\"width\":0.312,\"height\":0.624},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":5,\"blur\":9}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492457-704271336.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "e45d477a-d445-4135-a651-52988a80e490",
+    "shop_id": "67708124",
+    "name": "t8 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.20488505747126437,\"y\":0.062,\"width\":0.37431495473576687,\"height\":0.7486299094715337},\"frame\":{\"style\":\"walnut\",\"thickness\":10},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4.5,\"distance\":8,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492458-111524267.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "1feae4f4-b0c1-4233-8ada-a449b5ac9ab4",
+    "shop_id": "67708124",
+    "name": "t6 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.35812969970703123,\"y\":0.19542343139648438},\"tr\":{\"x\":0.6427117309570313,\"y\":0.19591171264648438},\"br\":{\"x\":0.6441765747070313,\"y\":0.7363999938964844},\"bl\":{\"x\":0.35968829345703124,\"y\":0.7378648376464844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492462-781523327.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "9626164e-6846-41e1-8deb-e1467c37dade",
+    "shop_id": "67708124",
+    "name": "t5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3417351684570312,\"y\":0.10039999389648438},\"tr\":{\"x\":0.6572468872070313,\"y\":0.09995858764648438},\"br\":{\"x\":0.6558289184570313,\"y\":0.6693765563964844},\"bl\":{\"x\":0.3422703247070312,\"y\":0.6699117126464844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492464-124858593.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "c192a60a-9045-499e-8d46-d7fdf631da01",
+    "shop_id": "67708124",
+    "name": "t4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3332468872070313,\"y\":0.15347030639648437},\"tr\":{\"x\":0.6672000122070313,\"y\":0.15342343139648437},\"br\":{\"x\":0.6692000122070313,\"y\":0.7789820251464844},\"bl\":{\"x\":0.3317820434570313,\"y\":0.7783999938964844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492466-26900121.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "170d7eb7-a468-4672-aae9-7510ae5cb50e",
+    "shop_id": "67708124",
+    "name": "t2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.5162234497070313,\"y\":0.2670289001464844},\"tr\":{\"x\":0.7566648559570313,\"y\":0.24137655639648437},\"br\":{\"x\":0.7536882934570313,\"y\":0.7894234313964844},\"bl\":{\"x\":0.5116882934570313,\"y\":0.7668414001464844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492469-465433888.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "f685d249-3abe-4986-ac6a-00f0caef2993",
+    "shop_id": "67708124",
+    "name": "t1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"1:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.3830270886120496,\"y\":0.2813477354307432,\"width\":0.23017292359498168,\"height\":0.46034584718996335},\"frame\":{\"style\":\"black_frame\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":5,\"blur\":10}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492471-6486841.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "4b196bce-ae5d-4502-b52f-07b4c152c0a1",
+    "shop_id": "67708124",
+    "name": "pana7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.18695282119579532,\"y\":0.24084943209873155},\"tr\":{\"x\":0.846750574004784,\"y\":0.24084943209873155},\"br\":{\"x\":0.846750574004784,\"y\":0.5112988703009788},\"bl\":{\"x\":0.18695282119579532,\"y\":0.5112988703009788}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492488-694093816.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "64ac1022-d332-44c6-a61e-09f21adb1cd6",
+    "shop_id": "67708124",
+    "name": "pana2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.14880325175810902,\"y\":0.2594723501116978},\"tr\":{\"x\":0.8704332285865736,\"y\":0.2597617749725514},\"br\":{\"x\":0.8711439230590826,\"y\":0.8180808844345175},\"bl\":{\"x\":0.14853320044836016,\"y\":0.817327637681271}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492490-970094136.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "3c3578ae-73f3-49a1-9904-ac9ac613157e",
+    "shop_id": "67708124",
+    "name": "yy2522 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":815,\"corners\":{\"tl\":{\"x\":0.28199456804002015,\"y\":0.17912448369240275},\"tr\":{\"x\":0.7539420730405719,\"y\":0.2579357081821985},\"br\":{\"x\":0.7817177989000191,\"y\":0.7263999938964844},\"bl\":{\"x\":0.306871173133148,\"y\":0.8077622387944436}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492493-36190062.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "3a23f2b7-7dcb-430d-a2e6-d874b9690ffb",
+    "shop_id": "67708124",
+    "name": "yy235 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.1452214523350998,\"y\":0.12526519765823987},\"tr\":{\"x\":0.8619528848303788,\"y\":0.1243101297376547},\"br\":{\"x\":0.8620564534062544,\"y\":0.8284898580553139},\"bl\":{\"x\":0.14339552415494153,\"y\":0.8303101297376547}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492495-974867572.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "7f5bddf9-97ff-4d89-b22d-2915258b573e",
+    "shop_id": "67708124",
+    "name": "yy157 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.2601177164713542,\"y\":0.09835311889648438},\"tr\":{\"x\":0.8701958414713543,\"y\":0.09639999389648438},\"br\":{\"x\":0.8701645914713543,\"y\":0.6943531188964843},\"bl\":{\"x\":0.2594666748046875,\"y\":0.6923062438964844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492496-726334235.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "4c466b15-b18f-43ad-a421-ef53396668cf",
+    "shop_id": "67708124",
+    "name": "yy150 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":888,\"placement\":{\"x\":0.3102477821143898,\"y\":0.1,\"width\":0.4516891616958756,\"height\":0.46794997151692713},\"frame\":{\"style\":\"black_frame\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492498-540119846.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "d677673b-cd4e-46e7-9218-86b0d71b6cc8",
+    "shop_id": "67708124",
+    "name": "yy15 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":888,\"corners\":{\"tl\":{\"x\":0.1729729798463014,\"y\":0.10049374389648434},\"tr\":{\"x\":0.7547322116055332,\"y\":0.20835311889648434},\"br\":{\"x\":0.7822344391077607,\"y\":0.7923999938964844},\"bl\":{\"x\":0.1917780486513702,\"y\":0.8950979105631511}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492500-151832382.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "8338343f-30be-4065-93f1-96c091aa356d",
+    "shop_id": "67708124",
+    "name": "yy13 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":805,\"corners\":{\"tl\":{\"x\":0.14179419556913733,\"y\":0.09103774899852518},\"tr\":{\"x\":0.8154267896401272,\"y\":0.15657346328423952},\"br\":{\"x\":0.8208465174493527,\"y\":0.8131244836924028},\"bl\":{\"x\":0.1397605072292946,\"y\":0.8470377489985251}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492502-231143161.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "eb91d4ba-2da5-4314-9190-8d554a5821e1",
+    "shop_id": "67708124",
+    "name": "yy12 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.21011804657790503,\"y\":0.14521121838628032},\"tr\":{\"x\":0.8060606131742606,\"y\":0.14512448369240274},\"br\":{\"x\":0.8059073489050974,\"y\":0.7535887694066883},\"bl\":{\"x\":0.21011804657790503,\"y\":0.7537622387944436}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492504-790853235.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "e5dc38a4-a005-4451-bd85-b10dd7a355f6",
+    "shop_id": "67708124",
+    "name": "yy10 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":858,\"corners\":{\"tl\":{\"x\":0.2047130998653803,\"y\":0.21657346328423951},\"tr\":{\"x\":0.8053687592134616,\"y\":0.21703774899852518},\"br\":{\"x\":0.808763086530523,\"y\":0.8210377489985251},\"bl\":{\"x\":0.20153697930441578,\"y\":0.8203132592026067}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492507-816023656.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "20fd3506-c623-4933-a7ba-4ca78f78fb04",
+    "shop_id": "67708124",
+    "name": "yy9 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.346402564041162,\"y\":0.31362806407192273},\"tr\":{\"x\":0.8699974603729005,\"y\":0.25400764939887666},\"br\":{\"x\":0.8699974603729005,\"y\":0.6831974420623537},\"bl\":{\"x\":0.346402564041162,\"y\":0.6595897865599614}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492509-205126531.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "28a1d86a-11e6-46fa-ad99-637b5e35a359",
+    "shop_id": "67708124",
+    "name": "yy8 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.14649279862853054,\"y\":0.21415671242548015},\"tr\":{\"x\":0.8546144393640326,\"y\":0.21439999389648437},\"br\":{\"x\":0.8556639443145279,\"y\":0.6218144210534857},\"bl\":{\"x\":0.14649279862853054,\"y\":0.619107207474985}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492511-235179797.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "d4fa3ae0-a095-4db3-a783-9c7543c1bc9a",
+    "shop_id": "67708124",
+    "name": "yy7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":856,\"corners\":{\"tl\":{\"x\":0.2473632822640601,\"y\":0.09457346328423952},\"tr\":{\"x\":0.7553225170640963,\"y\":0.20639999389648436},\"br\":{\"x\":0.7865435941616807,\"y\":0.7723999938964844},\"bl\":{\"x\":0.2741680713747829,\"y\":0.8930377489985252}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492512-308257546.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "db698485-59ba-4c58-8e0b-9e318ef32041",
+    "shop_id": "67708124",
+    "name": "yy3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"12:7\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.16520001220703126,\"y\":0.30002040856953044},\"tr\":{\"x\":0.8839974603729005,\"y\":0.14080509756474593},\"br\":{\"x\":0.8832000122070313,\"y\":0.7355770273893075},\"bl\":{\"x\":0.16480766770942362,\"y\":0.6707923383940921}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492514-596215678.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "2b63903b-4c52-44af-ab6d-096fab367d84",
+    "shop_id": "67708124",
+    "name": "y52 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.14841975141930458,\"y\":0.07824143831717538,\"width\":0.7107802607877267,\"height\":0.47385350719181774},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492515-152358160.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "6c222adb-4f52-457f-b942-b030bd42cbb3",
+    "shop_id": "67708124",
+    "name": "y212 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"placement\":{\"x\":0.2942443654462085,\"y\":0.17079998779296876,\"width\":0.6719999389648438,\"height\":0.44799995930989583},\"frame\":{\"style\":\"black_frame\",\"thickness\":7.5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492517-721364756.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "17607ec4-f186-421e-a77f-969c41fdc169",
+    "shop_id": "67708124",
+    "name": "d150 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.4383788316514756,\"y\":0.11984270222981758},\"tr\":{\"x\":0.8209829983181424,\"y\":0.11970207722981775},\"br\":{\"x\":0.8212000122070312,\"y\":0.6654381883409282},\"bl\":{\"x\":0.4379916788736978,\"y\":0.6648340216742621}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492519-92221786.jpg",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "b1ec90d6-2c13-45cf-b2dc-0d4f1b542c12",
+    "shop_id": "67708124",
+    "name": "dd300 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.3454494382022472,\"y\":0.035943803080012285,\"width\":0.319750574004784,\"height\":0.5481438411510583},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":3.5,\"distance\":3,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492521-160111445.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "a7e6809b-a126-4cdd-a533-5d70c1a60dbf",
+    "shop_id": "67708124",
+    "name": "dd250 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.33713800469760236,\"y\":0.09120688181910021,\"width\":0.3960620075094289,\"height\":0.6789634414447352},\"frame\":{\"style\":\"black_frame\",\"thickness\":5.5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":7,\"blur\":11}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492523-519927437.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "2fad6fc4-a5a4-441c-8fd2-8a8a76883654",
+    "shop_id": "67708124",
+    "name": "dd150 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.40915053763440856,\"y\":0.12780428519300233,\"width\":0.3526613030382382,\"height\":0.604562233779837},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":4,\"distance\":8,\"blur\":16}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492524-308581968.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "fd2990d7-8aa2-4ebc-8363-7f548a88c12c",
+    "shop_id": "67708124",
+    "name": "dd1 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":288,\"placement\":{\"x\":0.16666666666666666,\"y\":0.096,\"width\":0.6826388041178385,\"height\":0.6740570591517857},\"frame\":{\"style\":\"natural_wood\",\"thickness\":4.5},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":4,\"distance\":7,\"blur\":14}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492526-272521200.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "77b87e71-b121-4a0c-89b1-05efffe23df6",
+    "shop_id": "67708124",
+    "name": "dd7 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2984153232118158,\"y\":0.1452102012330075},\"tr\":{\"x\":0.7167949085387697,\"y\":0.1715770273893073},\"br\":{\"x\":0.7892127713776851,\"y\":0.853982131057569},\"bl\":{\"x\":0.3559974603729005,\"y\":0.8911974420623536}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492528-41018175.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "34516d68-056d-442a-a177-07f9c27f3ba8",
+    "shop_id": "67708124",
+    "name": "dd8 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.2660000610351563,\"y\":0.07079998779296875,\"width\":0.453199951171875,\"height\":0.7769142020089286},\"frame\":{\"style\":\"black_frame\",\"thickness\":6.5},\"shadow\":{\"enabled\":true,\"sides\":\"left\",\"opacity\":4.5,\"distance\":5,\"blur\":11}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492529-329315491.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "70b66392-cb7e-4d13-a75a-c3c3a540dab8",
+    "shop_id": "67708124",
+    "name": "dd5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.29022344970703123,\"y\":0.12244686889648437},\"tr\":{\"x\":0.7482234497070313,\"y\":0.12239999389648437},\"br\":{\"x\":0.7481765747070312,\"y\":0.8552359313964844},\"bl\":{\"x\":0.29017657470703123,\"y\":0.8544468688964844}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492531-842308898.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "d14426a8-d6bf-41ce-bad1-a7e317c2ec62",
+    "shop_id": "67708124",
+    "name": "d15 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"placement\":{\"x\":0.27280936421239094,\"y\":0.11966696436682411,\"width\":0.5023906479946403,\"height\":0.7535859719919605},\"frame\":{\"style\":\"black_frame\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":6.5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492532-414961701.jpg",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "9460ab93-5dfd-4ce1-a218-6a01ef708781",
+    "shop_id": "67708124",
+    "name": "dd2 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"7:12\"],\"editorWidth\":500,\"placement\":{\"x\":0.31100006103515626,\"y\":0.104,\"width\":0.404199951171875,\"height\":0.6929142020089285},\"frame\":{\"style\":\"walnut\",\"thickness\":6},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5.5,\"distance\":4,\"blur\":15}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492533-249192170.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "16ffaf8b-93a6-4be5-99ce-2e9c86520ecc",
+    "shop_id": "67708124",
+    "name": "k12 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.26571609798519286,\"y\":0.2460884125591104},\"tr\":{\"x\":0.7346719139875173,\"y\":0.24664312438209007},\"br\":{\"x\":0.7342998127671139,\"y\":0.714551820259155},\"bl\":{\"x\":0.26548960543059086,\"y\":0.7145454406738281}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492535-186293648.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "626a56a1-fc88-4ddd-a17a-3d11a42d6e7d",
+    "shop_id": "67708124",
+    "name": "k10 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.27933342943183076,\"y\":0.2250136694807331},\"tr\":{\"x\":0.7171133649972751,\"y\":0.22478678698062166},\"br\":{\"x\":0.7170908813476562,\"y\":0.6861403370055666},\"bl\":{\"x\":0.27950236460124467,\"y\":0.6857479925079589}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492537-158414272.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "926198e5-ccac-475e-ab65-165bc7cc1cae",
+    "shop_id": "67708124",
+    "name": "k9 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.2736934509198109,\"y\":0.17232853251453994},\"tr\":{\"x\":0.7588221503066501,\"y\":0.17242971801716914},\"br\":{\"x\":0.759483225845264,\"y\":0.6589377851714359},\"bl\":{\"x\":0.2733139010029569,\"y\":0.659162004392721}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492539-997283925.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "46ea1e68-3614-4a96-b0fa-2dedf20ccb54",
+    "shop_id": "67708124",
+    "name": "k8 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.30750236460124464,\"y\":0.1799649119339111},\"tr\":{\"x\":0.7450845017623293,\"y\":0.1799585323485842},\"br\":{\"x\":0.7450908813476562,\"y\":0.6335661878509765},\"bl\":{\"x\":0.3074959850159178,\"y\":0.6327623600997804}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492541-363442360.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "cfe10edd-034a-46f2-b2aa-7a62be373f1d",
+    "shop_id": "67708124",
+    "name": "k7 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3998213110397743,\"y\":0.2571090161148206},\"tr\":{\"x\":0.8586350552388419,\"y\":0.19284461132194292},\"br\":{\"x\":0.8586921572647216,\"y\":0.7993492684250243},\"bl\":{\"x\":0.4003061923524408,\"y\":0.7605390610885012}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492544-387208941.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "b542d1ca-eed8-461c-a6d2-a518de6d7b8f",
+    "shop_id": "67708124",
+    "name": "k6 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3851951111843064,\"y\":0.23247255861934252},\"tr\":{\"x\":0.7863935843556324,\"y\":0.13452318532193516},\"br\":{\"x\":0.7870845017623294,\"y\":0.7621403370055666},\"bl\":{\"x\":0.38509088134765623,\"y\":0.7353492684250242}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492547-616391081.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "81da970c-1243-44ab-a2de-a669ced85b79",
+    "shop_id": "67708124",
+    "name": "k5 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.40367509638909216,\"y\":0.2147300669689052},\"tr\":{\"x\":0.819619196397814,\"y\":0.1820292516105108},\"br\":{\"x\":0.8194959850159178,\"y\":0.6605454406738281},\"bl\":{\"x\":0.4038947090988524,\"y\":0.643741612922632}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492549-355284467.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "a8a12b52-67b5-4faf-b1d4-f20ae6242038",
+    "shop_id": "67708124",
+    "name": "k2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.36370969187661994,\"y\":0.188988817230176},\"tr\":{\"x\":0.7832045792355469,\"y\":0.16024993422819084},\"br\":{\"x\":0.7830845017623294,\"y\":0.5985454406738281},\"bl\":{\"x\":0.3638947090988524,\"y\":0.5921467165908935}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492554-629918889.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "96f5e842-18a9-4216-b971-7e3be672f597",
+    "shop_id": "67708124",
+    "name": "k1 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"1:1\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3458819499281986,\"y\":0.28295054434208966},\"tr\":{\"x\":0.8171036405183101,\"y\":0.2081467165908935},\"br\":{\"x\":0.8170908813476563,\"y\":0.765741612922632},\"bl\":{\"x\":0.3459010886841793,\"y\":0.745741612922632}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492557-646812065.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "13d1d66b-4268-4d0a-b981-6e7390a12985",
+    "shop_id": "67708124",
+    "name": "y8 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":666,\"corners\":{\"tl\":{\"x\":0.18275678796445266,\"y\":0.18792665614344137},\"tr\":{\"x\":0.8969043298861631,\"y\":0.1398342910947521},\"br\":{\"x\":0.8828909691069209,\"y\":0.9031642252042148},\"bl\":{\"x\":0.15074411230536805,\"y\":0.836703820047677}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492560-776623935.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "b61cd49d-4a26-4bc5-bde3-de60558fa58d",
+    "shop_id": "67708124",
+    "name": "y7 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"placement\":{\"x\":0.11363400148478096,\"y\":0.1058929765886287,\"width\":0.7777599194136564,\"height\":0.7777599194136564},\"frame\":{\"style\":\"black_frame\",\"thickness\":7},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":5,\"distance\":5,\"blur\":19}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492563-9168282.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "35909fbf-081e-482b-b915-b81260f4311d",
+    "shop_id": "67708124",
+    "name": "y5 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":750,\"corners\":{\"tl\":{\"x\":0.16501721916888726,\"y\":0.09236357932867006},\"tr\":{\"x\":0.8541776069305234,\"y\":0.1802824008389839},\"br\":{\"x\":0.8541750707900027,\"y\":0.8229464630582439},\"bl\":{\"x\":0.1650215250651042,\"y\":0.8901040344238281}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492566-36696698.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "fe95c168-4a43-464c-bfda-e805f51d95f4",
+    "shop_id": "67708124",
+    "name": "y3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.1666086718184285,\"y\":0.24647997123300644},\"tr\":{\"x\":0.813483225845264,\"y\":0.2753556480103512},\"br\":{\"x\":0.8570972609329831,\"y\":0.7525390610885012},\"bl\":{\"x\":0.1842998127671139,\"y\":0.7889441647567628}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492568-760418979.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "66a66413-571d-4929-a0b8-7aa69ad6620a",
+    "shop_id": "67708124",
+    "name": "d11 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3378022728181828,\"y\":0.10411863760220805},\"tr\":{\"x\":0.7108666788736979,\"y\":0.058733327229817694},\"br\":{\"x\":0.7105333455403642,\"y\":0.7523999938964842},\"bl\":{\"x\":0.337866678873698,\"y\":0.7387333272298174}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492575-657969645.jpg",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "f44f030d-ba1d-4ed0-b49b-eb8bcf55ac44",
+    "shop_id": "67708124",
+    "name": "d7 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"corners\":{\"tl\":{\"x\":0.1846312424464779,\"y\":0.20605469002908106},\"tr\":{\"x\":0.6869811503654467,\"y\":0.22301877842687115},\"br\":{\"x\":0.7415041706232733,\"y\":0.8437093861616778},\"bl\":{\"x\":0.22894800119417588,\"y\":0.8867452977638877}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492577-807931894.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "6a722a0e-b457-4807-a8db-021e99af9102",
+    "shop_id": "67708124",
+    "name": "d3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"corners\":{\"tl\":{\"x\":0.3068012881240966,\"y\":0.11360254573061516},\"tr\":{\"x\":0.719585977119312,\"y\":0.07040637348181134},\"br\":{\"x\":0.7195987362899658,\"y\":0.7811974420623536},\"bl\":{\"x\":0.3040165991288812,\"y\":0.768798717979419}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787692492588-885148256.png",
+    "created_at": "2026-08-25 21:14:52"
+  },
+  {
+    "id": "373a8220-5cc7-44e8-a9b6-985cc4efcabc",
+    "shop_id": "67708124",
+    "name": "statik",
+    "type": "static",
+    "config": "{\"compatible_ratios\":[\"2:3\",\"1:2x2\",\"1:2\",\"7:12\",\"1:1\",\"12:7\",\"3:2\",\"2:3x2\",\"12:5\"],\"is_thumbnail\":false}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787693186233-223769649.png",
+    "created_at": "2026-08-25 21:26:26"
+  },
+  {
+    "id": "3fa5044a-4680-4c36-9afd-77f5494b0263",
+    "shop_id": "66531013",
+    "name": "NEWvert1",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}],\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-1787850600322-356360311.png",
+    "created_at": "2026-08-27 17:10:00"
+  },
+  {
+    "id": "d439c6d0-a672-4e18-9b85-43ad7c56f294",
+    "shop_id": "66531013",
+    "name": "NEWvert2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}],\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-1787850651160-149176645.png",
+    "created_at": "2026-08-27 17:10:51"
+  },
+  {
+    "id": "fac77019-a097-4c7d-939b-eb938f89404a",
+    "shop_id": "66531013",
+    "name": "NEWvert3",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595}}],\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-1787850691821-748484129.png",
+    "created_at": "2026-08-27 17:11:31"
+  },
+  {
+    "id": "cf1b4f9c-ad0b-42a7-bce2-26e1112e79d7",
+    "shop_id": "67708124",
+    "name": "NEWvert3 (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595}}],\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787850772437-806526455.png",
+    "created_at": "2026-08-27 17:12:52"
+  },
+  {
+    "id": "4a2d7e64-25fc-49a8-b3cb-bb48140949b2",
+    "shop_id": "67708124",
+    "name": "NEWvert2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}],\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787850772442-704542378.png",
+    "created_at": "2026-08-27 17:12:52"
+  },
+  {
+    "id": "f75cb9fc-29a2-44be-b304-03ebeba3bce3",
+    "shop_id": "67708124",
+    "name": "NEWvert1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}],\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-copy-1787850772446-179214153.png",
+    "created_at": "2026-08-27 17:12:52"
+  },
+  {
+    "id": "dc0e9ef0-b582-4c6c-b17c-00af699066df",
+    "shop_id": "65571647",
+    "name": "NEWvert3 (Kopya) (Kopya)",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595}}],\"placement\":{\"x\":0.319,\"y\":0.069,\"width\":0.373,\"height\":0.5595},\"frame\":{\"style\":\"stretched\",\"thickness\":3},\"shadow\":{\"enabled\":true,\"sides\":\"right\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787850792459-26723455.png",
+    "created_at": "2026-08-27 17:13:12"
+  },
+  {
+    "id": "76c817ca-fc6e-4d47-93f3-71a5d1593d55",
+    "shop_id": "65571647",
+    "name": "NEWvert1 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}],\"corners\":{\"tl\":{\"x\":0.3196,\"y\":0.22279999999999991},\"tr\":{\"x\":0.6795999999999999,\"y\":0.22280000000000003},\"br\":{\"x\":0.6796000000000001,\"y\":0.7512000000000001},\"bl\":{\"x\":0.3196,\"y\":0.7516}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787850792463-856231219.png",
+    "created_at": "2026-08-27 17:13:12"
+  },
+  {
+    "id": "5664d0d1-ba40-424d-a0f3-21f1855f355e",
+    "shop_id": "65571647",
+    "name": "NEWvert2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}],\"corners\":{\"tl\":{\"x\":0.32151917964299276,\"y\":0.2396202050892518},\"tr\":{\"x\":0.6872404101785035,\"y\":0.23972123053551087},\"br\":{\"x\":0.6878989745537413,\"y\":0.775519179642993},\"bl\":{\"x\":0.32124041017850363,\"y\":0.7747595898214965}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787850792465-469470100.png",
+    "created_at": "2026-08-27 17:13:12"
+  },
+  {
+    "id": "af17a21f-4ed8-486f-9fda-1f33e2e048f0",
+    "shop_id": "67708124",
+    "name": "NEWhorz1",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}],\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787851349090-949863386.png",
+    "created_at": "2026-08-27 17:22:29"
+  },
+  {
+    "id": "b95b852e-b3fe-4306-88cd-e3d75f142dff",
+    "shop_id": "67708124",
+    "name": "NEWhorz2",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}],\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787851382097-572217080.png",
+    "created_at": "2026-08-27 17:23:02"
+  },
+  {
+    "id": "dd938ac1-d77f-4a37-ab20-fea723ed19eb",
+    "shop_id": "67708124",
+    "name": "NEWhorz3",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}],\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787851418327-402711418.png",
+    "created_at": "2026-08-27 17:23:38"
+  },
+  {
+    "id": "cce738c0-029a-4c15-a4be-b49939682066",
+    "shop_id": "67708124",
+    "name": "NEWhorz5",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}],\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787851597507-295783245.png",
+    "created_at": "2026-08-27 17:26:37"
+  },
+  {
+    "id": "c10bf6d3-e5b7-4fc5-be20-52c1ddb94c22",
+    "shop_id": "67708124",
+    "name": "NEWhorz4",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}],\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787986802079-718540143.png",
+    "created_at": "2026-08-29 07:00:02"
+  },
+  {
+    "id": "17a6edf9-c5ef-449a-9e47-e13d11df0735",
+    "shop_id": "67708124",
+    "name": "NEWhorz6",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}],\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}",
+    "background_path": "storage/BrightCanvasHaven/templates/template-1787986933659-190396641.png",
+    "created_at": "2026-08-29 07:02:13"
+  },
+  {
+    "id": "4ea59d66-dfe8-41af-9226-fdcef36cc971",
+    "shop_id": "65571647",
+    "name": "NEWhorz6 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}],\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958773-351146533.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "dd71127b-dadd-4c00-ae95-c36c715062e3",
+    "shop_id": "65571647",
+    "name": "NEWhorz4 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}],\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958777-175936585.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "932c81e0-bbb5-4e2a-9e12-a106473b5d26",
+    "shop_id": "65571647",
+    "name": "NEWhorz5 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}],\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958779-47976870.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "5ae89db8-9682-4203-8757-fb54f191f157",
+    "shop_id": "65571647",
+    "name": "NEWhorz3 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}],\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958781-278243821.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "fb8eb40a-e20d-4c55-997e-fb6e94d0049e",
+    "shop_id": "65571647",
+    "name": "NEWhorz2 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}],\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958782-53359521.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "21699dd4-9d51-4507-9932-e7deb0600699",
+    "shop_id": "65571647",
+    "name": "NEWhorz1 (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}],\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}",
+    "background_path": "storage/usalkArtHouse/templates/template-copy-1787986958785-779444336.png",
+    "created_at": "2026-08-29 07:02:38"
+  },
+  {
+    "id": "fbb1bbfe-33c5-47ff-aa59-185676ceb738",
+    "shop_id": "66531013",
+    "name": "NEWhorz6 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}],\"corners\":{\"tl\":{\"x\":0.124,\"y\":0.11644802867383514},\"tr\":{\"x\":0.894,\"y\":0.11624014336917565},\"br\":{\"x\":0.8937921146953404,\"y\":0.6328960573476702},\"bl\":{\"x\":0.12510394265232977,\"y\":0.6324480286738351}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977958-734313129.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "32002b95-8073-4697-bc94-bb9be96aad96",
+    "shop_id": "66531013",
+    "name": "NEWhorz4 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}],\"corners\":{\"tl\":{\"x\":0.34844444444444445,\"y\":0.27222222222222214},\"tr\":{\"x\":0.7046666666666668,\"y\":0.272},\"br\":{\"x\":0.705111111111111,\"y\":0.5137777777777777},\"bl\":{\"x\":0.34844444444444445,\"y\":0.5135555555555555}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977962-32570878.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "400a7645-ff5e-4238-aabf-b3ad33dcf380",
+    "shop_id": "66531013",
+    "name": "NEWhorz3 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}],\"corners\":{\"tl\":{\"x\":0.32,\"y\":0.2599999999999998},\"tr\":{\"x\":0.8013333333333332,\"y\":0.22000000000000003},\"br\":{\"x\":0.8011111111111113,\"y\":0.6142222222222221},\"bl\":{\"x\":0.31955555555555554,\"y\":0.6057777777777779}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977964-742137006.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "f4cfb065-f6e5-477d-9ed0-6afe60a0856f",
+    "shop_id": "66531013",
+    "name": "NEWhorz5 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}],\"corners\":{\"tl\":{\"x\":0.23555555555555555,\"y\":0.25911111111111107},\"tr\":{\"x\":0.7711111111111111,\"y\":0.2593333333333334},\"br\":{\"x\":0.770888888888889,\"y\":0.6317777777777779},\"bl\":{\"x\":0.2351111111111111,\"y\":0.632}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977966-406717875.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "783d2c1d-d603-40c3-817f-eb25cefa4e74",
+    "shop_id": "66531013",
+    "name": "NEWhorz2 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":false,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}],\"corners\":{\"tl\":{\"x\":0.39222222222222236,\"y\":0.2966666666666666},\"tr\":{\"x\":0.806,\"y\":0.2051111111111111},\"br\":{\"x\":0.8062222222222224,\"y\":0.664},\"bl\":{\"x\":0.392,\"y\":0.6266666666666668}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977967-603455312.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "98ab237c-ec7a-4ae8-ac86-6b47470281c4",
+    "shop_id": "66531013",
+    "name": "NEWhorz1 (Kopya) (Kopya)",
+    "type": "perspective",
+    "config": "{\"compatible_ratios\":[\"3:2\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}],\"corners\":{\"tl\":{\"x\":0.21155555555555555,\"y\":0.27555555555555555},\"tr\":{\"x\":0.7944444444444445,\"y\":0.2751111111111111},\"br\":{\"x\":0.7946666666666669,\"y\":0.6842222222222224},\"bl\":{\"x\":0.21022222222222223,\"y\":0.686888888888889}}}",
+    "background_path": "storage/MorelloCanvasShop/templates/template-copy-1787986977970-548949105.png",
+    "created_at": "2026-08-29 07:02:57"
+  },
+  {
+    "id": "4afb31f7-cc85-4045-afbd-15d7654b02d1",
+    "shop_id": "65571647",
+    "name": "new panaromic",
+    "type": "flat",
+    "config": "{\"compatible_ratios\":[\"12:5\"],\"editorWidth\":500,\"is_thumbnail\":true,\"panel_count\":1,\"slots\":[{\"placement\":{\"x\":0.2036875,\"y\":0.38148750000000003,\"width\":0.5983125,\"height\":0.249296875}}],\"placement\":{\"x\":0.2036875,\"y\":0.38148750000000003,\"width\":0.5983125,\"height\":0.249296875},\"frame\":{\"style\":\"black_frame\",\"thickness\":4},\"shadow\":{\"enabled\":true,\"sides\":\"bottom\",\"opacity\":3.5,\"distance\":5,\"blur\":6}}",
+    "background_path": "storage/usalkArtHouse/templates/template-1788688018409-682673931.jpg",
+    "created_at": "2026-09-06 09:46:58"
   }
 ]

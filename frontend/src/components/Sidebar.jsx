@@ -10,7 +10,8 @@ import {
   Coins,
   BarChart3,
   HardDrive,
-  Wrench
+  Wrench,
+  CalendarClock
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -27,6 +28,7 @@ export default function Sidebar({
   // Dynamic menu based on platform mode
   const menuItems = appMode === 'etsy' ? [
     { id: 'dashboard', name: 'Ürün Paneli', icon: LayoutDashboard },
+    { id: 'renew-manager', name: 'Yenileme Yöneticisi', icon: CalendarClock },
     { id: 'analytics', name: 'Analiz & Optimizasyon', icon: BarChart3 },
     { id: 'price-update', name: 'Listing Fiyat Güncelle', icon: Coins },
     { id: 'bulk-upload', name: 'Toplu Yükleme Sihirbazı', icon: UploadCloud },

@@ -1,0 +1,727 @@
+{
+  "generated": "2026-08-31",
+  "source": "EtsyListingsDownload.csv",
+  "delete": [
+    {
+      "csv_line": 894,
+      "match_title": "Rock'n'Roll 1957 Canvas Wall Art, Vintage Elvis Presley Poster, The King Is Here Retro Music Canvas, Classic Rock Music Home Decor",
+      "reason": "Elvis Presley Enterprises - kisilik hakki + marka"
+    },
+    {
+      "csv_line": 590,
+      "match_title": "Harlem Globetrotters 1952 Vintage Poster, Retro Basketball Print, Classic Sports Wall Art, Basketball Fan Gift",
+      "reason": "Harlem Globetrotters tescilli marka"
+    },
+    {
+      "csv_line": 673,
+      "match_title": "Rome Colosseum Vintage Travel Poster, Retro Italy Wall Art Canvas, Ghibli Style Roman Holiday Painting, Italian Street View Print",
+      "reason": "Baslikta \"Ghibli Style\" - Studio Ghibli IP"
+    },
+    {
+      "csv_line": 893,
+      "match_title": "Vintage Woodstock 1969 Canvas, Peace Symbol Wall Art, Music Festival Poster, Retro Hippie Decor, Three Days of Peace & Music Canvas",
+      "reason": "Woodstock Ventures tescilli marka"
+    },
+    {
+      "csv_line": 598,
+      "match_title": "Fillmore West San Francisco 1967 Concert Poster, Vintage Psychedelic Rock Wall Art, Retro Music Poster, 60s Rock Band Canvas Print",
+      "reason": "The Fillmore (Live Nation) markasi + 1967 afis telifi"
+    },
+    {
+      "csv_line": 897,
+      "match_title": "Cuba Libre 1959 Che Guevara Canvas, Cuban Revolution Wall Art, Vintage, Historical Canvas Decoration, Latin America Icon",
+      "reason": "Cuba yaptirimi + Che Guevara Korda fotografi"
+    },
+    {
+      "csv_line": 594,
+      "match_title": "Wembley Stadium 1966 Vintage Poster, World Cup Final Retro Football Print, London Soccer Wall Art, England Decor",
+      "reason": "FIFA World Cup + Wembley + The FA"
+    },
+    {
+      "csv_line": 592,
+      "match_title": "Camp Nou Barcelona 1957 Vintage Poster, Retro Football Stadium Print, Spain Soccer Wall Art, Catalan Sports Decor",
+      "reason": "FC Barcelona + Camp Nou"
+    },
+    {
+      "csv_line": 892,
+      "match_title": "Vintage 1954 World Cup Victory Canvas, Das Wunder Von Bern Wall Art, Retro Soccer Champion Decoration, Football Trophy Celebration Print",
+      "reason": "FIFA World Cup + \"Das Wunder von Bern\" film markasi"
+    },
+    {
+      "csv_line": 209,
+      "match_title": "Henry Ford Vintage Car Canvas, Model T Horseless Carriage 1908, Automotive History Wall Art, Industrial Revolution Decor, Classic Car Canvas",
+      "reason": "Ford Motor Company - Henry Ford + Model T"
+    },
+    {
+      "csv_line": 597,
+      "match_title": "The Cotton Club Harlem 1927 Canvas, Vintage Jazz Dance Scene Wall Art, Retro Music Venue Canvas, Historic Jazz Club Decoration, Ready to",
+      "reason": "The Cotton Club markasi"
+    }
+  ],
+  "update": [
+    {
+      "csv_line": 86,
+      "match_title": "Le Mans 1955 Vintage Race Car Canvas, Classic Motorsport Wall Art, Retro Grand Prix Endurance Poster, Racing Car Canvas Decor",
+      "new_title": "Vintage Endurance Race Car Canvas, Classic Motorsport Wall Art, Retro 1950s Racing Poster, Racing Car Canvas Decor",
+      "old_tags": [
+        "vintage race car",
+        "Le Mans canvas",
+        "motorsport wall art",
+        "classic car poster",
+        "endurance race art",
+        "1955 racing print",
+        "grand prix wall art",
+        "racing car canvas",
+        "classic motorsport a",
+        "car race decoration",
+        "automotive wall art",
+        "vintage wall art",
+        "racing poster"
+      ],
+      "new_tags": [
+        "vintage race car",
+        "classic race canvas",
+        "motorsport wall art",
+        "classic car poster",
+        "endurance race art",
+        "1950s racing print",
+        "retro racing art",
+        "racing car canvas",
+        "classic motorsport a",
+        "car race decoration",
+        "automotive wall art",
+        "vintage wall art",
+        "racing poster"
+      ],
+      "changed_tags": [
+        "Le Mans canvas -> classic race canvas",
+        "grand prix wall art -> retro racing art",
+        "1955 racing print -> 1950s racing print"
+      ]
+    },
+    {
+      "csv_line": 87,
+      "match_title": "Monza 1971 Vintage F1 Poster, Retro Grand Prix Racing Car Art Print, Red Race Car Motorsport Canvas, Italian Racing Fan Gift",
+      "new_title": "Vintage Italian Racing Circuit Poster, Retro Race Car Art Print, Red Race Car Motorsport Canvas, Italian Racing Fan Gift",
+      "old_tags": [
+        "monza grand prix",
+        "f1 vintage poster",
+        "vintage f1 art",
+        "racing car print",
+        "retro motorsport",
+        "classic racing art",
+        "red race car poster",
+        "monza 1971 print",
+        "man cave racing art",
+        "grand prix poster",
+        "racing driver gift",
+        "italy racing poster",
+        "retro formula print"
+      ],
+      "new_tags": [
+        "italian racing art",
+        "vintage racing art",
+        "retro race car art",
+        "racing car print",
+        "retro motorsport",
+        "classic racing art",
+        "red race car poster",
+        "1970s racing print",
+        "man cave racing art",
+        "motorsport poster",
+        "racing driver gift",
+        "italy racing poster",
+        "retro racing print"
+      ],
+      "changed_tags": [
+        "monza grand prix -> italian racing art",
+        "f1 vintage poster -> vintage racing art",
+        "vintage f1 art -> retro race car art",
+        "monza 1971 print -> 1970s racing print",
+        "grand prix poster -> motorsport poster",
+        "retro formula print -> retro racing print"
+      ]
+    },
+    {
+      "csv_line": 589,
+      "match_title": "Nurburgring 1968 Vintage F1 Poster, The Green Hell Retro Racing Print, Formula 1 Wall Art, Motorsport Gift",
+      "new_title": "Vintage German Racing Circuit Poster, The Green Hell Retro Racing Print, Motorsport Wall Art, Racing Fan Gift",
+      "old_tags": [
+        "nurburgring poster",
+        "green hell racing",
+        "vintage f1 print",
+        "formula 1 art",
+        "retro racing print",
+        "german racing art",
+        "f1 fan gift",
+        "nurburgring art",
+        "classic racing art",
+        "motorsport decor",
+        "vintage racing",
+        "f1 wall decor",
+        "racing fan gift"
+      ],
+      "new_tags": [
+        "german racing art",
+        "green hell racing",
+        "vintage racing print",
+        "retro racing art",
+        "retro racing print",
+        "racing lover gift",
+        "circuit racing art",
+        "classic racing art",
+        "motorsport decor",
+        "vintage racing",
+        "motorsport wall art",
+        "racing fan gift"
+      ],
+      "changed_tags": [
+        "nurburgring poster -> german racing art",
+        "vintage f1 print -> vintage racing print",
+        "formula 1 art -> retro racing art",
+        "f1 fan gift -> racing lover gift",
+        "nurburgring art -> circuit racing art",
+        "f1 wall decor -> motorsport wall art"
+      ]
+    },
+    {
+      "csv_line": 262,
+      "match_title": "Monaco 1963 Vintage Racing Canvas Wall Art, Monte Carlo Retro Motorsport Poster, Classic Race Car Decor",
+      "new_title": "Vintage Riviera Racing Canvas Wall Art, Monte Carlo Retro Motorsport Poster, Classic Race Car Decor",
+      "old_tags": [
+        "monaco grand prix",
+        "formula 1 poster",
+        "monte carlo art",
+        "vintage f1 print",
+        "retro racing art",
+        "race car wall art",
+        "f1 fan gift",
+        "monaco wall art",
+        "vintage racing art",
+        "motorsport print",
+        "classic f1 poster",
+        "grand prix decor",
+        "racing fan gift"
+      ],
+      "new_tags": [
+        "riviera racing art",
+        "retro racing poster",
+        "monte carlo art",
+        "vintage racing print",
+        "retro racing art",
+        "race car wall art",
+        "racing lover gift",
+        "monte carlo wall art",
+        "vintage racing art",
+        "motorsport print",
+        "classic racing art",
+        "motorsport decor",
+        "racing fan gift"
+      ],
+      "changed_tags": [
+        "monaco grand prix -> riviera racing art",
+        "formula 1 poster -> retro racing poster",
+        "vintage f1 print -> vintage racing print",
+        "f1 fan gift -> racing lover gift",
+        "monaco wall art -> monte carlo wall art",
+        "classic f1 poster -> classic racing art",
+        "grand prix decor -> motorsport decor"
+      ]
+    },
+    {
+      "csv_line": 900,
+      "match_title": "Vintage Tour de France 1948 Cycling Canvas, Mountain Road Bike Wall Art, Retro Sports Decor, La Grande Boucle Poster Canvas, Bike Lover Gift",
+      "new_title": "Vintage Alpine Cycling Race Canvas, Mountain Road Bike Wall Art, Retro Sports Decor, 1940s Cyclist Poster, Bike Lover Gift",
+      "old_tags": [
+        "vintage cycling art",
+        "Tour de France",
+        "mountain bike canvas",
+        "retro sports poster",
+        "1940s bike art",
+        "cycling wall decor",
+        "La Grande Boucle",
+        "bike race artwork",
+        "road cycling print",
+        "mountain landscape a",
+        "cyclist canvas art",
+        "sports memorabilia",
+        "bike lover gift"
+      ],
+      "new_tags": [
+        "vintage cycling art",
+        "alpine cycling art",
+        "mountain bike canvas",
+        "retro sports poster",
+        "1940s bike art",
+        "cycling wall decor",
+        "vintage bike poster",
+        "bike race artwork",
+        "road cycling print",
+        "mountain landscape a",
+        "cyclist canvas art",
+        "sports memorabilia",
+        "bike lover gift"
+      ],
+      "changed_tags": [
+        "Tour de France -> alpine cycling art",
+        "La Grande Boucle -> vintage bike poster"
+      ]
+    },
+    {
+      "csv_line": 593,
+      "match_title": "Maracana Stadium Vintage Poster, Rio de Janeiro 1950 Retro Football Print, Brazil Soccer Wall Art, Stadium Decor",
+      "new_title": "Vintage Brazilian Football Stadium Poster, Rio de Janeiro Retro Soccer Print, Brazil Football Wall Art, Stadium Decor",
+      "old_tags": [
+        "maracana stadium",
+        "brazil football art",
+        "rio de janeiro print",
+        "vintage soccer art",
+        "retro football print",
+        "brazil sports decor",
+        "stadium wall art",
+        "football fan gift",
+        "south america art",
+        "vintage brazil print",
+        "soccer poster art",
+        "retro sports print",
+        "stadium poster"
+      ],
+      "new_tags": [
+        "brazil stadium art",
+        "brazil football art",
+        "rio de janeiro print",
+        "vintage soccer art",
+        "retro football print",
+        "brazil sports decor",
+        "stadium wall art",
+        "football fan gift",
+        "south america art",
+        "vintage brazil print",
+        "soccer poster art",
+        "retro sports print",
+        "stadium poster"
+      ],
+      "changed_tags": [
+        "maracana stadium -> brazil stadium art"
+      ]
+    },
+    {
+      "csv_line": 901,
+      "match_title": "New York World's Fair 1939 Canvas Wall Art, Vintage 20th Century Expo Poster, Retro Cityscape Decor, The World of Tomorrow Art Print",
+      "new_title": "Retro Futurist Expo Poster, Vintage 1930s Exposition Canvas Wall Art, New York Cityscape Decor, World of Tomorrow Art Print",
+      "old_tags": [
+        "New York decor",
+        "vintage wall art",
+        "Worlds Fair canvas",
+        "1939 poster",
+        "retro cityscape",
+        "expo wall art",
+        "historical art print",
+        "mid-century decor",
+        "museum style art",
+        "travel wall decor",
+        "collectible canvas",
+        "urban vintage art",
+        "classic event poster"
+      ],
+      "new_tags": [
+        "New York decor",
+        "vintage wall art",
+        "retro expo canvas",
+        "1930s poster",
+        "retro cityscape",
+        "expo wall art",
+        "historical art print",
+        "mid-century decor",
+        "museum style art",
+        "travel wall decor",
+        "collectible canvas",
+        "urban vintage art",
+        "vintage expo art"
+      ],
+      "changed_tags": [
+        "Worlds Fair canvas -> retro expo canvas",
+        "1939 poster -> 1930s poster",
+        "classic event poster -> vintage expo art"
+      ]
+    },
+    {
+      "csv_line": 23,
+      "match_title": "Black Cat Full Moon Wall Art, Orientalist Cityscape Painting, Persian Mosaic Midnight Poster, Mystic Celestial Living Room Decor",
+      "new_title": "Black Cat Full Moon Wall Art, Orientalist Cityscape Painting, Moorish Mosaic Midnight Poster, Mystic Celestial Living Room Decor",
+      "old_tags": [
+        "mystical feline",
+        "fantasy cityscape",
+        "persian tile mosaic",
+        "glow illustration",
+        "lantern painting",
+        "architecture vista",
+        "blue aesthetic",
+        "witchy celestial",
+        "midnight sky scenery",
+        "cozy study room",
+        "realism animal",
+        "palace rooftop",
+        "whimsical nightscape"
+      ],
+      "new_tags": [
+        "mystical feline",
+        "fantasy cityscape",
+        "moorish tile mosaic",
+        "glow illustration",
+        "lantern painting",
+        "architecture vista",
+        "blue aesthetic",
+        "witchy celestial",
+        "midnight sky scenery",
+        "cozy study room",
+        "realism animal",
+        "palace rooftop",
+        "whimsical nightscape"
+      ],
+      "changed_tags": [
+        "persian tile mosaic -> moorish tile mosaic"
+      ]
+    },
+    {
+      "csv_line": 436,
+      "match_title": "Hanging Persian Gardens Waterfall Poster, Vintage Art Deco Oasis Print, Ancient Babylonian Palace Wall Art, Retro Travel Canvas",
+      "new_title": "Hanging Babylonian Gardens Waterfall Poster, Vintage Art Deco Oasis Print, Ancient Palace Wall Art, Retro Travel Canvas",
+      "old_tags": [
+        "Persian garden art",
+        "vintage oasis print",
+        "art deco poster",
+        "waterfall wall art",
+        "ancient palace decor",
+        "retro travel print",
+        "Babylonian style",
+        "botanical garden art",
+        "desert oasis decor",
+        "vintage landscape",
+        "romantic getaway art",
+        "exotic wall decor",
+        "sunset cityscape"
+      ],
+      "new_tags": [
+        "ancient garden art",
+        "vintage oasis print",
+        "art deco poster",
+        "waterfall wall art",
+        "ancient palace decor",
+        "retro travel print",
+        "Babylonian style",
+        "botanical garden art",
+        "desert oasis decor",
+        "vintage landscape",
+        "romantic getaway art",
+        "exotic wall decor",
+        "sunset cityscape"
+      ],
+      "changed_tags": [
+        "Persian garden art -> ancient garden art"
+      ]
+    },
+    {
+      "csv_line": 671,
+      "match_title": "Vintage Havana Street Scene Canvas, Classic Cars Wall Art, Cuban Architecture Print, Coastal Cityscape Canvas, Retro Travel Decor, Home",
+      "new_title": "Vintage Tropical Street Scene Canvas, Classic Cars Wall Art, Colonial Architecture Print, Coastal Cityscape Canvas, Retro Travel Decor",
+      "old_tags": [
+        "vintage street art",
+        "Havana wall art",
+        "classic cars canvas",
+        "Cuban cityscape",
+        "coastal wall decor",
+        "retro travel print",
+        "urban architecture a",
+        "sunny day artwork",
+        "seaside canvas art",
+        "historic buildings p",
+        "colorful city wall",
+        "summer travel decor",
+        "romantic walk painti"
+      ],
+      "new_tags": [
+        "vintage street art",
+        "tropical wall art",
+        "classic cars canvas",
+        "colonial cityscape",
+        "coastal wall decor",
+        "retro travel print",
+        "urban architecture a",
+        "sunny day artwork",
+        "seaside canvas art",
+        "historic buildings p",
+        "colorful city wall",
+        "summer travel decor",
+        "romantic walk painti"
+      ],
+      "changed_tags": [
+        "Havana wall art -> tropical wall art",
+        "Cuban cityscape -> colonial cityscape"
+      ]
+    },
+    {
+      "csv_line": 899,
+      "match_title": "Empire State Building Canvas Wall Art, Vintage New York 1931, Art Deco Skyline Poster, Retro Urban Canvas, Historic Landmark Wall Decoration",
+      "new_title": "Art Deco Skyscraper Canvas Wall Art, Vintage New York 1930s, Retro Skyline Poster, Historic Urban Canvas, City Landmark Decor",
+      "old_tags": [
+        "Empire State canvas",
+        "New York art",
+        "vintage wall art",
+        "1930s decor",
+        "Art Deco canvas",
+        "city skyline art",
+        "iconic landmark",
+        "retro home decor",
+        "urban wall art",
+        "historic building",
+        "classic poster art",
+        "vintage cityscape",
+        "architectural canvas"
+      ],
+      "new_tags": [
+        "art deco skyscraper",
+        "New York art",
+        "vintage wall art",
+        "1930s decor",
+        "Art Deco canvas",
+        "city skyline art",
+        "vintage skyline art",
+        "retro home decor",
+        "urban wall art",
+        "historic building",
+        "classic poster art",
+        "vintage cityscape",
+        "architectural canvas"
+      ],
+      "changed_tags": [
+        "Empire State canvas -> art deco skyscraper",
+        "iconic landmark -> vintage skyline art"
+      ]
+    },
+    {
+      "csv_line": 640,
+      "match_title": "America 250 Canvas Wall Art, Patriotic Western Cowboy Decor, 1776-2026 Anniversary Canvas, Freedom Heritage Wall Art, Rustic Sunset",
+      "new_title": "1776-2026 Anniversary Canvas Wall Art, Patriotic Western Cowboy Decor, 250 Years of Freedom Print, Heritage Wall Art, Rustic Sunset",
+      "old_tags": [
+        "patriotic wall art",
+        "cowboy canvas",
+        "western decor",
+        "American flag art",
+        "sunset landscape",
+        "rustic wall art",
+        "freedom celebration",
+        "heritage canvas",
+        "Americana art",
+        "250 years USA",
+        "desert scenery art",
+        "horse rider art",
+        "america250"
+      ],
+      "new_tags": [
+        "patriotic wall art",
+        "cowboy canvas",
+        "western decor",
+        "American flag art",
+        "sunset landscape",
+        "rustic wall art",
+        "freedom celebration",
+        "heritage canvas",
+        "Americana art",
+        "250 years USA",
+        "desert scenery art",
+        "horse rider art",
+        "1776 to 2026 art"
+      ],
+      "changed_tags": [
+        "america250 -> 1776 to 2026 art"
+      ]
+    },
+    {
+      "csv_line": 642,
+      "match_title": "America 250 Canvas Wall Art, Patriotic Independence Day Decoration, USA Flag Stars Stripes Vintage Style, 1776 to 2026 Anniversary Print",
+      "new_title": "1776 to 2026 Anniversary Canvas Wall Art, Patriotic Independence Day Decoration, USA Flag Stars Stripes Vintage Style, 250th Anniversary",
+      "old_tags": [
+        "patriotic wall art",
+        "USA canvas art",
+        "Independence Day dec",
+        "American flag art",
+        "vintage style canvas",
+        "250th anniversary",
+        "stars and stripes",
+        "USA home decoration",
+        "Fourth of July art",
+        "historic America pri",
+        "eagle wall art",
+        "red white blue",
+        "Americana canvas"
+      ],
+      "new_tags": [
+        "patriotic wall art",
+        "USA canvas art",
+        "Independence Day dec",
+        "American flag art",
+        "vintage style canvas",
+        "250th anniversary",
+        "stars and stripes",
+        "USA home decoration",
+        "Fourth of July art",
+        "historic America pri",
+        "eagle wall art",
+        "red white blue",
+        "Americana canvas"
+      ],
+      "changed_tags": []
+    },
+    {
+      "csv_line": 643,
+      "match_title": "America 250th Anniversary Canvas Wall Art, Patriotic Eagle Design, 1776-2026 Celebration Canvas, Independence Day Decor, USA Vintage Style",
+      "new_title": "America's 250th Anniversary Canvas Wall Art, Patriotic Eagle Design, 1776-2026 Celebration Canvas, Independence Day Decor, USA Vintage",
+      "old_tags": [
+        "America wall art",
+        "patriotic canvas",
+        "bald eagle decor",
+        "250th anniversary",
+        "USA home decoration",
+        "vintage style art",
+        "independence day",
+        "4th of July",
+        "Americana canvas",
+        "freedom artwork",
+        "community celebratio",
+        "fireworks design",
+        "live music poster"
+      ],
+      "new_tags": [
+        "America wall art",
+        "patriotic canvas",
+        "bald eagle decor",
+        "250th anniversary",
+        "USA home decoration",
+        "vintage style art",
+        "independence day",
+        "4th of July",
+        "Americana canvas",
+        "freedom artwork",
+        "community celebratio",
+        "fireworks design",
+        "live music poster"
+      ],
+      "changed_tags": []
+    },
+    {
+      "csv_line": 644,
+      "match_title": "Patriotic America 250 Years Canvas, Bald Eagle Wall Art, 1776 to 2026 USA Celebration Canvas, Vintage Flag Print, Home Decoration",
+      "new_title": "Patriotic 250 Years Canvas, Bald Eagle Wall Art, 1776 to 2026 USA Celebration Canvas, Vintage Flag Print, Home Decoration",
+      "old_tags": [
+        "patriotic wall art",
+        "bald eagle canvas",
+        "USA flag art",
+        "250 years celebratio",
+        "vintage American dec",
+        "USA home decoration",
+        "patriotic eagle prin",
+        "1776 to 2026",
+        "USA anniversary art",
+        "rustic flag canvas",
+        "red white blue",
+        "American pride art",
+        "america 250"
+      ],
+      "new_tags": [
+        "patriotic wall art",
+        "bald eagle canvas",
+        "USA flag art",
+        "250 years celebratio",
+        "vintage American dec",
+        "USA home decoration",
+        "patriotic eagle prin",
+        "1776 to 2026",
+        "USA anniversary art",
+        "rustic flag canvas",
+        "red white blue",
+        "American pride art",
+        "1776 to 2026 art"
+      ],
+      "changed_tags": [
+        "america 250 -> 1776 to 2026 art"
+      ]
+    },
+    {
+      "csv_line": 647,
+      "match_title": "America 250 Years of Freedom Canvas Wall Art, Patriotic Eagle Print, 1776-2026 Vintage Flag Decor, Independence Day Celebration Canvas,",
+      "new_title": "250 Years of Freedom Canvas Wall Art, Patriotic Eagle Print, 1776-2026 Vintage Flag Decor, Independence Day Celebration Canvas",
+      "old_tags": [
+        "American flag art",
+        "patriotic canvas",
+        "eagle wall art",
+        "USA independence",
+        "250 years freedom",
+        "vintage flag print",
+        "1776 to 2026",
+        "USA celebration deco",
+        "4th July canvas",
+        "historic America art",
+        "liberty wall decor",
+        "Americana artwork",
+        "america 250"
+      ],
+      "new_tags": [
+        "American flag art",
+        "patriotic canvas",
+        "eagle wall art",
+        "USA independence",
+        "250 years freedom",
+        "vintage flag print",
+        "1776 to 2026",
+        "USA celebration deco",
+        "4th July canvas",
+        "historic America art",
+        "liberty wall decor",
+        "Americana artwork",
+        "1776 to 2026 decor"
+      ],
+      "changed_tags": [
+        "america 250 -> 1776 to 2026 decor"
+      ]
+    },
+    {
+      "csv_line": 648,
+      "match_title": "America 250 Canvas Wall Art, Patriotic Bald Eagle Print, 1776-2026 Freedom Anniversary, USA Flag Colors, Historic Celebration Canvas",
+      "new_title": "1776-2026 Freedom Anniversary Canvas Wall Art, Patriotic Bald Eagle Print, USA Flag Colors, Historic Celebration Canvas, 250 Years",
+      "old_tags": [
+        "America 250",
+        "Bald eagle art",
+        "Patriotic canvas",
+        "USA flag colors",
+        "Freedom anniversary",
+        "American pride",
+        "1776 to 2026",
+        "American eagle",
+        "Independence art",
+        "Historic celebration",
+        "US heritage art",
+        "Red white blue",
+        "Patriotic home decor"
+      ],
+      "new_tags": [
+        "usa anniversary art",
+        "Bald eagle art",
+        "Patriotic canvas",
+        "USA flag colors",
+        "Freedom anniversary",
+        "American pride",
+        "1776 to 2026",
+        "American eagle",
+        "Independence art",
+        "Historic celebration",
+        "US heritage art",
+        "Red white blue",
+        "Patriotic home decor"
+      ],
+      "changed_tags": [
+        "America 250 -> usa anniversary art"
+      ]
+    }
+  ]
+}

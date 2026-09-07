@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
 import * as EtsyService from './EtsyService.js';
 import { orderMockupFiles } from './MockupOrder.js';
+import { DEFAULT_LISTING_QUANTITY } from './listingShared.js';
 import {
   STYLE_MAPPING,
   OCCASION_MAPPING,
@@ -126,7 +127,7 @@ export async function uploadProductToEtsy(input) {
       title: product.title ? product.title.substring(0, 140) : 'Untitled Art',
       description: finalDescription,
       price: fallbackPrice,
-      quantity: 100,
+      quantity: DEFAULT_LISTING_QUANTITY,
       who_made,
       when_made,
       taxonomy_id: Number(taxonomy_id),
@@ -386,7 +387,7 @@ export async function uploadProductToEtsy(input) {
             offerings: [
               {
                 price: Number(comb.price),
-                quantity: 100,
+                quantity: DEFAULT_LISTING_QUANTITY,
                 is_enabled: true,
                 readiness_state_id: listingData.type === 'physical' ? Number(readiness_state_id) : null
               }

@@ -81,6 +81,28 @@ ARTIST & STYLE NAMING (read carefully, this is not a blanket ban):
 
 DEPICTED SUBJECT IS NOT STYLE — the rules above are about whose STYLE the piece imitates. If the artwork PICTURES a recognisable public-domain person (a historical figure, a mythological character, or a public-domain painter's own face, e.g. a Van Gogh self-portrait restyled as a mosaic), you MUST name that person in depicted_subject, in the title, in the tags and in the description. Saying "a legendary master", "iconic painter", "artist portrait" or "famous figure" instead of the actual name throws away the single highest-value keyword on the listing. Naming who is pictured is a descriptive fact, not a claim of authorship, so the "<Artist> Style" phrasing does NOT apply here — write "Van Gogh Portrait", not "Van Gogh Style Portrait".`;
 
+/*
+ * Sanatçı/marka politikası bu üç riski kapsamıyordu ve 2026'da üçü de gerçekleşti:
+ * 09.05 "Mexico City 1968" (Counterfeit Goods), 08.06 "Vintage Tokyo Travel Poster"
+ * (IP Policy), 31.08 "Persian Pottery Still Life" (Seller Policy). Üçünde de itiraz
+ * hakkı verilmedi, yani düzeltme şansı yok — tek savunma üretim anında engellemek.
+ *
+ * artistPolicy.json'daki blocked listesi bu kelimeleri son anda yine siliyor, ama
+ * regex "Mexico City 1968" gibi şehir+yıl kombinasyonunu yakalayamaz; onu sadece
+ * model anlayabilir. İki katman bu yüzden birbirinin yedeği değil, tamamlayıcısı.
+ */
+export const LISTING_COMPLIANCE_PROMPT = `
+
+MARKETPLACE COMPLIANCE (this shop lost three listings to the rules below, with no right of appeal — treat them as hard limits, not preferences):
+
+1) RESTRICTED ORIGINS. Never write Persian, Iran, Iranian, Isfahan, Tabriz, Kashan, Cuba, Cuban, Havana, Syria, Syrian, Damascus, Crimea, North Korea or Pyongyang in any field. Automated origin screening reads these as a physical import from a sanctioned country and removes the listing even when the item is obviously a painting. Name the visual language instead: Moorish, Ottoman, Andalusian, Arabesque, Islamic Geometric, Middle Eastern, Levantine, Tropical Retro.
+
+2) REAL NAMED EVENTS. Never name an actual competition, games, tournament, exposition or festival, and never pair a real city with a specific year in a way that identifies one real event ("Mexico City 1968", "Munich 1972"). Olympics, Olympiad, Grand Prix, Formula 1, World Cup, Super Bowl, Wimbledon, Tour de France and World's Fair are protected marks and their organisers run active takedown programmes. Write the generic activity: Retro Athletics Poster, Vintage Motorsport Art, Retro Football Illustration. A decade or an era is safe ("1960s", "Mid-Century"); a specific event year attached to a host city is not.
+
+3) TRANSPORT & TRAVEL BRANDS. Vintage travel posters are the highest-risk category in this shop. Never name an airline, railway, cruise line, hotel chain or tourism board (Pan Am, TWA, BOAC, Japan Airlines, Orient Express, Cunard, Michelin). A city, country or landmark on its own is fine — "Tokyo Travel Poster" is safe, "JAL Tokyo Poster" is not.
+
+4) THE DEPICTED OBJECT IS NOT THE PRODUCT. What is sold is always a printed artwork; the pot, lamp or rug inside the image is only subject matter. Never let a title or tag read as an offer of that object: "persian pottery", "antique ceramic vase" and "vintage brass lamp" all describe a collectible for sale and get classified as one. Keep every phrase anchored to the depiction — "ceramic vase artwork", "pottery still life art", "brass lamp illustration". Never call the depicted object antique, authentic, genuine, original, handmade or an artifact.`;
+
 // Modelin "yok" demesinin tüm biçimleri; boş konu alanını isim sanmamak için.
 const EMPTY_SUBJECT = /^(none|no|n\/a|na|null|nil|unknown|generic|anonymous|unnamed|invented|fictional|not applicable)\.?$/i;
 
@@ -461,7 +483,7 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
   // (~1.8s), and was the only model to fill all 13 tag slots with genuine
   // long-tail phrases on every run.
   let selectedModel = "openai/gpt-5-mini";
-  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "qwen/qwen3-vl-32b-instruct", "openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite", "google/gemini-3.7-flash"];
+  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "qwen/qwen3-vl-32b-instruct", "openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite", "google/gemini-3.7-flash", "google/gemini-3.8-flash"];
   try {
     const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
     const setting = stmt.get(targetShopId, 'nvidia_model');
@@ -519,7 +541,7 @@ ${usableSections.map(s => `- ${s.title}`).join('\n')}`
   // Shortened and token-efficient system prompt
   const systemPrompt = platform === 'shopify'
     ? `You are a Shopify E-commerce copywriter. Analyze the artwork image and generate a short, clean, premium product title (max 50 characters, 4-6 words) and search-optimized product metadata in JSON format. Do not use keyword stuffing. Always identify the artwork's art movement or technique explicitly in visual_style.`
-    : `You are an Etsy SEO expert. Analyze the artwork image and return a JSON object with optimized listing metadata. Always identify the artwork's art movement or technique explicitly. Public-domain artists may be referenced as a style; living artists and brands may not. Return ONLY a single JSON object without markdown formatting.`;
+    : `You are an Etsy SEO expert. Analyze the artwork image and return a JSON object with optimized listing metadata. Always identify the artwork's art movement or technique explicitly. Public-domain artists may be referenced as a style; living artists and brands may not. Sanctioned-country names, real named events and transport brands are forbidden in every field — the MARKETPLACE COMPLIANCE rules override every SEO instruction. Return ONLY a single JSON object without markdown formatting.`;
 
   const promptText = platform === 'shopify'
     ? `Please analyze the attached image and generate Shopify metadata.
@@ -537,7 +559,7 @@ Format your response as a single, valid JSON object matching this schema:
   "holiday": [],
   "room": ["rooms where this art fits best"]
 }
-${ARTIST_POLICY_PROMPT}
+${ARTIST_POLICY_PROMPT}${LISTING_COMPLIANCE_PROMPT}
 CRITICAL: Return ONLY the JSON object. Do not include markdown code block formatting (like \`\`\`json).`
     : `Analyze the image of this wall art and return Etsy metadata JSON.
 CONTEXT ONLY (never quote or paraphrase this line in your output): the item is a physical canvas artwork shipped to the buyer, never a digital download, printable or file. Use this only to avoid digital-product wording.
@@ -558,7 +580,7 @@ Schema:
   "secondary_color": "second most prominent colour, plain English",
   "orientation": "one of: vertical, horizontal, square",
   "subject": "one of: landscape, seascape, botanical, abstract, architecture, animal, figure, still life"${sectionSchemaLine}
-}${sectionInstruction}${setInstruction}${ARTIST_POLICY_PROMPT}
+}${sectionInstruction}${setInstruction}${ARTIST_POLICY_PROMPT}${LISTING_COMPLIANCE_PROMPT}
 CRITICAL: Return ONLY raw JSON without markdown blocks.`;
 
   // Sağlayıcı bazlı deneme sırası: OpenRouter (seçilen model) birincil, NVIDIA (Nemotron VL) yedek.
@@ -683,6 +705,7 @@ CRITICAL: Return ONLY raw JSON without markdown blocks.`;
     "google/gemini-3.5-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
     "google/gemini-3.5-flash-lite": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
     "google/gemini-3.7-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
+    "google/gemini-3.8-flash": { input: 0.75 / 1000000, output: 3.75 / 1000000 },
     "moonshotai/kimi-k2.6": { input: 1.00 / 1000000, output: 1.00 / 1000000 },
     "minimaxai/minimax-m3": { input: 0.18 / 1000000, output: 0.18 / 1000000 },
     "nvidia/nemotron-nano-12b-v2-vl": { input: 0.07 / 1000000, output: 0.07 / 1000000 },

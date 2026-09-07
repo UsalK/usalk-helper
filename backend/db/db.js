@@ -268,6 +268,21 @@ try {
   console.error("Failed to ensure etsy_analytics_cache table:", err);
 }
 
+// Ensure should_auto_renew and ending_timestamp exist in etsy_analytics_cache
+try {
+  db.exec("ALTER TABLE etsy_analytics_cache ADD COLUMN should_auto_renew INTEGER DEFAULT 1");
+  console.log("[Schema Upgrade] Added should_auto_renew column to etsy_analytics_cache table.");
+} catch (err) {
+  // Column already exists, ignore
+}
+
+try {
+  db.exec("ALTER TABLE etsy_analytics_cache ADD COLUMN ending_timestamp INTEGER DEFAULT 0");
+  console.log("[Schema Upgrade] Added ending_timestamp column to etsy_analytics_cache table.");
+} catch (err) {
+  // Column already exists, ignore
+}
+
 // Çok panelli (set) varyasyon profilleri için ek kolonlar.
 // kind: 'single' (tek panel, klasik oran profili) | 'set' (birden fazla panel)
 // panel_count: sette kaç panel var (tek panelde 1)

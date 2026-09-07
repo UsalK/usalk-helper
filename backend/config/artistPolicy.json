@@ -16,7 +16,13 @@
     "               ve blocked girdilerde doğrudan replacement olarak yazılır.",
     "",
     "Not: kamu malı olmak eseri çoğaltma hakkı verir, sanatçının adını anahtar kelime olarak",
-    "kullanma hakkı ayrı bir konudur. 'Style/Inspired' eki bu yüzden var."
+    "kullanma hakkı ayrı bir konudur. 'Style/Inspired' eki bu yüzden var.",
+    "",
+    "blocked listesinin sonundaki üç grup sanatçı/marka değil, MAĞAZA GEÇMİŞİNDEN gelen",
+    "kaldırma sebepleri: yaptırımlı menşe adları, gerçek etkinlik adları ve ulaşım markaları.",
+    "2026'da bu üç sınıftan üç listing kaldırıldı ve hiçbirine itiraz hakkı verilmedi, o yüzden",
+    "prompt'a güvenilmiyor; sanitizeText son savunma hattı olarak bunları da siliyor.",
+    "_group alanı sadece okunabilirlik için ayraçtır: pattern '(?!)' hiçbir şeyle eşleşmez."
   ],
 
   "blocked": [
@@ -70,7 +76,28 @@
     { "pattern": "\\b(nike|adidas|puma|supreme)\\b", "replacement": "Streetwear Style" },
     { "pattern": "\\b(gucci|chanel|prada|louis\\s+vuitton|versace|dior|balenciaga|herm[eè]s)\\b", "replacement": "Luxury Fashion Style" },
     { "pattern": "\\b(ferrari|lamborghini|porsche|bugatti|rolex)\\b", "replacement": "Luxury Automotive Style" },
-    { "pattern": "\\b(coca[- ]?cola|pepsi|starbucks|mcdonald'?s)\\b", "replacement": "Vintage Advertising Style" }
+    { "pattern": "\\b(coca[- ]?cola|pepsi|starbucks|mcdonald'?s)\\b", "replacement": "Vintage Advertising Style" },
+
+    { "_group": "Yaptirim uygulanan menseler. Etsy'nin otomatik mense taramasi bu kelimeleri fiziksel ithal urun sanip listingi kaldiriyor (31.08.2026 kaldirmasi bu yuzden). 'persian cat' bir kedi irki oldugu icin disarida birakildi; riskli bulunursa lookahead silinerek kapatilabilir.", "pattern": "(?!)", "replacement": "" },
+    { "pattern": "\\bpersians?\\b(?!\\s+cats?\\b)", "replacement": "Moorish" },
+    { "pattern": "\\b(iran|iranian|isfahan|esfahan|tabriz|kashan|tehran)\\b", "replacement": "Middle Eastern" },
+    { "pattern": "\\b(cuba|cuban|havana)\\b", "replacement": "Tropical Retro" },
+    { "pattern": "\\b(syria|syrian)\\b", "replacement": "Levantine" },
+    { "pattern": "\\bdamascus\\b(?!\\s+steel\\b)", "replacement": "Levantine" },
+    { "pattern": "\\b(crimea|crimean)\\b", "replacement": "Black Sea" },
+    { "pattern": "\\b(north\\s+korea|north\\s+korean|pyongyang)\\b", "replacement": "Retro East Asian" },
+
+    { "_group": "Gercek etkinlik/organizasyon adlari. 09.05.2026'daki 'Mexico City 1968' kaldirmasi (Counterfeit Goods) bu siniftan geldi.", "pattern": "(?!)", "replacement": "" },
+    { "pattern": "\\b(olympics?|olympiad)\\b(?!\\s+(national|peninsula|mountains?))", "replacement": "Athletic Games" },
+    { "pattern": "\\b(grand\\s+prix|formula\\s*one|formula\\s*1|f1\\s+racing)\\b", "replacement": "Vintage Motorsport" },
+    { "pattern": "\\b(world\\s+cup|fifa|uefa)\\b", "replacement": "Retro Football" },
+    { "pattern": "\\b(super\\s+bowl|nfl|nba|mlb|nhl|ncaa)\\b", "replacement": "Retro Sports" },
+    { "pattern": "\\b(wimbledon|roland\\s+garros|tour\\s+de\\s+france|le\\s+mans|daytona\\s+500|indy\\s+500)\\b", "replacement": "Vintage Sporting" },
+    { "pattern": "\\b(world'?s\\s+fair|expo\\s*\\d{2,4})\\b", "replacement": "Retro Exposition" },
+
+    { "_group": "Ulasim/seyahat markalari. 08.06.2026'daki 'Vintage Tokyo Travel Poster' IP kaldirmasi bu siniftan. Sehir adi serbest, tasiyici markasi degil.", "pattern": "(?!)", "replacement": "" },
+    { "pattern": "\\b(pan\\s?am|pan\\s+american\\s+world\\s+airways|trans\\s+world\\s+airlines|t\\.?w\\.?a\\.?|boac|qantas|aeroflot|lufthansa|air\\s+france|japan\\s+airlines|swissair|alitalia|klm|braniff)\\b", "replacement": "Vintage Airline Style" },
+    { "pattern": "\\b(orient\\s+express|cunard|white\\s+star\\s+line|michelin|goodyear)\\b", "replacement": "Vintage Travel Style" }
   ],
 
   "publicDomain": [

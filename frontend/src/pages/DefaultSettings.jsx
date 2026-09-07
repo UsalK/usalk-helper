@@ -423,6 +423,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                   <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
                   <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
                   <option value="google/gemini-3.7-flash">Gemini 3.7 Flash</option>
+                  <option value="google/gemini-3.8-flash">Gemini 3.8 Flash</option>
                 </select>
                 <p className="text-[10px] text-slate-500">
                   Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin.

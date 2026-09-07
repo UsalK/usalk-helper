@@ -8,6 +8,14 @@
  * ListingUploadService'teki mantığın birebir aynısıdır: aynı property ID'leri
  * (513 Dimensions / 514 Frame), aynı SKU şeması, aynı fiyat kuralları.
  */
+/**
+ * Yeni açılan listing'lerde ve varyasyon offering'lerinde kullanılan stok adedi.
+ * Daha önce 100'dü; yeni yüklemelerde 8 adet yazıyoruz. Zaten yayında olan
+ * listing'lerin stoğuna dokunulmaz (bkz. routes/etsy.js fiyat güncelleme akışı,
+ * orada mevcut offering.quantity korunur).
+ */
+export const DEFAULT_LISTING_QUANTITY = 8;
+
 export function buildInventoryPayload(variationProfile, productId, readinessStateId, isPhysical = true) {
   if (!variationProfile?.combinations?.length) return null;
 
@@ -48,7 +56,7 @@ export function buildInventoryPayload(variationProfile, productId, readinessStat
       offerings: [
         {
           price: Number(comb.price),
-          quantity: 100,
+          quantity: DEFAULT_LISTING_QUANTITY,
           is_enabled: true,
           readiness_state_id: isPhysical && readinessStateId ? Number(readinessStateId) : null
         }

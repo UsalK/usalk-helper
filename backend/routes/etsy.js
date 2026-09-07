@@ -8,6 +8,7 @@ import multer from 'multer';
 import db, { getActiveShop, getShopStorageName, getProductStorageFolder } from '../db/db.js';
 import * as EtsyService from '../services/EtsyService.js';
 import { uploadProductToEtsy } from '../services/ListingUploadService.js';
+import { DEFAULT_LISTING_QUANTITY } from '../services/listingShared.js';
 import { assignUsalkScores } from '../services/UsalkScore.js';
 import {
   STYLE_MAPPING,
@@ -48,7 +49,7 @@ router.get('/auth-url', (req, res, next) => {
     stmt.run('etsy_code_verifier', verifierStr, verifierStr);
     
     const redirectUri = process.env.ETSY_REDIRECT_URI || 'http://localhost:3001/api/etsy/callback';
-    const scope = 'listings_r listings_w shops_r shops_w';
+    const scope = 'listings_r listings_w listings_d shops_r shops_w';
     const state = 'usalk_auth';
     
     const authUrl = `https://www.etsy.com/oauth/connect?` + new URLSearchParams({
@@ -207,25 +208,48 @@ router.get('/callback', async (req, res, next) => {
       );
       authStmt.run(shopId, shopName, access_token, refresh_token, expiresAt);
       
-      // Self-heal: If there were records with 'default_shop', rename them to the connected shop_id
+      // Self-heal: eski 'default_shop' kayitlarini ilk baglanan magazaya tasi.
+      //
+      // Bu tasima SADECE hic veri uretmemis sifir kurulum icindir. Magaza
+      // etsy_auth'tan silinip (ornegin Etsy app/API degistigi icin) ayni magaza
+      // yeniden baglandiginda o shop_id'ye ait satirlar veritabaninda duruyor
+      // olur. O durumda 'default_shop' referans satirlarini ustune tasimak
+      // PRIMARY KEY(shop_id, id) catismasi uretiyor, catisma tum transaction'i
+      // ROLLBACK ediyor ve magaza hic eklenemiyordu.
+      //
+      // Bu yuzden her tablo ayri kontrol ediliyor: hedef magazanin o tabloda
+      // kendi verisi varsa tasima atlanir. UPDATE OR IGNORE de son emniyet
+      // kemeri - beklenmedik bir catisma artik OAuth'u kiramaz.
       const connectedShopsCount = db.prepare('SELECT COUNT(*) as count FROM etsy_auth WHERE shop_id != ?').get(shopId).count;
       if (connectedShopsCount === 0) {
-        console.log(`First shop connected. Renaming default_shop records to ${shopId}...`);
-        db.prepare("UPDATE settings SET shop_id = ? WHERE shop_id = 'default_shop'").run(shopId);
-        db.prepare("UPDATE templates SET shop_id = ? WHERE shop_id = 'default_shop'").run(shopId);
-        db.prepare("UPDATE variation_profiles SET shop_id = ? WHERE shop_id = 'default_shop'").run(shopId);
-        db.prepare("UPDATE products SET shop_id = ? WHERE shop_id = 'default_shop'").run(shopId);
+        for (const table of ['settings', 'templates', 'variation_profiles', 'products']) {
+          const own = db.prepare(`SELECT COUNT(*) as count FROM ${table} WHERE shop_id = ?`).get(shopId).count;
+          if (own > 0) {
+            console.log(`[OAuth] ${table}: ${shopId} icin ${own} kayit zaten var, default_shop tasimasi atlandi.`);
+            continue;
+          }
+          const info = db.prepare(`UPDATE OR IGNORE ${table} SET shop_id = ? WHERE shop_id = 'default_shop'`).run(shopId);
+          if (info.changes > 0) {
+            console.log(`[OAuth] ${table}: ${info.changes} default_shop kaydi ${shopId} magazasina tasindi.`);
+          }
+        }
       }
-      
-      // Seed default variation profiles for new shop
-      import('../db/db.js').then(dbMod => {
-        dbMod.seedDefaultProfilesForShop(shopId);
-      });
       
       db.exec('COMMIT');
     } catch (txErr) {
       db.exec('ROLLBACK');
       throw txErr;
+    }
+
+    // Varsayilan varyasyon profilleri commit'ten SONRA yukleniyor. Onceden
+    // transaction'in icinde fire-and-forget bir dynamic import olarak duruyordu:
+    // seed'in commit'ten once mi sonra mi isledigi belirsizdi ve olasi bir hata
+    // yakalanmadan kaliyordu. Burada hata magaza kaydini goturmez.
+    try {
+      const dbMod = await import('../db/db.js');
+      dbMod.seedDefaultProfilesForShop(shopId);
+    } catch (seedErr) {
+      console.error('[OAuth] Varsayilan varyasyon profilleri yuklenemedi:', seedErr.message);
     }
     
     // Clear the cache
@@ -624,7 +648,7 @@ router.post('/listings/batch-materials', async (req, res, next) => {
 router.post('/listings/:listingId/update', async (req, res, next) => {
   try {
     const { listingId } = req.params;
-    const { title, description, tags, materials, shop_section_id } = req.body;
+    const { title, description, tags, materials, shop_section_id, should_auto_renew } = req.body;
     
     const activeShop = getActiveShop();
     const checkProduct = db.prepare('SELECT id, title, tags, description, shop_section_id FROM products WHERE etsy_listing_id = ? OR etsy_listing_id = ? OR etsy_listing_id = ?');
@@ -642,10 +666,27 @@ router.post('/listings/:listingId/update', async (req, res, next) => {
     if (shop_section_id !== undefined) {
       updateData.shop_section_id = shop_section_id || null;
     }
+    if (should_auto_renew !== undefined) {
+      updateData.should_auto_renew = Boolean(should_auto_renew);
+    }
 
     console.log(`Updating listing ${listingId} on Etsy...`, updateData);
     const updated = await EtsyService.updateListing(listingId, updateData);
     
+    // If should_auto_renew changed, update cache and memory
+    if (should_auto_renew !== undefined) {
+      try {
+        db.prepare('UPDATE etsy_analytics_cache SET should_auto_renew = ? WHERE listing_id = ?')
+          .run(should_auto_renew ? 1 : 0, String(listingId));
+      } catch (dbErr) {}
+
+      const cacheKey = `${activeShop.shop_id}_active`;
+      if (listingsCache.data[cacheKey]) {
+        const item = listingsCache.data[cacheKey].listings.find(l => String(l.listing_id) === String(listingId));
+        if (item) item.should_auto_renew = Boolean(should_auto_renew);
+      }
+    }
+
     // If there is a local product, also update it in SQLite!
     if (product) {
       const updateStmt = db.prepare(
@@ -664,6 +705,220 @@ router.post('/listings/:listingId/update', async (req, res, next) => {
     res.json({ success: true, updated });
   } catch (err) {
     console.error("Etsy Update Error:", err.response?.data || err.message);
+    next(err);
+  }
+});
+
+// Batch update should_auto_renew for multiple listings on Etsy
+router.post('/listings/batch-auto-renew', async (req, res, next) => {
+  try {
+    const { listingIds, should_auto_renew } = req.body;
+    if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+      return res.status(400).json({ error: 'listingIds dizisi gereklidir.' });
+    }
+    if (typeof should_auto_renew !== 'boolean') {
+      return res.status(400).json({ error: 'should_auto_renew boolean olmalıdır.' });
+    }
+
+    const activeShop = getActiveShop();
+    const cacheKey = `${activeShop.shop_id}_active`;
+    const results = [];
+
+    const updateCacheStmt = db.prepare('UPDATE etsy_analytics_cache SET should_auto_renew = ? WHERE listing_id = ?');
+
+    for (const listingId of listingIds) {
+      const listingIdStr = String(listingId);
+      try {
+        await EtsyService.updateListing(listingIdStr, { should_auto_renew });
+        
+        // Update in SQLite
+        try {
+          updateCacheStmt.run(should_auto_renew ? 1 : 0, listingIdStr);
+        } catch (dbErr) {}
+
+        // Update in memory cache
+        if (listingsCache.data[cacheKey]) {
+          const item = listingsCache.data[cacheKey].listings.find(l => String(l.listing_id) === listingIdStr);
+          if (item) item.should_auto_renew = should_auto_renew;
+        }
+
+        results.push({ listingId: listingIdStr, success: true });
+      } catch (err) {
+        console.error(`Auto-renew update failed for listing ${listingIdStr}:`, err.response?.data || err.message);
+        results.push({
+          listingId: listingIdStr,
+          success: false,
+          error: err.response?.data?.error || err.message
+        });
+      }
+
+      // Small delay between calls to prevent rate limits
+      if (listingIds.length > 1) {
+        await sleep(150);
+      }
+    }
+
+    const successes = results.filter(r => r.success);
+    const failures = results.filter(r => !r.success);
+
+    return res.json({
+      success: true,
+      updatedCount: successes.length,
+      failedCount: failures.length,
+      results
+    });
+  } catch (err) {
+    console.error("Batch auto-renew error:", err);
+    next(err);
+  }
+});
+
+// Dedicated endpoint for Renew Manager: returns paginated, filtered, sorted listings with stats & expiration progress
+router.get('/renew-manager/listings', async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      renewFilter = 'all', // 'all' | 'auto' | 'manual'
+      daysFilter = 'all',  // 'all' | 'urgent' (<15) | 'warning' (<30) | 'safe' (>30)
+      shop_section_id = '',
+      sortBy = 'days_remaining', // 'days_remaining' | 'num_favorers' | 'views' | 'sales_count' | 'total_revenue' | 'price'
+      sortOrder = 'asc' // 'asc' | 'desc'
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+
+    const { access_token, client_id, client_secret, shop_id } = await EtsyService.getValidToken();
+
+    // Fetch active listings for this shop (cached in memory)
+    const allListings = await getFullListingsForShopState(shop_id, 'active', access_token, client_id, client_secret);
+
+    // Fetch local analytics map
+    let localAnalytics = [];
+    try {
+      localAnalytics = db.prepare('SELECT listing_id, sales_count, total_revenue FROM etsy_analytics_cache WHERE shop_id = ?').all(shop_id);
+    } catch (e) {}
+
+    const analyticsMap = new Map();
+    localAnalytics.forEach(a => analyticsMap.set(String(a.listing_id), a));
+
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // Transform raw listings
+    let mapped = allListings.map(l => {
+      const listingIdStr = String(l.listing_id);
+      const cached = analyticsMap.get(listingIdStr);
+      const salesCount = cached ? cached.sales_count : (l.transaction_sell_count || 0);
+      const totalRevenue = cached ? cached.total_revenue : 0;
+      const priceVal = l.price ? (l.price.amount / (l.price.divisor || 100)) : 0;
+      const endingTimestamp = l.ending_timestamp || 0;
+      const remainingSec = endingTimestamp > 0 ? (endingTimestamp - nowSec) : 0;
+      const daysRemaining = endingTimestamp > 0 ? Math.max(0, Math.ceil(remainingSec / 86400)) : 0;
+      // Etsy standard listing duration is 120 days (~4 months)
+      const lifePercent = Math.min(100, Math.max(0, Math.round((daysRemaining / 120) * 100)));
+
+      const imagesArr = l.images || l.Images || [];
+      const firstImg = imagesArr[0];
+      const thumbnail = firstImg ? (firstImg.url_170x135 || firstImg.url_75x75 || firstImg.url_570xN || firstImg.url_fullxfull || '') : '';
+
+      return {
+        listing_id: l.listing_id,
+        listing_id_str: listingIdStr,
+        title: l.title || 'Untitled',
+        url: l.url || `https://www.etsy.com/listing/${listingIdStr}`,
+        price: priceVal,
+        currency: l.price?.currency_code || 'USD',
+        quantity: l.quantity || 0,
+        state: l.state,
+        should_auto_renew: Boolean(l.should_auto_renew),
+        ending_timestamp: endingTimestamp,
+        creation_timestamp: l.creation_timestamp || 0,
+        original_creation_timestamp: l.original_creation_timestamp || 0,
+        views: l.views || 0,
+        num_favorers: l.num_favorers || 0,
+        sales_count: salesCount,
+        total_revenue: totalRevenue,
+        image_url: thumbnail,
+        shop_section_id: l.shop_section_id ? String(l.shop_section_id) : null,
+        days_remaining: daysRemaining,
+        life_percent: lifePercent
+      };
+    });
+
+    // Summary calculation (over ALL active listings of the shop)
+    const autoRenewListings = mapped.filter(m => m.should_auto_renew);
+    const manualListings = mapped.filter(m => !m.should_auto_renew);
+    const urgentCount = mapped.filter(m => m.days_remaining <= 30 && m.should_auto_renew).length;
+    const criticalCount = mapped.filter(m => m.days_remaining <= 15 && m.should_auto_renew).length;
+
+    const summary = {
+      total_listings: mapped.length,
+      auto_renew_count: autoRenewListings.length,
+      manual_count: manualListings.length,
+      urgent_count: urgentCount, // < 30 days & auto-renew
+      critical_count: criticalCount, // < 15 days & auto-renew
+      potential_cost: (autoRenewListings.length * 0.20).toFixed(2)
+    };
+
+    // Filter by search
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      mapped = mapped.filter(m => 
+        m.title.toLowerCase().includes(q) || 
+        m.listing_id_str.includes(q)
+      );
+    }
+
+    // Filter by auto renew
+    if (renewFilter === 'auto') {
+      mapped = mapped.filter(m => m.should_auto_renew);
+    } else if (renewFilter === 'manual') {
+      mapped = mapped.filter(m => !m.should_auto_renew);
+    }
+
+    // Filter by days remaining
+    if (daysFilter === 'urgent') {
+      mapped = mapped.filter(m => m.days_remaining <= 15);
+    } else if (daysFilter === 'warning') {
+      mapped = mapped.filter(m => m.days_remaining <= 30);
+    } else if (daysFilter === 'safe') {
+      mapped = mapped.filter(m => m.days_remaining > 30);
+    }
+
+    // Filter by shop section
+    if (shop_section_id) {
+      mapped = mapped.filter(m => m.shop_section_id === String(shop_section_id));
+    }
+
+    // Sorting
+    mapped.sort((a, b) => {
+      let valA = a[sortBy] ?? 0;
+      let valB = b[sortBy] ?? 0;
+
+      if (sortBy === 'days_remaining') {
+        return sortOrder === 'desc' ? (valB - valA) : (valA - valB);
+      }
+      return sortOrder === 'asc' ? (valA - valB) : (valB - valA);
+    });
+
+    const totalFiltered = mapped.length;
+    const totalPages = Math.ceil(totalFiltered / limitNum) || 1;
+    const offset = (pageNum - 1) * limitNum;
+    const pageItems = mapped.slice(offset, offset + limitNum);
+
+    res.json({
+      success: true,
+      summary,
+      total: totalFiltered,
+      page: pageNum,
+      limit: limitNum,
+      total_pages: totalPages,
+      listings: pageItems
+    });
+  } catch (err) {
+    console.error("Renew manager listings error:", err.response?.data || err.message);
     next(err);
   }
 });
@@ -782,7 +1037,7 @@ router.post('/listings/batch-variation-profile', async (req, res, next) => {
         
         const offeringObj = {
           price: Number(comb.price),
-          quantity: 100,
+          quantity: DEFAULT_LISTING_QUANTITY,
           is_enabled: true
         };
         if (readiness_state_id) {
@@ -905,7 +1160,7 @@ router.post('/upload-custom-draft', uploadCustomDraft.array('mockups'), async (r
       title: 'Handmade Canvas Wall Art Set (1:2) - Draft',
       description: settings.description_boilerplate || 'Stunning printed wall art set.',
       price: fallbackPrice,
-      quantity: 100,
+      quantity: DEFAULT_LISTING_QUANTITY,
       who_made,
       when_made,
       taxonomy_id: Number(taxonomy_id),
@@ -1087,7 +1342,7 @@ router.post('/upload-custom-draft', uploadCustomDraft.array('mockups'), async (r
           offerings: [
             {
               price: Number(comb.price),
-              quantity: 100,
+              quantity: DEFAULT_LISTING_QUANTITY,
               is_enabled: true,
               readiness_state_id: Number(actualReadinessStateId)
             }
@@ -1447,9 +1702,10 @@ router.get('/analytics/sync', async (req, res, next) => {
       INSERT INTO etsy_analytics_cache (
         listing_id, shop_id, title, state, views, num_favorers, sales_count, total_revenue,
         price_amount, currency_code, quantity, creation_timestamp, original_creation_timestamp,
-        url, image_url, image_width, image_height, tags, shop_section_id, section_title, last_synced_at
+        url, image_url, image_width, image_height, tags, shop_section_id, section_title,
+        should_auto_renew, ending_timestamp, last_synced_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP
       ) ON CONFLICT(listing_id) DO UPDATE SET
         title = excluded.title,
         state = excluded.state,
@@ -1469,6 +1725,8 @@ router.get('/analytics/sync', async (req, res, next) => {
         tags = excluded.tags,
         shop_section_id = excluded.shop_section_id,
         section_title = excluded.section_title,
+        should_auto_renew = excluded.should_auto_renew,
+        ending_timestamp = excluded.ending_timestamp,
         last_synced_at = CURRENT_TIMESTAMP
     `);
 
@@ -1508,7 +1766,9 @@ router.get('/analytics/sync', async (req, res, next) => {
           imgData.height,
           tagsJson,
           l.shop_section_id ? String(l.shop_section_id) : '',
-          sectionTitle
+          sectionTitle,
+          l.should_auto_renew ? 1 : 0,
+          l.ending_timestamp || 0
         );
       });
       db.exec('COMMIT');

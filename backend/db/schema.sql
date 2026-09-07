@@ -104,6 +104,8 @@ CREATE TABLE IF NOT EXISTS etsy_analytics_cache (
   tags TEXT,
   shop_section_id TEXT,
   section_title TEXT,
+  should_auto_renew INTEGER DEFAULT 1,
+  ending_timestamp INTEGER DEFAULT 0,
   last_synced_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
