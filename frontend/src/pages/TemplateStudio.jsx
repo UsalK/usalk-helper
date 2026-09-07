@@ -543,7 +543,13 @@ export default function TemplateStudio() {
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const stageRef = useRef(null);
   const zoomTimeoutRef = useRef(null);
+
+  // Tuvalin sığdırılacağı sahne alanının ölçüsü. containerRef tuvali saran
+  // kutu olduğu için genişliği tuvalden türer (döngüsel); ölçüm bu yüzden bir
+  // üstteki sabit yükseklikli sahneden alınır.
+  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     fetchTemplates();
@@ -927,7 +933,25 @@ export default function TemplateStudio() {
     if (view === 'editor' && bgImage) {
       drawEditor();
     }
-  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt]);
+  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt, stageSize]);
+
+  // Sahne alanı büyüdükçe/küçüldükçe tuval yeniden sığdırılır.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (view !== 'editor' || !bgImage || !el || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(entries => {
+      const rect = entries[0]?.contentRect;
+      if (!rect) return;
+      setStageSize(prev => (
+        Math.abs(prev.w - rect.width) < 1 && Math.abs(prev.h - rect.height) < 1
+          ? prev
+          : { w: rect.width, h: rect.height }
+      ));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [view, bgImage]);
 
   const handleCreateNew = () => {
     setBgImage(null);
@@ -1084,28 +1108,21 @@ export default function TemplateStudio() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    // Fit canvas to background image aspect ratio while keeping maximum container size
-    const container = containerRef.current;
-    if (!container) return;
-    
-    const maxWidth = container.clientWidth;
-    const maxHeight = 500;
-    
-    let w = bgImage.width;
-    let h = bgImage.height;
-    
-    const ratio = w / h;
-    
-    if (w > maxWidth) {
-      w = maxWidth;
-      h = w / ratio;
-    }
-    
-    if (h > maxHeight) {
-      h = maxHeight;
-      w = h * ratio;
-    }
-    
+    // Tuvali sahne alanına sığdır (contain): görsel alanı tamamen kaplar,
+    // oranı korunur. Ölçü sahneden alınır; tuvali saran kutudan alınırsa
+    // genişlik tuvalin kendisinden türeyeceği için her çizimde büyür.
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const maxWidth = stageSize.w || stage.clientWidth;
+    const maxHeight = stageSize.h || stage.clientHeight;
+    if (maxWidth < 2 || maxHeight < 2) return;
+
+    // Küçük görseller de alanı doldurur; aşırı bulanıklaşmasın diye 3 katla sınırlı.
+    const scale = Math.min(maxWidth / bgImage.width, maxHeight / bgImage.height, 3);
+    const w = Math.max(1, Math.round(bgImage.width * scale));
+    const h = Math.max(1, Math.round(bgImage.height * scale));
+
     if (canvas.width !== w) canvas.width = w;
     if (canvas.height !== h) canvas.height = h;
     
@@ -1114,21 +1131,19 @@ export default function TemplateStudio() {
 
     // Önizleme: deneme eseri köşelere/dikdörtgene gerçek render mantığıyla
     // yerleştirilir, böylece kaydetmeden önce sonuç görülür.
+    // Perspektif modda eser doğrudan köşelere warp edilir. Düz modda ise
+    // drawFlatOverlay içinde, gölge çizildikten SONRA yerleştirilir; aksi
+    // halde gölgeyi oluşturan beyaz dikdörtgen eserin üstünü kapatır.
     const art = (previewOn && previewArt) ? previewArt : null;
-    if (art) {
+    if (art && type === 'perspective') {
       slots.forEach(slot => {
-        if (type === 'perspective') {
-          const c = slot.corners || DEFAULT_CORNERS;
-          warpImage(ctx, art, [
-            { x: c.tl.x * w, y: c.tl.y * h },
-            { x: c.tr.x * w, y: c.tr.y * h },
-            { x: c.br.x * w, y: c.br.y * h },
-            { x: c.bl.x * w, y: c.bl.y * h }
-          ], 12);
-        } else {
-          const p = slot.placement || DEFAULT_PLACEMENT;
-          ctx.drawImage(art, p.x * w, p.y * h, p.width * w, p.height * h);
-        }
+        const c = slot.corners || DEFAULT_CORNERS;
+        warpImage(ctx, art, [
+          { x: c.tl.x * w, y: c.tl.y * h },
+          { x: c.tr.x * w, y: c.tr.y * h },
+          { x: c.br.x * w, y: c.br.y * h },
+          { x: c.bl.x * w, y: c.bl.y * h }
+        ], 12);
       });
     }
 
@@ -1151,13 +1166,10 @@ export default function TemplateStudio() {
     // dışarısı karartılır.
     ctx.fillStyle = `rgba(0, 0, 0, ${hasPreview ? 0.28 : 0.4})`;
     ctx.fillRect(0, 0, w, h);
-    rects.forEach((r, idx) => {
-      if (hasPreview) {
-        const slot = slots[idx];
-        const p = slot?.placement || DEFAULT_PLACEMENT;
-        ctx.drawImage(previewArt, p.x * w, p.y * h, p.width * w, p.height * h);
-        return;
-      }
+    rects.forEach(r => {
+      // Önizlemede panelin içi zaten eserle doldurulacağı için arka planı
+      // geri getirmeye gerek yok.
+      if (hasPreview) return;
       ctx.drawImage(
         bgImage,
         (r.x / w) * bgImage.width, (r.y / h) * bgImage.height,
@@ -1194,8 +1206,10 @@ export default function TemplateStudio() {
         ctx.restore();
       }
 
-      // Draw Mockup placeholder background
-      if (!hasPreview) {
+      // Eser (önizleme) gölgenin üstüne, çerçevenin altına gelir
+      if (hasPreview) {
+        ctx.drawImage(previewArt, r.x, r.y, r.w, r.h);
+      } else {
         ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
         ctx.fillRect(r.x, r.y, r.w, r.h);
       }
@@ -1656,6 +1670,136 @@ export default function TemplateStudio() {
       alert('Thumbnail durumu güncellenirken hata oluştu.');
     }
   };
+
+  /**
+   * Çerçeve & gölge ayarları. Yalnızca düz (flat) modda anlamlı olduğu için
+   * Şablon Tipi kartının altında, mod seçiminin hemen ardından gösterilir.
+   */
+  const renderFrameShadowPanel = () => (
+        <div className="space-y-6 pt-5 border-t border-[#1e293b]">
+          <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
+            <Frame className="w-4 h-4 text-amber-500" />
+            <span>Çerçeve & Gölge Efektleri</span>
+          </h3>
+
+          {/* Frame selection */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Çerçeve Türü
+            </label>
+            <select
+              value={frameStyle}
+              onChange={(e) => setFrameStyle(e.target.value)}
+              className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+            >
+              {FRAME_OPTIONS.map(opt => (
+                <option key={opt.id} value={opt.id}>{opt.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {frameStyle !== 'stretched' && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Çerçeve Kalınlığı</span>
+                <span>{frameThickness}px</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="15"
+                step="0.5"
+                value={frameThickness}
+                onChange={(e) => setFrameThickness(Number(e.target.value))}
+                className="w-full accent-amber-500"
+              />
+            </div>
+          )}
+
+          {/* Shadow settings */}
+          <div className="border-t border-[#1e293b] pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">Derinlik Gölgesi</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={shadowEnabled} 
+                  onChange={(e) => setShadowEnabled(e.target.checked)} 
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
+              </label>
+            </div>
+
+            {shadowEnabled && (
+              <div className="space-y-3 pt-2">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Gölge Kenarı (Direction)
+                  </label>
+                  <select
+                    value={shadowSides}
+                    onChange={(e) => setShadowSides(e.target.value)}
+                    className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none"
+                  >
+                    <option value="all">Her Yöne (All)</option>
+                    <option value="bottom">Alt Kenara (Bottom)</option>
+                    <option value="right">Sağ Kenara (Right)</option>
+                    <option value="left">Sol Kenara (Left)</option>
+                    <option value="top">Üst Kenara (Top)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-slate-400">
+                    <span>Yoğunluk (Opacity)</span>
+                    <span>{shadowOpacity / 10}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="9"
+                    step="0.5"
+                    value={shadowOpacity}
+                    onChange={(e) => setShadowOpacity(Number(e.target.value))}
+                    className="w-full accent-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-slate-400">
+                    <span>Mesafe (Offset)</span>
+                    <span>{shadowDistance}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="25"
+                    value={shadowDistance}
+                    onChange={(e) => setShadowDistance(Number(e.target.value))}
+                    className="w-full accent-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-slate-400">
+                    <span>Yayılma & Bulanıklık</span>
+                    <span>{shadowBlur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="25"
+                    value={shadowBlur}
+                    onChange={(e) => setShadowBlur(Number(e.target.value))}
+                    className="w-full accent-amber-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+  );
 
   /**
    * Otomatik tanıma paneli: tarama durumu, bulunan adaylar arasında gezinme,
@@ -2457,7 +2601,8 @@ export default function TemplateStudio() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto py-8 px-4 animate-fade-in">
+      {/* Editör tüm genişliği kullanır: tuval alanı büyür, ayar panelleri yanına sığar */}
+      <div className={`mx-auto py-8 px-4 animate-fade-in ${view === 'editor' ? 'max-w-[1900px]' : 'max-w-6xl'}`}>
       {view === 'list' ? (
         <>
           <div className="flex items-center justify-between mb-6">
@@ -2678,25 +2823,30 @@ export default function TemplateStudio() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Görsel alanı solda geniş, ayar panelleri sağda yan yana iki sütun */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-6 items-start">
             {/* Canvas workspace column */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
+              <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-4 sm:p-5 relative overflow-hidden">
                 {!bgImage ? (
-                  <div className="text-center py-20">
+                  <div className="flex flex-col items-center justify-center text-center h-[62vh] min-h-[420px] max-h-[780px]">
                     <Crop className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                     <p className="text-slate-400 font-medium mb-4">Bir arka plan görseli yükleyerek başlayın</p>
                     <label className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-6 rounded-xl shadow-lg shadow-amber-500/10 transition-colors cursor-pointer text-sm">
                       Görsel Yükle (Oda Fotoğrafı)
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleBgUpload} 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBgUpload}
+                        className="hidden"
                       />
                     </label>
                   </div>
                 ) : (
+                  <div
+                    ref={stageRef}
+                    className="h-[62vh] min-h-[420px] max-h-[780px] flex items-center justify-center"
+                  >
                   <div className="relative" ref={containerRef}>
                     <canvas
                       ref={canvasRef}
@@ -2774,6 +2924,7 @@ export default function TemplateStudio() {
                       );
                     })()}
                   </div>
+                  </div>
                 )}
               </div>
 
@@ -2789,10 +2940,8 @@ export default function TemplateStudio() {
                 </div>
               )}
               {/* Yerleşim ve stil kartları — sağ paneli şişirmemek için tuvalin altında */}
-              {(isSetTemplate || (type === 'flat' && bgImage)) && (
-                <div className={`grid grid-cols-1 gap-4 items-start ${
-                  isSetTemplate && type === 'flat' && bgImage ? 'xl:grid-cols-2' : ''
-                }`}>
+              {isSetTemplate && (
+                <div className="grid grid-cols-1 gap-4 items-start">
                   {isSetTemplate && (
                     <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-4">
                       <h3 className="text-sm font-semibold text-white flex items-center space-x-2 border-b border-[#1e293b] pb-3">
@@ -2902,140 +3051,19 @@ export default function TemplateStudio() {
                       </button>
                     </div>
                   )}
-                  {/* Only show styling tools in Flat mode */}
-                  {type === 'flat' && bgImage && (
-                    <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-6">
-                      <h3 className="text-sm font-semibold text-white flex items-center space-x-2 border-b border-[#1e293b] pb-3">
-                        <Frame className="w-4 h-4 text-amber-500" />
-                        <span>Çerçeve & Gölge Efektleri</span>
-                      </h3>
-
-                      {/* Frame selection */}
-                      <div className="space-y-2">
-                        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                          Çerçeve Türü
-                        </label>
-                        <select
-                          value={frameStyle}
-                          onChange={(e) => setFrameStyle(e.target.value)}
-                          className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                        >
-                          {FRAME_OPTIONS.map(opt => (
-                            <option key={opt.id} value={opt.id}>{opt.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {frameStyle !== 'stretched' && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-slate-400">
-                            <span>Çerçeve Kalınlığı</span>
-                            <span>{frameThickness}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="15"
-                            step="0.5"
-                            value={frameThickness}
-                            onChange={(e) => setFrameThickness(Number(e.target.value))}
-                            className="w-full accent-amber-500"
-                          />
-                        </div>
-                      )}
-
-                      {/* Shadow settings */}
-                      <div className="border-t border-[#1e293b] pt-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-300 font-semibold uppercase tracking-wider">Derinlik Gölgesi</span>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={shadowEnabled} 
-                              onChange={(e) => setShadowEnabled(e.target.checked)} 
-                              className="sr-only peer"
-                            />
-                            <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-slate-950 peer-checked:after:border-slate-950"></div>
-                          </label>
-                        </div>
-
-                        {shadowEnabled && (
-                          <div className="space-y-3 pt-2">
-                            <div className="space-y-1.5">
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                Gölge Kenarı (Direction)
-                              </label>
-                              <select
-                                value={shadowSides}
-                                onChange={(e) => setShadowSides(e.target.value)}
-                                className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none"
-                              >
-                                <option value="all">Her Yöne (All)</option>
-                                <option value="bottom">Alt Kenara (Bottom)</option>
-                                <option value="right">Sağ Kenara (Right)</option>
-                                <option value="left">Sol Kenara (Left)</option>
-                                <option value="top">Üst Kenara (Top)</option>
-                              </select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-slate-400">
-                                <span>Yoğunluk (Opacity)</span>
-                                <span>{shadowOpacity / 10}</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="0.5"
-                                max="9"
-                                step="0.5"
-                                value={shadowOpacity}
-                                onChange={(e) => setShadowOpacity(Number(e.target.value))}
-                                className="w-full accent-amber-500"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-slate-400">
-                                <span>Mesafe (Offset)</span>
-                                <span>{shadowDistance}px</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="1"
-                                max="25"
-                                value={shadowDistance}
-                                onChange={(e) => setShadowDistance(Number(e.target.value))}
-                                className="w-full accent-amber-500"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-xs text-slate-400">
-                                <span>Yayılma & Bulanıklık</span>
-                                <span>{shadowBlur}px</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="1"
-                                max="25"
-                                value={shadowBlur}
-                                onChange={(e) => setShadowBlur(Number(e.target.value))}
-                                className="w-full accent-amber-500"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                                </div>
               )}
             </div>
 
-            {/* Sidebar properties panel */}
-            <div className="space-y-6">
-              {bgImage && renderAutoDetectPanel()}
+            {/* Otomatik tanıma sütunu */}
+            {bgImage && (
+              <div className="space-y-6">
+                {renderAutoDetectPanel()}
+              </div>
+            )}
 
+            {/* Şablon özellikleri sütunu */}
+            <div className="space-y-6">
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-5">
                 <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
                   <Compass className="w-4 h-4 text-amber-500" />
@@ -3189,6 +3217,9 @@ export default function TemplateStudio() {
                       : 'Tek panelli şablon. Çok panelli set için listeden bir "Set" oranı seçin.'}
                   </p>
                 </div>
+
+                {/* Çerçeve ve gölge yalnızca düz modda uygulanır */}
+                {type === 'flat' && bgImage && renderFrameShadowPanel()}
 
               </div>
 
