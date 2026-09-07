@@ -553,6 +553,30 @@ export async function generateMockupsForProduct(product, options = {}) {
   let maxOutputSize = readSetting('mockup_max_output_px', 2000);
   if (maxOutputSize > 0 && maxOutputSize < 800) maxOutputSize = 800; // aşırı küçültmeyi engelle
 
+  // Küçük şablonların çıktı sınırına kadar büyütülme katsayısı.
+  // 1 = büyütme kapalı (eski davranış).
+  let maxUpscale = readSetting('mockup_max_upscale', 2);
+  if (!Number.isFinite(maxUpscale) || maxUpscale < 1) maxUpscale = 1;
+  if (maxUpscale > 4) maxUpscale = 4;
+
+  /**
+   * Şablon arka planının çıktı tuvaline ölçeği.
+   *
+   * Büyük şablonlar çıktı sınırına küçültülür. Sınırın altında kalan
+   * şablonlar ise büyütülür: büyütme arka planda yeni ayrıntı üretmez, ama
+   * eser (ürün görseli genelde 4000px+) mockup içinde iki kat daha yüksek
+   * çözünürlükte işlenir — alıcının yakınlaştırdığı yer orasıdır. Ayrıca
+   * Etsy'de yakınlaştırma 2000px altındaki görsellerde çalışmaz.
+   *
+   * Aşırı yumuşamayı önlemek için büyütme `maxUpscale` ile sınırlıdır:
+   * 1024px şablon 2000'e çıkar, 600px şablon yalnızca 1200'e.
+   */
+  const outputScaleFor = (w, h) => {
+    if (maxOutputSize <= 0) return 1;
+    const scale = maxOutputSize / Math.max(w, h);
+    return scale < 1 ? scale : Math.min(scale, maxUpscale);
+  };
+
   let jpegQuality = readSetting('mockup_jpeg_quality', 92);
   if (jpegQuality < 70) jpegQuality = 70;
   if (jpegQuality > 100) jpegQuality = 100;
@@ -619,9 +643,7 @@ export async function generateMockupsForProduct(product, options = {}) {
         // doğrudan piksel sayısıyla orantılı. Yerleşim, köşe ve gölge
         // değerlerinin hepsi oransal olduğu için tuvali küçültmek çıktıyı
         // birebir aynı kompozisyonda, sadece daha düşük çözünürlükte üretir.
-        const outScale = maxOutputSize > 0
-          ? Math.min(1, maxOutputSize / Math.max(bgImg.width, bgImg.height))
-          : 1;
+        const outScale = outputScaleFor(bgImg.width, bgImg.height);
         const W = Math.round(bgImg.width * outScale);
         const H = Math.round(bgImg.height * outScale);
         const canvas = createCanvas(W, H);
@@ -722,9 +744,7 @@ export async function generateMockupsForProduct(product, options = {}) {
       for (const ratio of ratios) {
         if (profile && ratio !== profile.ratio) continue;
 
-        const sScale = maxOutputSize > 0
-          ? Math.min(1, maxOutputSize / Math.max(staticImg.width, staticImg.height))
-          : 1;
+        const sScale = outputScaleFor(staticImg.width, staticImg.height);
         const sW = Math.round(staticImg.width * sScale);
         const sH = Math.round(staticImg.height * sScale);
 

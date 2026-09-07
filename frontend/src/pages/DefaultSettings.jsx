@@ -24,6 +24,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
     default_price: 35.00,
     shop_discount_percent: 0,
     mockup_max_output_px: 2000,
+    mockup_max_upscale: 2,
     mockup_jpeg_quality: 92,
     default_taxonomy_id: 1027, // Wall Decor
     default_who_made: 'i_did',
@@ -512,6 +513,28 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                       piksel sayısına bağlı. <strong className="text-slate-400">2000</strong> Etsy'nin önerdiği alt sınır
                       ve varsayılan. <strong className="text-slate-400">0</strong> yazarsan şablonun tam çözünürlüğü
                       kullanılır (yaklaşık 2 kat yavaş).
+                    </span>
+                  </div>
+
+                  {/* Küçük Şablonları Büyütme */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Küçük Şablonları Büyütme (kat)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      max="4"
+                      name="mockup_max_upscale"
+                      value={settings.mockup_max_upscale}
+                      onChange={handleChange}
+                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block leading-relaxed">
+                      Çıktı boyutunun altında kalan şablonlar bu kata kadar büyütülür.
+                      <strong className="text-slate-400"> 2</strong> varsayılan: 1024px şablon 2000'e çıkar,
+                      600px şablon yalnızca 1200'e. Büyütme arka planda yeni ayrıntı üretmez; kazanç, eserin
+                      mockup içinde daha yüksek çözünürlükte işlenmesi ve Etsy'de yakınlaştırmanın çalışmasıdır.
+                      <strong className="text-slate-400"> 1</strong> yazarsan büyütme kapanır.
                     </span>
                   </div>
 
