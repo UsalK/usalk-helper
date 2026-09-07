@@ -9,15 +9,6 @@
     "created_at": "2026-06-15 12:34:14"
   },
   {
-    "id": "4a81ddd0-da50-4a79-9e8e-8bd4dc19a74d",
-    "shop_id": "65571647",
-    "name": "d4",
-    "type": "flat",
-    "config": "{\"compatible_ratios\":[\"2:3\"],\"editorWidth\":375,\"placement\":{\"x\":0.228,\"y\":0.1365,\"width\":0.5669332682291667,\"height\":0.6377999267578125},\"frame\":{\"style\":\"natural_wood\",\"thickness\":5},\"shadow\":{\"enabled\":true,\"sides\":\"all\",\"opacity\":3,\"distance\":5,\"blur\":6}}",
-    "background_path": "storage/usalkArtHouse/templates/template-1781526877261-896414663.png",
-    "created_at": "2026-06-15 12:34:37"
-  },
-  {
     "id": "c6b82eb9-57f5-47c9-8755-24ee3345c538",
     "shop_id": "65571647",
     "name": "d7",
