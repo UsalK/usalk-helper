@@ -3,7 +3,8 @@ import axios from 'axios';
 import {
   Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle,
   Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square,
-  GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Unlock, Pin, Eye, ListOrdered
+  GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Unlock, Pin, Eye, ListOrdered,
+  ScanLine, Wand2, Ruler, ChevronLeft, ChevronRight, AlertTriangle
 } from 'lucide-react';
 
 import {
@@ -11,6 +12,11 @@ import {
   layoutPanels, placementToCorners,
   DEFAULT_PLACEMENT, DEFAULT_CORNERS
 } from '../utils/panels';
+import { detectMockupQuads } from '../utils/mockupDetect';
+import {
+  measureQuad, nearestRatioKey, suggestTemplateName, cornersToPlacement
+} from '../utils/quadGeometry';
+import { warpImage } from '../utils/homography';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -242,6 +248,61 @@ const drawRealisticFrame = (ctx, x, y, w, h, style, thickness) => {
   ctx.stroke();
 }
 
+/**
+ * Önizleme için sentetik bir deneme eseri üretir. Gerçek bir ürün görseli
+ * yüklemeye gerek kalmadan köşelerin doğru oturup oturmadığı görülür:
+ * ızgara çizgileri perspektif bozulmasını, kenar şeridi ise taşmayı gösterir.
+ */
+const buildPreviewArtwork = (ratio) => {
+  const H = 900;
+  const W = Math.max(120, Math.round(H * (ratio || 1)));
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#0f172a');
+  grad.addColorStop(0.45, '#b45309');
+  grad.addColorStop(1, '#fde68a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Ölçüm ızgarası
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.30)';
+  ctx.lineWidth = Math.max(1, H / 500);
+  for (let i = 1; i < 8; i++) {
+    const y = (H * i) / 8;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  const cols = Math.max(2, Math.round(8 * (W / H)));
+  for (let i = 1; i < cols; i++) {
+    const x = (W * i) / cols;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+
+  // Köşe taşmasını yakalamak için kenar şeridi
+  const inset = Math.round(H * 0.035);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.lineWidth = Math.max(2, H / 130);
+  ctx.strokeRect(inset, inset, W - inset * 2, H - inset * 2);
+
+  ctx.beginPath();
+  ctx.moveTo(inset, inset);
+  ctx.lineTo(W - inset, H - inset);
+  ctx.moveTo(W - inset, inset);
+  ctx.lineTo(inset, H - inset);
+  ctx.stroke();
+
+  return canvas;
+};
+
 export default function TemplateStudio() {
   const [templates, setTemplates] = useState([]);
   const [variationProfiles, setVariationProfiles] = useState([]);
@@ -465,6 +526,21 @@ export default function TemplateStudio() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [zoomPoint, setZoomPoint] = useState(null); // null | {x, y} for magnifying glass
 
+  // Otomatik şablon tanıma
+  const [scanState, setScanState] = useState('idle'); // idle | scanning | done | empty
+  const [scanPhase, setScanPhase] = useState('');
+  const [detections, setDetections] = useState([]);
+  const [detectionIndex, setDetectionIndex] = useState(0);
+  const [autoRatioOn, setAutoRatioOn] = useState(true);
+  const [autoNameOn, setAutoNameOn] = useState(true);
+  const [autoRatio, setAutoRatio] = useState(null); // { key, error, aspect }
+  const scanTokenRef = useRef(0);
+
+  // Önizleme (köşelere yerleşmiş deneme eseri)
+  const [previewOn, setPreviewOn] = useState(true);
+  const [previewArt, setPreviewArt] = useState(null);
+  const [previewCustom, setPreviewCustom] = useState(null);
+
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const zoomTimeoutRef = useRef(null);
@@ -606,6 +682,60 @@ export default function TemplateStudio() {
   // Çizim oranı anahtarı panel sayısını da taşır: '1:2x2' → 1:2 oranında 2 panel
   const { ratio: activePanelRatio, panelCount: activePanelCount } = parseRatioKey(activeRatio);
   const isSetTemplate = activePanelCount > 1;
+
+  // Aktif panelin ölçümleri: kenar uzunlukları, perspektif sapması ve
+  // perspektif düzeltmesi yapılmış gerçek en/boy oranı.
+  const measurement = bgImage
+    ? measureQuad(
+        type === 'perspective' ? corners : placementToCorners(flatPlacement),
+        bgImage.naturalWidth || bgImage.width,
+        bgImage.naturalHeight || bgImage.height
+      )
+    : null;
+
+  // Önizleme eseri: kullanıcı kendi görselini yüklemediyse çizim oranında
+  // sentetik bir deneme eseri üretilir.
+  useEffect(() => {
+    if (previewCustom) {
+      setPreviewArt(previewCustom);
+      return;
+    }
+    setPreviewArt(buildPreviewArtwork(activePanelRatio));
+  }, [activePanelRatio, previewCustom]);
+
+  // Oran değişince otomatik ad da güncellenir (kullanıcı adı elle yazdıysa
+  // autoNameOn kapanır ve buraya girilmez).
+  useEffect(() => {
+    if (!autoNameOn || !bgImage) return;
+    setName(suggestTemplateName(activeRatio, measurement?.aspect, templates.map(t => t.name)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRatio, autoNameOn, bgImage]);
+
+  const handlePreviewUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      // Önizleme her yeniden çizimde üçgen üçgen warp edildiği için büyük
+      // görseller editörü yavaşlatır; küçültülmüş bir kopya yeterli.
+      const maxDim = 1000;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      if (scale === 1) {
+        setPreviewCustom(img);
+      } else {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setPreviewCustom(canvas);
+      }
+      setPreviewOn(true);
+    };
+    img.src = URL.createObjectURL(file);
+  };
 
   const panelLabel = (idx, total) => {
     if (total <= 1) return 'Sanat Eseri Yerleşim Alanı';
@@ -797,7 +927,7 @@ export default function TemplateStudio() {
     if (view === 'editor' && bgImage) {
       drawEditor();
     }
-  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle]);
+  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt]);
 
   const handleCreateNew = () => {
     setBgImage(null);
@@ -820,6 +950,16 @@ export default function TemplateStudio() {
     setShadowDistance(5.0);
     setShadowBlur(6.0);
     setIsThumbnail(false);
+    scanTokenRef.current++;
+    setScanState('idle');
+    setScanPhase('');
+    setDetections([]);
+    setDetectionIndex(0);
+    setAutoRatio(null);
+    setAutoRatioOn(true);
+    setAutoNameOn(true);
+    setPreviewCustom(null);
+    setPreviewOn(true);
     setView('editor');
   };
 
@@ -829,10 +969,114 @@ export default function TemplateStudio() {
 
     setBgFile(file);
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    // onload, src atamasindan once baglanir: onbellekten gelen gorseller
+    // aninda yuklenip olayi kacirmasin.
     img.onload = () => {
       setBgImage(img);
+      runAutoScan(img);
     };
+    img.src = URL.createObjectURL(file);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Otomatik şablon tanıma                                              */
+  /* ------------------------------------------------------------------ */
+
+  /** Aday bulunamazsa: çizim oranında, ortalanmış bir başlangıç dörtgeni. */
+  const fallbackCorners = (image) => {
+    const bgRatio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height);
+    const { ratio } = parseRatioKey(activeRatio);
+    const [{ placement }] = layoutPanels(ratio, 1, 0, 0.55, 0.5, bgRatio);
+    return placementToCorners(placement);
+  };
+
+  /**
+   * Bulunan adaylardan birini editöre uygular: köşeler yerleşir, ölçülen
+   * gerçek orana en yakın varyasyon oranı seçilir ve şablon adı üretilir.
+   */
+  const applyDetection = (list, index, image) => {
+    const cand = list[index];
+    const target = image || bgImage;
+    if (!cand || !target) return;
+
+    setDetectionIndex(index);
+
+    const imgW = target.naturalWidth || target.width;
+    const imgH = target.naturalHeight || target.height;
+    const m = measureQuad(cand.corners, imgW, imgH);
+
+    // Perspektif köşeleri ile düz mod yerleşimi birlikte güncellenir; kullanıcı
+    // mod değiştirdiğinde yeniden çizim yapmak zorunda kalmaz.
+    setSlots(prev => prev.map((slot, idx) => (
+      idx === activeSlot
+        ? { ...slot, corners: cand.corners, placement: cornersToPlacement(cand.corners) }
+        : slot
+    )));
+    setType('perspective');
+
+    const nearest = nearestRatioKey(m.aspect, ratioPresets);
+    setAutoRatio(nearest ? { ...nearest, aspect: m.aspect } : null);
+
+    if (nearest && autoRatioOn && !isSetTemplate) {
+      setActiveRatio(nearest.key);
+      setCompatibleRatios([nearest.key]);
+    }
+    if (autoNameOn) {
+      const key = (nearest && autoRatioOn) ? nearest.key : activeRatio;
+      setName(suggestTemplateName(key, m.aspect, templates.map(t => t.name)));
+    }
+  };
+
+  /**
+   * Yüklenen sahne görselini tarar. Tarama animasyonu göz kırpıp kaybolmasın
+   * diye en az ~1.1 sn ekranda tutulur.
+   */
+  const runAutoScan = async (image) => {
+    const target = image || bgImage;
+    if (!target) return;
+
+    const token = ++scanTokenRef.current;
+    setScanState('scanning');
+    setScanPhase('Görsel hazırlanıyor');
+    setDetections([]);
+    setDetectionIndex(0);
+    setAutoRatio(null);
+
+    const startedAt = Date.now();
+    let found = [];
+    try {
+      found = await detectMockupQuads(target, {
+        maxCandidates: 4,
+        onPhase: (phase) => {
+          if (scanTokenRef.current === token) setScanPhase(phase);
+        }
+      });
+    } catch (err) {
+      console.error('Otomatik şablon tanıma başarısız:', err);
+    }
+
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < 1100) await new Promise(resolve => setTimeout(resolve, 1100 - elapsed));
+    if (scanTokenRef.current !== token) return;
+
+    setDetections(found);
+    if (found.length === 0) {
+      setScanState('empty');
+      const corners = fallbackCorners(target);
+      setSlots(prev => prev.map((slot, idx) => (
+        idx === activeSlot ? { ...slot, corners, placement: cornersToPlacement(corners) } : slot
+      )));
+      return;
+    }
+
+    applyDetection(found, 0, target);
+    setScanState('done');
+  };
+
+  const cycleDetection = (delta) => {
+    if (detections.length < 2) return;
+    const next = (detectionIndex + delta + detections.length) % detections.length;
+    applyDetection(detections, next);
   };
 
   const drawEditor = () => {
@@ -867,25 +1111,53 @@ export default function TemplateStudio() {
     
     // Draw background image
     ctx.drawImage(bgImage, 0, 0, w, h);
-    
+
+    // Önizleme: deneme eseri köşelere/dikdörtgene gerçek render mantığıyla
+    // yerleştirilir, böylece kaydetmeden önce sonuç görülür.
+    const art = (previewOn && previewArt) ? previewArt : null;
+    if (art) {
+      slots.forEach(slot => {
+        if (type === 'perspective') {
+          const c = slot.corners || DEFAULT_CORNERS;
+          warpImage(ctx, art, [
+            { x: c.tl.x * w, y: c.tl.y * h },
+            { x: c.tr.x * w, y: c.tr.y * h },
+            { x: c.br.x * w, y: c.br.y * h },
+            { x: c.bl.x * w, y: c.bl.y * h }
+          ], 12);
+        } else {
+          const p = slot.placement || DEFAULT_PLACEMENT;
+          ctx.drawImage(art, p.x * w, p.y * h, p.width * w, p.height * h);
+        }
+      });
+    }
+
     // Draw overlays based on type
     if (type === 'flat') {
-      drawFlatOverlay(ctx, w, h);
+      drawFlatOverlay(ctx, w, h, !!art);
     } else {
-      drawPerspectiveOverlay(ctx, w, h);
+      drawPerspectiveOverlay(ctx, w, h, !!art);
     }
   };
 
-  const drawFlatOverlay = (ctx, w, h) => {
+  const drawFlatOverlay = (ctx, w, h, hasPreview = false) => {
     const rects = slots.map(slot => {
       const p = slot.placement || DEFAULT_PLACEMENT;
       return { x: p.x * w, y: p.y * h, w: p.width * w, h: p.height * h };
     });
 
-    // Panellerin dışında kalan alanı karart, panel içlerinde arka planı geri getir
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    // Panellerin dışında kalan alanı karart, panel içlerinde arka planı geri
+    // getir. Önizleme açıkken paneller zaten eserle dolu olduğu için sadece
+    // dışarısı karartılır.
+    ctx.fillStyle = `rgba(0, 0, 0, ${hasPreview ? 0.28 : 0.4})`;
     ctx.fillRect(0, 0, w, h);
-    rects.forEach(r => {
+    rects.forEach((r, idx) => {
+      if (hasPreview) {
+        const slot = slots[idx];
+        const p = slot?.placement || DEFAULT_PLACEMENT;
+        ctx.drawImage(previewArt, p.x * w, p.y * h, p.width * w, p.height * h);
+        return;
+      }
       ctx.drawImage(
         bgImage,
         (r.x / w) * bgImage.width, (r.y / h) * bgImage.height,
@@ -923,8 +1195,10 @@ export default function TemplateStudio() {
       }
 
       // Draw Mockup placeholder background
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-      ctx.fillRect(r.x, r.y, r.w, r.h);
+      if (!hasPreview) {
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+      }
 
       // Draw borders & frame thickness
       if (frameStyle !== 'stretched') {
@@ -964,7 +1238,7 @@ export default function TemplateStudio() {
     });
   };
 
-  const drawPerspectiveOverlay = (ctx, w, h) => {
+  const drawPerspectiveOverlay = (ctx, w, h, hasPreview = false) => {
     slots.forEach((slot, idx) => {
       const c = slot.corners || DEFAULT_CORNERS;
       const isActive = idx === activeSlot;
@@ -987,8 +1261,10 @@ export default function TemplateStudio() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = isActive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.07)';
-      ctx.fill();
+      if (!hasPreview) {
+        ctx.fillStyle = isActive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.07)';
+        ctx.fill();
+      }
 
       if (slots.length > 1) {
         ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)';
@@ -1379,6 +1655,221 @@ export default function TemplateStudio() {
       console.error(err);
       alert('Thumbnail durumu güncellenirken hata oluştu.');
     }
+  };
+
+  /**
+   * Otomatik tanıma paneli: tarama durumu, bulunan adaylar arasında gezinme,
+   * köşeler arası ölçümler ve perspektif düzeltmeli oran önerisi.
+   */
+  const renderAutoDetectPanel = () => {
+    const px = (v) => (Number.isFinite(v) ? `${Math.round(v)} px` : '—');
+    const pct = (v) => (Number.isFinite(v) ? `%${(v * 100).toFixed(1)}` : '—');
+
+    const skewTone = (v) => (v < 0.02 ? 'text-slate-300' : v < 0.12 ? 'text-amber-400' : 'text-rose-400');
+    const ratioDelta = autoRatio ? Math.abs(autoRatio.aspect / autoRatio.ratio - 1) : null;
+
+    return (
+      <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
+            <Wand2 className="w-4 h-4 text-amber-500" />
+            <span>Otomatik Tanıma</span>
+          </h3>
+          <div className="flex items-center space-x-3">
+            <label className="flex items-center space-x-1.5 text-[11px] font-semibold text-slate-400 hover:text-amber-500 cursor-pointer transition-colors">
+              <Crop className="w-3.5 h-3.5" />
+              <span>Görseli Değiştir</span>
+              <input type="file" accept="image/*" onChange={handleBgUpload} className="hidden" />
+            </label>
+            <button
+              type="button"
+              onClick={() => runAutoScan()}
+              disabled={scanState === 'scanning'}
+              className="flex items-center space-x-1.5 text-[11px] font-semibold text-slate-300 hover:text-amber-500 disabled:opacity-40 disabled:hover:text-slate-300 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${scanState === 'scanning' ? 'animate-spin' : ''}`} />
+              <span>Yeniden Tara</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Durum + adaylar arasında gezinme */}
+        {scanState === 'scanning' && (
+          <div className="flex items-center space-x-2 text-xs text-amber-400 font-medium">
+            <ScanLine className="w-4 h-4 animate-pulse" />
+            <span>{scanPhase || 'Taranıyor'}…</span>
+          </div>
+        )}
+
+        {scanState === 'empty' && (
+          <div className="flex items-start space-x-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-rose-200 leading-relaxed">
+              Bu görselde çerçeve/tuval alanı bulunamadı (ör. boş duvar fotoğrafı).
+              Çizim oranında ortalanmış bir dörtgen yerleştirildi; köşeleri sürükleyerek konumlandırın.
+            </p>
+          </div>
+        )}
+
+        {scanState === 'done' && detections.length > 0 && (
+          <div className="flex items-center justify-between p-2.5 bg-[#151f32] border border-[#1e293b] rounded-xl">
+            <div className="flex items-center space-x-2 min-w-0">
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="text-[11px] text-slate-300 truncate">
+                {detections.length} alan bulundu ·{' '}
+                <span className="text-white font-semibold">
+                  {detections[detectionIndex]?.kind === 'blank' ? 'Boş tuval'
+                    : detections[detectionIndex]?.kind === 'framed' ? 'Çerçeve içi'
+                    : 'Eser alanı'}
+                </span>
+              </span>
+            </div>
+            {detections.length > 1 && (
+              <div className="flex items-center space-x-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => cycleDetection(-1)}
+                  className="p-1 rounded-lg bg-[#0e1726] border border-[#1e293b] text-slate-400 hover:text-amber-500"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] text-slate-400 tabular-nums w-8 text-center">
+                  {detectionIndex + 1}/{detections.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => cycleDetection(1)}
+                  className="p-1 rounded-lg bg-[#0e1726] border border-[#1e293b] text-slate-400 hover:text-amber-500"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Köşeler arası ölçümler */}
+        {measurement && (
+          <div className="space-y-3">
+            <div className="flex items-center space-x-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              <Ruler className="w-3.5 h-3.5 text-amber-500" />
+              <span>Köşe Ölçümleri</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+              <div className="flex justify-between"><span className="text-slate-500">Üst</span><span className="text-slate-200 tabular-nums">{px(measurement.top)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Alt</span><span className="text-slate-200 tabular-nums">{px(measurement.bottom)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Sol</span><span className="text-slate-200 tabular-nums">{px(measurement.left)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Sağ</span><span className="text-slate-200 tabular-nums">{px(measurement.right)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Yatay sapma</span><span className={`tabular-nums ${skewTone(measurement.hSkew)}`}>{pct(measurement.hSkew)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Dikey sapma</span><span className={`tabular-nums ${skewTone(measurement.vSkew)}`}>{pct(measurement.vSkew)}</span></div>
+              <div className="flex justify-between col-span-2"><span className="text-slate-500">Kenar eğimi</span><span className="text-slate-200 tabular-nums">{measurement.maxTilt.toFixed(1)}°</span></div>
+            </div>
+
+            {measurement.isNearRectangle && type === 'perspective' && (
+              <button
+                type="button"
+                onClick={() => setType('flat')}
+                className="w-full py-2 rounded-lg bg-[#151f32] border border-[#1e293b] text-[11px] text-slate-300 hover:border-amber-500/40 hover:text-amber-500 transition-colors"
+              >
+                Neredeyse tam dikdörtgen — Düz (Flat) moda geç
+              </button>
+            )}
+
+            <div className="p-3 bg-[#151f32] border border-[#1e293b] rounded-xl space-y-1.5">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-slate-400">Ekrandaki ham oran</span>
+                <span className="text-slate-300 tabular-nums">{measurement.rawAspect.toFixed(3)}</span>
+              </div>
+              <div className="flex justify-between text-[11px]">
+                <span className="text-amber-500 font-semibold">Perspektif düzeltmeli oran</span>
+                <span className="text-white font-bold tabular-nums">{measurement.aspect.toFixed(3)}</span>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-relaxed pt-0.5">
+                {measurement.aspectMethod === 'perspective'
+                  ? 'Her iki yönde de kaçış noktası bulundu; gerçek oran doğrudan çözüldü.'
+                  : measurement.aspectMethod === 'assumed'
+                  ? 'Çerçeve tek eksende açılı; perspektif sapması tipik bir oda odak uzaklığı varsayılarak düzeltildi.'
+                  : 'Kenarlar paralel; perspektif sapması yok, oran doğrudan kenar uzunluklarından alındı.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Oran önerisi */}
+        {autoRatio && (
+          <div className="p-3 bg-[#151f32] border border-[#1e293b] rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">En yakın varyasyon</span>
+              <span className="text-xs font-bold text-amber-500">{ratioKeyLabel(autoRatio.key)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">Orandan fark</span>
+              <span className={`text-[11px] tabular-nums ${ratioDelta < 0.04 ? 'text-emerald-400' : ratioDelta < 0.12 ? 'text-amber-400' : 'text-rose-400'}`}>
+                %{(ratioDelta * 100).toFixed(1)}
+              </span>
+            </div>
+            {activeRatio !== autoRatio.key && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveRatio(autoRatio.key);
+                  setCompatibleRatios([autoRatio.key]);
+                }}
+                className="w-full mt-1 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[11px] font-semibold hover:bg-amber-500/20 transition-colors"
+              >
+                {ratioKeyLabel(autoRatio.key)} oranını uygula
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Otomatik davranış anahtarları */}
+        <div className="space-y-2 pt-1">
+          {[
+            { key: 'ratio', label: 'Oranı otomatik seç', value: autoRatioOn, set: setAutoRatioOn },
+            { key: 'name', label: 'Adı otomatik oluştur', value: autoNameOn, set: setAutoNameOn },
+            { key: 'preview', label: 'Önizlemeyi göster', value: previewOn, set: setPreviewOn }
+          ].map(item => (
+            <label key={item.key} className="flex items-center justify-between cursor-pointer">
+              <span className="text-[11px] text-slate-300">{item.label}</span>
+              <div className="relative inline-flex items-center">
+                <input
+                  type="checkbox"
+                  checked={item.value}
+                  onChange={(e) => item.set(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-[18px] bg-slate-800 rounded-full peer peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:translate-x-[14px] peer-checked:after:bg-slate-950"></div>
+              </div>
+            </label>
+          ))}
+
+          {previewOn && (
+            <label className="block pt-1">
+              <span className="text-[10px] text-slate-500">
+                {previewCustom ? 'Kendi deneme görseliniz kullanılıyor.' : 'Sentetik deneme eseri kullanılıyor.'}
+              </span>
+              <div className="flex items-center space-x-2 mt-1.5">
+                <span className="flex-1 text-[11px] text-center py-1.5 rounded-lg bg-[#151f32] border border-[#1e293b] text-slate-300 cursor-pointer hover:border-amber-500/40">
+                  Deneme görseli yükle
+                  <input type="file" accept="image/*" onChange={handlePreviewUpload} className="hidden" />
+                </span>
+                {previewCustom && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewCustom(null)}
+                    className="px-2 py-1.5 rounded-lg bg-[#151f32] border border-[#1e293b] text-slate-400 hover:text-rose-400"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </label>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const renderStaticSection = () => {
@@ -2216,6 +2707,19 @@ export default function TemplateStudio() {
                       className="border border-[#1e293b] rounded-xl cursor-crosshair bg-slate-950 shadow-2xl"
                     />
 
+                    {/* Otomatik tarama katmanı */}
+                    {scanState === 'scanning' && (
+                      <div className="mockup-scan">
+                        <div className="mockup-scan__grid" />
+                        <div className="mockup-scan__sweep" />
+                        <div className="mockup-scan__label">
+                          <ScanLine className="w-7 h-7 text-amber-500 mx-auto mb-2" />
+                          <p className="text-sm font-bold text-white tracking-wide">Şablon otomatik taranıyor</p>
+                          <p className="text-[11px] text-amber-400/90 mt-1 font-medium">{scanPhase || 'Hazırlanıyor'}…</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Magnifying Glass widget */}
                     {zoomPoint && (() => {
                       const canvasW = canvasRef.current?.width || 500;
@@ -2530,6 +3034,8 @@ export default function TemplateStudio() {
 
             {/* Sidebar properties panel */}
             <div className="space-y-6">
+              {bgImage && renderAutoDetectPanel()}
+
               <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-5">
                 <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
                   <Compass className="w-4 h-4 text-amber-500" />
@@ -2543,11 +3049,21 @@ export default function TemplateStudio() {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Örn: Modern Living Room"
+                    onChange={(e) => {
+                      // Elle düzenlenen ad otomatik üretimle ezilmesin
+                      setAutoNameOn(false);
+                      setName(e.target.value);
+                    }}
+                    placeholder="Örn: 3:2 Yatay 1"
                     className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                     required
                   />
+                  {autoNameOn && bgImage && (
+                    <p className="text-[10px] text-amber-500/80 flex items-center space-x-1">
+                      <Wand2 className="w-3 h-3" />
+                      <span>Ad orana göre otomatik üretiliyor; yazmaya başlarsanız devre dışı kalır.</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
