@@ -4,7 +4,7 @@ import {
   Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle,
   Trash2, Crop, Move, HelpCircle, RefreshCw, CheckSquare, Square,
   GripVertical, ArrowUp, ArrowDown, X, Shuffle, Lock, Unlock, Pin, Eye, ListOrdered,
-  ScanLine, Wand2, Ruler, ChevronLeft, ChevronRight, AlertTriangle
+  ScanLine, Wand2, Ruler, ChevronLeft, ChevronRight, AlertTriangle, ZoomIn
 } from 'lucide-react';
 
 import {
@@ -29,6 +29,38 @@ const DEFAULT_ORDER = {
   restMode: 'random',
   staticLast: true
 };
+
+/* ------------------------------------------------------------------ */
+/* Editör tercihleri — tarayıcıda kalıcı                               */
+/* ------------------------------------------------------------------ */
+
+const PREFS_KEY = 'usalkHelper.templateStudio.prefs';
+
+const readPrefs = () => {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+/** Tercihi kalıcı yazar; depolama kapalıysa yalnızca bu oturumda geçerli olur. */
+const writePref = (key, value) => {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ ...readPrefs(), [key]: value }));
+  } catch {
+    /* yoksay */
+  }
+};
+
+const boolPref = (key, fallback) => {
+  const value = readPrefs()[key];
+  return typeof value === 'boolean' ? value : fallback;
+};
+
+/** Önizleme yakınlaştırma kademeleri: tıkladıkça sırayla dolaşılır. */
+const ZOOM_STEPS = [1, 1.5, 2];
 
 const templateKey = (t) => (t.type === 'static' ? `static_${t.id}` : t.id);
 const isThumbTemplate = (t) => {
@@ -531,15 +563,26 @@ export default function TemplateStudio() {
   const [scanPhase, setScanPhase] = useState('');
   const [detections, setDetections] = useState([]);
   const [detectionIndex, setDetectionIndex] = useState(0);
-  const [autoRatioOn, setAutoRatioOn] = useState(true);
-  const [autoNameOn, setAutoNameOn] = useState(true);
+  // Otomatik davranış anahtarları kullanıcı tercihidir; tarayıcıda saklanır.
+  const [autoRatioOn, setAutoRatioOn] = useState(() => boolPref('autoRatioOn', true));
+  const [autoNameOn, setAutoNameOn] = useState(() => boolPref('autoNameOn', true));
   const [autoRatio, setAutoRatio] = useState(null); // { key, error, aspect }
   const scanTokenRef = useRef(0);
 
   // Önizleme (köşelere yerleşmiş deneme eseri)
-  const [previewOn, setPreviewOn] = useState(true);
+  const [previewOn, setPreviewOn] = useState(() => boolPref('previewOn', true));
   const [previewArt, setPreviewArt] = useState(null);
   const [previewCustom, setPreviewCustom] = useState(null);
+
+  // Önizleme incelemesi: yakınlaştırma, gezinme ve editör katmanının solması
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [panning, setPanning] = useState(false);
+  const [overlayOpaque, setOverlayOpaque] = useState(false);
+  const [hoverHandle, setHoverHandle] = useState(null);
+  const panDragRef = useRef(null);     // sağ tık ile gezinme başlangıcı
+  const clickStartRef = useRef(null);  // basit tıklama mı sürükleme mi
+  const overlayFadeRef = useRef(null); // 1 sn sonra %20'ye dönüş
 
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -574,6 +617,9 @@ export default function TemplateStudio() {
       else if (e.key === 'ArrowDown') dy = 1;
 
       if (dx === 0 && dy === 0) return;
+
+      // Klavyeyle ince ayar da bir düzenlemedir: editör katmanı tam görünür olur
+      boostOverlay();
 
       // Prevent window scrolling
       e.preventDefault();
@@ -627,6 +673,7 @@ export default function TemplateStudio() {
           setZoomPoint(null);
           zoomTimeoutRef.current = null;
         }, 1500); // Keep magnifier visible for 1.5 seconds after releasing arrow key
+        if (previewActive) scheduleOverlayFade();
       }
     };
 
@@ -698,6 +745,56 @@ export default function TemplateStudio() {
         bgImage.naturalHeight || bgImage.height
       )
     : null;
+
+  /* ------------------------------------------------------------------ */
+  /* Önizleme incelemesi                                                 */
+  /* ------------------------------------------------------------------ */
+
+  /** Tuvalde bir eser görünüyor mu: yakınlaştırma ve solma buna bağlı. */
+  const previewActive = !!(previewOn && previewArt && bgImage);
+  const zoomed = zoomLevel > 1;
+
+  // Editör katmanı (dörtgen, tutamaçlar, etiketler) saydamlığı.
+  // Yakınlaştırıldığında tamamen gizlenir; eser görünürken sönük durur ve
+  // yalnızca kullanıcı bir noktayı tutunca tam görünür olur.
+  const overlayAlpha = !previewActive ? 1 : (zoomed ? 0 : (overlayOpaque ? 1 : 0.2));
+
+  /** Noktayı tutar tutmaz katman tam görünür olur. */
+  const boostOverlay = () => {
+    if (overlayFadeRef.current) {
+      clearTimeout(overlayFadeRef.current);
+      overlayFadeRef.current = null;
+    }
+    setOverlayOpaque(true);
+  };
+
+  /** Bırakıldıktan 1 sn sonra sönük seviyeye geri döner. */
+  const scheduleOverlayFade = () => {
+    if (overlayFadeRef.current) clearTimeout(overlayFadeRef.current);
+    overlayFadeRef.current = setTimeout(() => {
+      overlayFadeRef.current = null;
+      setOverlayOpaque(false);
+    }, 1000);
+  };
+
+  useEffect(() => () => {
+    if (overlayFadeRef.current) clearTimeout(overlayFadeRef.current);
+  }, []);
+
+  /** Yakınlaştırma kaydırmasını görsel tuvali doldurmaya devam edecek şekilde sınırlar. */
+  const clampPan = (p, z, w, h) => ({
+    x: Math.min(0, Math.max(w - w * z, p.x)),
+    y: Math.min(0, Math.max(h - h * z, p.y))
+  });
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  // Yeni arka plan yüklenince ya da önizleme kapanınca yakınlaştırma sıfırlanır
+  useEffect(() => { resetZoom(); }, [bgImage]);
+  useEffect(() => { if (!previewActive) resetZoom(); }, [previewActive]);
 
   // Önizleme eseri: kullanıcı kendi görselini yüklemediyse çizim oranında
   // sentetik bir deneme eseri üretilir.
@@ -933,7 +1030,7 @@ export default function TemplateStudio() {
     if (view === 'editor' && bgImage) {
       drawEditor();
     }
-  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt, stageSize]);
+  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt, stageSize, zoomLevel, pan, overlayAlpha]);
 
   // Sahne alanı büyüdükçe/küçüldükçe tuval yeniden sığdırılır.
   useEffect(() => {
@@ -980,10 +1077,14 @@ export default function TemplateStudio() {
     setDetections([]);
     setDetectionIndex(0);
     setAutoRatio(null);
-    setAutoRatioOn(true);
-    setAutoNameOn(true);
+    // Anahtarlar kullanıcı tercihine döner, sabit varsayılana değil
+    setAutoRatioOn(boolPref('autoRatioOn', true));
+    setAutoNameOn(boolPref('autoNameOn', true));
+    setPreviewOn(boolPref('previewOn', true));
     setPreviewCustom(null);
-    setPreviewOn(true);
+    resetZoom();
+    setOverlayOpaque(false);
+    setHoverHandle(null);
     setView('editor');
   };
 
@@ -1125,7 +1226,17 @@ export default function TemplateStudio() {
 
     if (canvas.width !== w) canvas.width = w;
     if (canvas.height !== h) canvas.height = h;
-    
+
+    // Yakınlaştırma/gezinme yalnızca çizime uygulanır: tuval ölçüsü sabit
+    // kalır, sahne içine büyütülmüş bir kesit çizilir.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    if (zoomLevel !== 1 || pan.x !== 0 || pan.y !== 0) {
+      ctx.translate(pan.x, pan.y);
+      ctx.scale(zoomLevel, zoomLevel);
+    }
+
     // Draw background image
     ctx.drawImage(bgImage, 0, 0, w, h);
 
@@ -1149,13 +1260,29 @@ export default function TemplateStudio() {
 
     // Draw overlays based on type
     if (type === 'flat') {
-      drawFlatOverlay(ctx, w, h, !!art);
-    } else {
+      // Düz modda gölge ve çerçeve çıktının parçasıdır; solma yalnızca
+      // editör öğelerine uygulanır, bu yüzden saydamlık içeride yönetilir.
+      drawFlatOverlay(ctx, w, h, !!art, overlayAlpha);
+    } else if (overlayAlpha > 0) {
+      ctx.globalAlpha = overlayAlpha;
       drawPerspectiveOverlay(ctx, w, h, !!art);
+      ctx.globalAlpha = 1;
     }
+
+    ctx.restore();
   };
 
-  const drawFlatOverlay = (ctx, w, h, hasPreview = false) => {
+  const drawFlatOverlay = (ctx, w, h, hasPreview = false, chromeAlpha = 1) => {
+    // Gölge, eser ve çerçeve mockup çıktısının parçasıdır ve her zaman tam
+    // görünür çizilir. Karartma, dörtgen çizgisi, tutamaçlar ve etiketler ise
+    // editör öğesidir; önizleme incelenirken sönükleşir.
+    const chrome = (draw) => {
+      if (chromeAlpha <= 0) return;
+      ctx.globalAlpha = chromeAlpha;
+      draw();
+      ctx.globalAlpha = 1;
+    };
+
     const rects = slots.map(slot => {
       const p = slot.placement || DEFAULT_PLACEMENT;
       return { x: p.x * w, y: p.y * h, w: p.width * w, h: p.height * h };
@@ -1164,8 +1291,10 @@ export default function TemplateStudio() {
     // Panellerin dışında kalan alanı karart, panel içlerinde arka planı geri
     // getir. Önizleme açıkken paneller zaten eserle dolu olduğu için sadece
     // dışarısı karartılır.
-    ctx.fillStyle = `rgba(0, 0, 0, ${hasPreview ? 0.28 : 0.4})`;
-    ctx.fillRect(0, 0, w, h);
+    chrome(() => {
+      ctx.fillStyle = `rgba(0, 0, 0, ${hasPreview ? 0.28 : 0.4})`;
+      ctx.fillRect(0, 0, w, h);
+    });
     rects.forEach(r => {
       // Önizlemede panelin içi zaten eserle doldurulacağı için arka planı
       // geri getirmeye gerek yok.
@@ -1210,8 +1339,10 @@ export default function TemplateStudio() {
       if (hasPreview) {
         ctx.drawImage(previewArt, r.x, r.y, r.w, r.h);
       } else {
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
-        ctx.fillRect(r.x, r.y, r.w, r.h);
+        chrome(() => {
+          ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+        });
       }
 
       // Draw borders & frame thickness
@@ -1219,36 +1350,38 @@ export default function TemplateStudio() {
         drawRealisticFrame(ctx, r.x, r.y, r.w, r.h, frameStyle, frameThickness);
       }
 
-      // Outer bounding border — pasif paneller kesikli çizilir
-      ctx.strokeStyle = isActive ? '#f59e0b' : 'rgba(245, 158, 11, 0.45)';
-      ctx.lineWidth = isActive ? 1.5 : 1;
-      ctx.setLineDash(isActive ? [] : [5, 4]);
-      ctx.strokeRect(r.x, r.y, r.w, r.h);
-      ctx.setLineDash([]);
+      chrome(() => {
+        // Outer bounding border — pasif paneller kesikli çizilir
+        ctx.strokeStyle = isActive ? '#f59e0b' : 'rgba(245, 158, 11, 0.45)';
+        ctx.lineWidth = isActive ? 1.5 : 1;
+        ctx.setLineDash(isActive ? [] : [5, 4]);
+        ctx.strokeRect(r.x, r.y, r.w, r.h);
+        ctx.setLineDash([]);
 
-      if (isActive) {
-        // Draw center indicator
-        ctx.fillStyle = '#f59e0b';
-        ctx.beginPath();
-        ctx.arc(r.x + r.w / 2, r.y + r.h / 2, 4, 0, Math.PI * 2);
-        ctx.fill();
+        if (isActive) {
+          // Draw center indicator
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(r.x + r.w / 2, r.y + r.h / 2, 4, 0, Math.PI * 2);
+          ctx.fill();
 
-        // Draw resize handles (TL, TR, BR, BL)
-        drawHandle(ctx, r.x, r.y);
-        drawHandle(ctx, r.x + r.w, r.y);
-        drawHandle(ctx, r.x + r.w, r.y + r.h);
-        drawHandle(ctx, r.x, r.y + r.h);
-      }
+          // Draw resize handles (TL, TR, BR, BL)
+          drawHandle(ctx, r.x, r.y);
+          drawHandle(ctx, r.x + r.w, r.y);
+          drawHandle(ctx, r.x + r.w, r.y + r.h);
+          drawHandle(ctx, r.x, r.y + r.h);
+        }
 
-      // Bounding dimensions text
-      ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)';
-      ctx.font = '10px Inter';
-      // Kilit aktifken referans panel ve kilitli paneller ayırt edilsin
-      const anyLock = panelLocks.x || panelLocks.y || panelLocks.size;
-      const suffix = (rects.length > 1 && anyLock)
-        ? (idx === REF_SLOT ? ' · referans' : ' · kilitli')
-        : '';
-      ctx.fillText(panelLabel(idx, rects.length) + suffix, r.x + 6, r.y + 16);
+        // Bounding dimensions text
+        ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)';
+        ctx.font = '10px Inter';
+        // Kilit aktifken referans panel ve kilitli paneller ayırt edilsin
+        const anyLock = panelLocks.x || panelLocks.y || panelLocks.size;
+        const suffix = (rects.length > 1 && anyLock)
+          ? (idx === REF_SLOT ? ' · referans' : ' · kilitli')
+          : '';
+        ctx.fillText(panelLabel(idx, rects.length) + suffix, r.x + 6, r.y + 16);
+      });
     });
   };
 
@@ -1363,20 +1496,13 @@ export default function TemplateStudio() {
     ...slots.map((_, i) => i).filter(i => i !== activeSlot)
   ].filter(i => slots[i]);
 
-  const handleMouseDown = (e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const w = canvas.width;
-    const h = canvas.height;
-
+  /**
+   * Verilen tuval noktasında bir düzenleme hedefi var mı?
+   * Hem tıklama hem de imleç biçimi için kullanılır.
+   */
+  const findHandleAt = (x, y, w, h) => {
     if (type === 'flat') {
       const hitRadius = 10;
-
       for (const idx of hitTestOrder()) {
         const placement = slots[idx].placement || DEFAULT_PLACEMENT;
         const px = placement.x * w;
@@ -1384,76 +1510,152 @@ export default function TemplateStudio() {
         const pw = placement.width * w;
         const ph = placement.height * h;
 
-        // Check corners for resizing
         const nearCorner = (cx, cy) => Math.abs(x - cx) < hitRadius && Math.abs(y - cy) < hitRadius;
         let handle = null;
         if (nearCorner(px, py)) handle = 'tl';
         else if (nearCorner(px + pw, py)) handle = 'tr';
         else if (nearCorner(px + pw, py + ph)) handle = 'br';
         else if (nearCorner(px, py + ph)) handle = 'bl';
+        if (handle) return { idx, handle, offset: null };
 
-        if (handle) {
-          setActiveSlot(idx);
-          setActiveHandle(handle);
-          setSelectedHandle(handle);
-          return;
-        }
-
-        // Check center dragging
         if (x > px && x < px + pw && y > py && y < py + ph) {
-          setActiveSlot(idx);
-          setActiveHandle('center');
-          setSelectedHandle('center');
-          setDragOffset({ x: x - px, y: y - py });
-          return;
+          return { idx, handle: 'center', offset: { x: x - px, y: y - py } };
         }
       }
-    } else {
-      // Perspective mode corners
-      const hitRadius = 15;
+      return null;
+    }
 
-      for (const idx of hitTestOrder()) {
-        const c = slots[idx].corners || DEFAULT_CORNERS;
-        const cornersCoords = {
-          'corner-tl': { x: c.tl.x * w, y: c.tl.y * h },
-          'corner-tr': { x: c.tr.x * w, y: c.tr.y * h },
-          'corner-br': { x: c.br.x * w, y: c.br.y * h },
-          'corner-bl': { x: c.bl.x * w, y: c.bl.y * h }
-        };
-
-        for (const [key, coord] of Object.entries(cornersCoords)) {
-          if (Math.sqrt((x - coord.x) ** 2 + (y - coord.y) ** 2) < hitRadius) {
-            setActiveSlot(idx);
-            setActiveHandle(key);
-            setSelectedHandle(key);
-            setZoomPoint({ x: coord.x, y: coord.y });
-            return;
-          }
-        }
-      }
-
-      // Köşeye denk gelmediyse dörtgenin içine tıklamak paneli seçer
-      for (const idx of hitTestOrder()) {
-        if (idx !== activeSlot && pointInQuad(x, y, slots[idx].corners || DEFAULT_CORNERS, w, h)) {
-          setActiveSlot(idx);
-          setSelectedHandle(null);
-          return;
+    const hitRadius = 15;
+    for (const idx of hitTestOrder()) {
+      const c = slots[idx].corners || DEFAULT_CORNERS;
+      const cornersCoords = {
+        'corner-tl': { x: c.tl.x * w, y: c.tl.y * h },
+        'corner-tr': { x: c.tr.x * w, y: c.tr.y * h },
+        'corner-br': { x: c.br.x * w, y: c.br.y * h },
+        'corner-bl': { x: c.bl.x * w, y: c.bl.y * h }
+      };
+      for (const [key, coord] of Object.entries(cornersCoords)) {
+        if (Math.hypot(x - coord.x, y - coord.y) < hitRadius) {
+          return { idx, handle: key, coord };
         }
       }
     }
+
+    // Köşeye denk gelmediyse pasif bir dörtgenin içi paneli seçer
+    for (const idx of hitTestOrder()) {
+      if (idx !== activeSlot && pointInQuad(x, y, slots[idx].corners || DEFAULT_CORNERS, w, h)) {
+        return { idx, handle: 'select' };
+      }
+    }
+    return null;
+  };
+
+  /** Tıklanan noktayı sabit tutarak bir sonraki yakınlaştırma kademesine geçer. */
+  const cycleZoom = (clientX, clientY) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const next = ZOOM_STEPS[(ZOOM_STEPS.indexOf(zoomLevel) + 1) % ZOOM_STEPS.length];
+    if (next === 1) {
+      resetZoom();
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    const k = next / zoomLevel;
+
+    setZoomLevel(next);
+    setPan(clampPan(
+      { x: px - (px - pan.x) * k, y: py - (py - pan.y) * k },
+      next, canvas.width, canvas.height
+    ));
+  };
+
+  const handleMouseDown = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Sağ tık: yakınlaştırılmış görselde tutup gezinme
+    if (e.button === 2) {
+      if (previewActive && zoomed) {
+        e.preventDefault();
+        panDragRef.current = { x: e.clientX, y: e.clientY, pan: { ...pan } };
+        setPanning(true);
+      }
+      return;
+    }
+    if (e.button !== 0) return;
+
+    // Yakınlaştırma açıkken editör katmanı gizlidir; tutamaçlar da devre dışı
+    // kalır, sol tık yalnızca yakınlaştırma kademesini ilerletir.
+    if (previewActive) clickStartRef.current = { x: e.clientX, y: e.clientY, moved: false };
+    if (zoomed) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const hit = findHandleAt(x, y, canvas.width, canvas.height);
+    if (hit) {
+      // Düzenleme başladı: bu bir yakınlaştırma tıklaması değil
+      clickStartRef.current = null;
+      setActiveSlot(hit.idx);
+
+      if (hit.handle === 'select') {
+        setSelectedHandle(null);
+        return;
+      }
+
+      boostOverlay();
+      setActiveHandle(hit.handle);
+      setSelectedHandle(hit.handle);
+      if (hit.offset) setDragOffset(hit.offset);
+      if (hit.coord) setZoomPoint({ x: hit.coord.x, y: hit.coord.y });
+      return;
+    }
+
     // Clicked elsewhere on canvas - clear selection
     setSelectedHandle(null);
   };
 
   const handleMouseMove = (e) => {
-    if (!activeHandle) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Sağ tıkla gezinme
+    if (panDragRef.current) {
+      const start = panDragRef.current;
+      setPan(clampPan(
+        { x: start.pan.x + (e.clientX - start.x), y: start.pan.y + (e.clientY - start.y) },
+        zoomLevel, canvas.width, canvas.height
+      ));
+      return;
+    }
+
+    // Sürükleme mi basit tıklama mı: 4px'ten fazla oynadıysa yakınlaştırma yok
+    const started = clickStartRef.current;
+    if (started && !started.moved &&
+        Math.hypot(e.clientX - started.x, e.clientY - started.y) > 4) {
+      started.moved = true;
+    }
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (!activeHandle) {
+      // İmleç biçimi için tutamaç üzerinde mi bakılır (yakınlaştırmada gerekmez)
+      if (previewActive && !zoomed) {
+        const hit = findHandleAt(x, y, canvas.width, canvas.height);
+        const next = hit && hit.handle !== 'select' ? hit.handle : null;
+        setHoverHandle(prev => (prev === next ? prev : next));
+      } else if (hoverHandle !== null) {
+        setHoverHandle(null);
+      }
+      return;
+    }
 
     const w = canvas.width;
     const h = canvas.height;
@@ -1559,13 +1761,55 @@ export default function TemplateStudio() {
     }
   };
 
-  const handleMouseUp = () => {
+  const endInteraction = () => {
+    const wasDragging = !!activeHandle;
     setActiveHandle(null);
     setZoomPoint(null);
     if (zoomTimeoutRef.current) {
       clearTimeout(zoomTimeoutRef.current);
       zoomTimeoutRef.current = null;
     }
+    // Nokta bırakıldıktan 1 sn sonra editör katmanı sönük seviyeye döner
+    if (wasDragging && previewActive) scheduleOverlayFade();
+    return wasDragging;
+  };
+
+  const handleMouseUp = (e) => {
+    if (panDragRef.current) {
+      panDragRef.current = null;
+      setPanning(false);
+      return;
+    }
+
+    const wasDragging = endInteraction();
+    const started = clickStartRef.current;
+    clickStartRef.current = null;
+
+    // Tutamaca denk gelmeyen, yerinde duran sol tık yakınlaştırmayı ilerletir
+    if (!wasDragging && started && !started.moved && previewActive && e && e.button === 0) {
+      cycleZoom(e.clientX, e.clientY);
+    }
+  };
+
+  /** İmleç tuvalden çıkarsa sürükleme biter ama yakınlaştırma tetiklenmez. */
+  const handleMouseLeave = () => {
+    if (panDragRef.current) {
+      panDragRef.current = null;
+      setPanning(false);
+    }
+    clickStartRef.current = null;
+    setHoverHandle(null);
+    endInteraction();
+  };
+
+  /** Tuval imleci: düzenleme mi inceleme mi olduğunu anlatır. */
+  const canvasCursor = () => {
+    if (panning) return 'grabbing';
+    if (!previewActive) return 'crosshair';
+    if (zoomed) return zoomLevel === ZOOM_STEPS[ZOOM_STEPS.length - 1] ? 'zoom-out' : 'zoom-in';
+    if (hoverHandle === 'center') return 'move';
+    if (hoverHandle) return 'crosshair';
+    return 'zoom-in';
   };
 
   const handleSaveTemplate = async () => {
@@ -1971,9 +2215,9 @@ export default function TemplateStudio() {
         {/* Otomatik davranış anahtarları */}
         <div className="space-y-2 pt-1">
           {[
-            { key: 'ratio', label: 'Oranı otomatik seç', value: autoRatioOn, set: setAutoRatioOn },
-            { key: 'name', label: 'Adı otomatik oluştur', value: autoNameOn, set: setAutoNameOn },
-            { key: 'preview', label: 'Önizlemeyi göster', value: previewOn, set: setPreviewOn }
+            { key: 'autoRatioOn', label: 'Oranı otomatik seç', value: autoRatioOn, set: setAutoRatioOn },
+            { key: 'autoNameOn', label: 'Adı otomatik oluştur', value: autoNameOn, set: setAutoNameOn },
+            { key: 'previewOn', label: 'Önizlemeyi göster', value: previewOn, set: setPreviewOn }
           ].map(item => (
             <label key={item.key} className="flex items-center justify-between cursor-pointer">
               <span className="text-[11px] text-slate-300">{item.label}</span>
@@ -1981,7 +2225,11 @@ export default function TemplateStudio() {
                 <input
                   type="checkbox"
                   checked={item.value}
-                  onChange={(e) => item.set(e.target.checked)}
+                  onChange={(e) => {
+                    // Anahtar konumu kullanıcı tercihidir; sonraki şablonlarda korunur
+                    item.set(e.target.checked);
+                    writePref(item.key, e.target.checked);
+                  }}
                   className="sr-only peer"
                 />
                 <div className="w-8 h-[18px] bg-slate-800 rounded-full peer peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:translate-x-[14px] peer-checked:after:bg-slate-950"></div>
@@ -1991,8 +2239,9 @@ export default function TemplateStudio() {
 
           {previewOn && (
             <label className="block pt-1">
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-slate-500 block leading-relaxed">
                 {previewCustom ? 'Kendi deneme görseliniz kullanılıyor.' : 'Sentetik deneme eseri kullanılıyor.'}
+                {previewActive && ' Tuvalde: sol tık %150 → %200 → %100 yakınlaştırır, yakınlaştırınca sağ tıkla gezinilir. Köşe noktaları sönük durur, tutunca netleşir.'}
               </span>
               <div className="flex items-center space-x-2 mt-1.5">
                 <span className="flex-1 text-[11px] text-center py-1.5 rounded-lg bg-[#151f32] border border-[#1e293b] text-slate-300 cursor-pointer hover:border-amber-500/40">
@@ -2853,8 +3102,10 @@ export default function TemplateStudio() {
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
-                      onMouseLeave={handleMouseUp}
-                      className="border border-[#1e293b] rounded-xl cursor-crosshair bg-slate-950 shadow-2xl"
+                      onMouseLeave={handleMouseLeave}
+                      onContextMenu={(e) => { if (previewActive) e.preventDefault(); }}
+                      style={{ cursor: canvasCursor() }}
+                      className="border border-[#1e293b] rounded-xl bg-slate-950 shadow-2xl"
                     />
 
                     {/* Otomatik tarama katmanı */}
@@ -2871,7 +3122,16 @@ export default function TemplateStudio() {
                     )}
 
                     {/* Magnifying Glass widget */}
-                    {zoomPoint && (() => {
+                    {/* Yakınlaştırma göstergesi */}
+                    {previewActive && zoomed && (
+                      <div className="absolute top-3 left-3 flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-amber-500/30 backdrop-blur-sm pointer-events-none">
+                        <ZoomIn className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-[11px] font-bold text-white tabular-nums">%{Math.round(zoomLevel * 100)}</span>
+                        <span className="text-[10px] text-slate-400">sağ tıkla gezin · sol tıkla devam</span>
+                      </div>
+                    )}
+
+                    {zoomPoint && !zoomed && (() => {
                       const canvasW = canvasRef.current?.width || 500;
                       // If pin is near the top of the canvas, render magnifier below the pin (at y + 30px)
                       // otherwise above it (at y - 120px) to prevent going off-screen
