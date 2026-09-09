@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import RECOMMENDED_DATA from './recommended_data.json';
 import { filterActiveProfiles, isSetProfile } from '../utils/profileFlags';
-import { groupFrames, groupPriceOf, setGroupPrice } from '../utils/frameGroups';
+import { buildPriceColumns, columnPriceOf, setColumnPrice } from '../utils/frameGroups';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -221,14 +221,6 @@ export default function VariationProfiles() {
     setPriceMap(updatedMap);
   };
 
-  // Handle cell price changes
-  const handlePriceChange = (size, frame, value) => {
-    setPriceMap(prev => ({
-      ...prev,
-      [`${size}_${frame}`]: Number(value) || 0
-    }));
-  };
-
   // Bulk price fill matrix tool
   const applyBulkPricing = () => {
     const base = Number(bulkBasePrice) || 0;
@@ -363,23 +355,26 @@ export default function VariationProfiles() {
   /* Gruplu fiyat matrisi                                                */
   /* ------------------------------------------------------------------ */
 
-  const frameGroupList = groupFrames(frames);
   const isGrouped = priceGrouping === 'frames';
+  const priceColumns = buildPriceColumns(frames, isGrouped);
+  const groupedColumn = priceColumns.find(c => c.grouped);
 
-  const handleGroupPriceChange = (size, group, value) => {
-    setPriceMap(prev => setGroupPrice(prev, size, group, value));
+  const handleColumnPriceChange = (size, column, value) => {
+    setPriceMap(prev => setColumnPrice(prev, size, column, value));
   };
 
-  /** Gruplama açılırken her grubun ilk fiyatını gruptaki tüm çerçevelere yayar. */
+  /**
+   * Gruplama açılırken, çerçeve fiyatları birbirinden farklıysa ilk çerçevenin
+   * fiyatı hepsine yayılır; böylece sütun tek bir değer gösterebilir.
+   */
   const enableGrouping = () => {
+    const columns = buildPriceColumns(frames, true);
     setPriceMap(prev => {
       let next = prev;
       sizes.forEach(size => {
-        frameGroupList.forEach(group => {
-          const common = groupPriceOf(next, size, group);
-          if (common === null) {
-            const first = next[`${size}_${group.frames[0]}`] || 0;
-            next = setGroupPrice(next, size, group, first);
+        columns.filter(c => c.grouped).forEach(column => {
+          if (columnPriceOf(next, size, column) === null) {
+            next = setColumnPrice(next, size, column, next[`${size}_${column.frames[0]}`] || 0);
           }
         });
       });
@@ -900,7 +895,7 @@ export default function VariationProfiles() {
                         <h3 className="text-md font-semibold text-white">Oran Fiyat Matrisi</h3>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {isGrouped
-                            ? 'Çerçeveler tek sütunda; girdiğiniz fiyat gruptaki tüm çerçevelere yazılır.'
+                            ? 'Çerçeveli seçenekler tek sütunda; Roll ve Stretched Wood kendi fiyatlarında kalır.'
                             : 'Boyut ve çerçeve kesişim fiyatlarını girin.'}
                         </p>
                         <label className="flex items-center space-x-2 mt-2 cursor-pointer w-fit">
@@ -912,7 +907,7 @@ export default function VariationProfiles() {
                           />
                           <span className="text-[11px] text-slate-300 font-semibold">Çerçeveleri grupla</span>
                           <span className="text-[10px] text-slate-500">
-                            ({frameGroupList.length} sütun)
+                            ({frames.length} → {buildPriceColumns(frames, true).length} sütun)
                           </span>
                         </label>
                       </div>
@@ -965,61 +960,43 @@ export default function VariationProfiles() {
                         <thead>
                           <tr className="border-b border-[#1e293b] text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                             <th className="py-3 px-4">Boyut / Çerçeve</th>
-                            {isGrouped
-                              ? frameGroupList.map(g => (
-                                  <th key={g.key} className="py-3 px-4">
-                                    {g.label}
-                                    <span className="block text-[9px] text-slate-600 font-medium normal-case tracking-normal">
-                                      {g.frames.length} seçenek
-                                    </span>
-                                  </th>
-                                ))
-                              : frames.map(f => (
-                                  <th key={f} className="py-3 px-4">{f}</th>
-                                ))}
+                            {priceColumns.map(col => (
+                              <th key={col.key} className="py-3 px-4">
+                                {col.label}
+                                {col.grouped && (
+                                  <span className="block text-[9px] text-amber-500/70 font-medium normal-case tracking-normal">
+                                    {col.frames.length} çerçeve birlikte
+                                  </span>
+                                )}
+                              </th>
+                            ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1e293b]">
                           {sizes.map(s => (
                             <tr key={s} className="text-xs hover:bg-[#151f32]/10">
                               <td className="py-3 px-4 text-slate-200 font-bold uppercase">{s}</td>
-                              {isGrouped
-                                ? frameGroupList.map(g => {
-                                    const common = groupPriceOf(priceMap, s, g);
-                                    return (
-                                      <td key={g.key} className="py-2 px-4">
-                                        <div className="relative flex items-center w-28">
-                                          <span className="absolute left-2.5 text-slate-500">$</span>
-                                          <input
-                                            type="number"
-                                            step="0.01"
-                                            value={common === null ? '' : (common || '')}
-                                            onChange={(e) => handleGroupPriceChange(s, g, e.target.value)}
-                                            placeholder={common === null ? 'farklı' : '0'}
-                                            title={g.frames.join(', ')}
-                                            className={`w-full bg-[#151f32] border rounded-lg pl-6 pr-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 ${
-                                              common === null ? 'border-amber-500/40' : 'border-[#1e293b]'
-                                            }`}
-                                          />
-                                        </div>
-                                      </td>
-                                    );
-                                  })
-                                : frames.map(f => (
-                                    <td key={f} className="py-2 px-4">
-                                      <div className="relative flex items-center w-28">
-                                        <span className="absolute left-2.5 text-slate-500">$</span>
-                                        <input
-                                          type="number"
-                                          step="0.01"
-                                          value={priceMap[`${s}_${f}`] || ''}
-                                          onChange={(e) => handlePriceChange(s, f, e.target.value)}
-                                          placeholder="0"
-                                          className="w-full bg-[#151f32] border border-[#1e293b] rounded-lg pl-6 pr-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-                                        />
-                                      </div>
-                                    </td>
-                                  ))}
+                              {priceColumns.map(col => {
+                                const common = columnPriceOf(priceMap, s, col);
+                                return (
+                                  <td key={col.key} className="py-2 px-4">
+                                    <div className="relative flex items-center w-28">
+                                      <span className="absolute left-2.5 text-slate-500">$</span>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={common === null ? '' : (common || '')}
+                                        onChange={(e) => handleColumnPriceChange(s, col, e.target.value)}
+                                        placeholder={common === null ? 'farklı' : '0'}
+                                        title={col.grouped ? col.frames.join(', ') : col.label}
+                                        className={`w-full bg-[#151f32] border rounded-lg pl-6 pr-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 ${
+                                          common === null ? 'border-amber-500/40' : 'border-[#1e293b]'
+                                        }`}
+                                      />
+                                    </div>
+                                  </td>
+                                );
+                              })}
                             </tr>
                           ))}
                         </tbody>

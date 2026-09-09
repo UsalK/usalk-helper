@@ -1,71 +1,76 @@
-// Çerçeve seçeneklerinin fiyat gruplaması.
+// Fiyat matrisinde çerçevelerin tek sütunda toplanması.
 //
-// Uygulamada çerçeve türlerinin fiyatı üç kümede toplanır: rulo baskı,
-// gerdirilmiş kanvas ve çerçeveli baskılar. Çerçeveli olanların (Gold, Black,
-// Silver, White, Natural Wood, Walnut ...) fiyatı pratikte hep aynıdır; bu
-// yüzden fiyat matrisinde tek sütunda toplanabilirler.
+// Gruplama YALNIZCA çerçeveli seçeneklere (Gold, Black, Silver, White,
+// Natural Wood, Walnut ...) uygulanır; bunların fiyatı pratikte hep aynıdır.
+// Roll ve Stretched Wood kendi fiyatlarına sahiptir ve gruplama açıkken de
+// ayrı, kendi adlarıyla duran sütunlar olarak kalır.
 //
 // Gruplama yalnızca DÜZENLEME görünümünü etkiler. Kaydederken fiyatlar yine
 // her çerçeve için ayrı ayrı yazılır (combinations: {size, frame, price}),
 // böylece render, Etsy yükleme ve fiyat güncelleme tarafında hiçbir şey
 // değişmez.
 
-/** Bir çerçeve adının hangi fiyat grubuna girdiği. */
-export function frameGroupOf(frame) {
+/** Seçenek gerçek bir çerçeve mi, yoksa rulo/kanvas gibi ayrı bir ürün mü? */
+export function isFrameOption(frame) {
   const name = String(frame || '').toLowerCase();
-  if (name.includes('roll') || name.includes('rulo')) return 'roll';
-  if (name.includes('stretched') || name.includes('canvas') || name.includes('kanvas')) return 'canvas';
-  return 'frame';
+  if (name.includes('roll') || name.includes('rulo')) return false;
+  if (name.includes('stretched') || name.includes('canvas') || name.includes('kanvas')) return false;
+  return true;
 }
 
-export const FRAME_GROUP_LABELS = {
-  roll: 'Roll (Rulo)',
-  canvas: 'Stretched Wood',
-  frame: 'Çerçeveli'
-};
-
-/** Grupların matriste görünme sırası. */
-const GROUP_ORDER = ['roll', 'canvas', 'frame'];
+/** Gruplanmış çerçeve sütununun başlığı. */
+export const FRAME_COLUMN_LABEL = 'Çerçeveli';
 
 /**
- * Çerçeve listesini fiyat gruplarına ayırır.
- * Yalnızca içinde çerçeve bulunan gruplar döner.
+ * Fiyat matrisinin sütunlarını kurar.
+ *
+ * Gruplama kapalıyken her seçenek kendi sütunudur. Açıkken çerçeveli
+ * seçenekler tek sütunda toplanır; rulo/kanvas seçenekleri olduğu gibi kalır.
+ * Sütun sırası çerçeve listesindeki sırayı korur: gruplanmış sütun, ilk
+ * çerçevenin bulunduğu yere yerleşir.
  *
  * @param {string[]} frames
- * @returns {{key: string, label: string, frames: string[]}[]}
+ * @param {boolean} grouped
+ * @returns {{key: string, label: string, frames: string[], grouped: boolean}[]}
  */
-export function groupFrames(frames = []) {
-  const buckets = new Map();
-  for (const frame of frames) {
-    const key = frameGroupOf(frame);
-    if (!buckets.has(key)) buckets.set(key, []);
-    buckets.get(key).push(frame);
+export function buildPriceColumns(frames = [], grouped = false) {
+  if (!grouped) {
+    return frames.map(f => ({ key: f, label: f, frames: [f], grouped: false }));
   }
 
-  return GROUP_ORDER
-    .filter(key => buckets.has(key))
-    .map(key => ({
-      key,
-      label: FRAME_GROUP_LABELS[key],
-      frames: buckets.get(key)
-    }));
+  const columns = [];
+  let framePlaceholder = null;
+
+  for (const frame of frames) {
+    if (!isFrameOption(frame)) {
+      columns.push({ key: frame, label: frame, frames: [frame], grouped: false });
+      continue;
+    }
+    if (!framePlaceholder) {
+      framePlaceholder = { key: '__frames__', label: FRAME_COLUMN_LABEL, frames: [], grouped: true };
+      columns.push(framePlaceholder);
+    }
+    framePlaceholder.frames.push(frame);
+  }
+
+  return columns;
 }
 
 /**
- * Bir grubun ortak fiyatı. Gruptaki çerçevelerin fiyatları birbirinden
+ * Bir sütunun ortak fiyatı. Sütundaki çerçevelerin fiyatları birbirinden
  * farklıysa null döner; arayüz bunu "farklı" olarak gösterir.
  */
-export function groupPriceOf(priceMap, size, group) {
-  const values = group.frames.map(f => priceMap[`${size}_${f}`]);
+export function columnPriceOf(priceMap, size, column) {
+  const values = column.frames.map(f => priceMap[`${size}_${f}`]);
   const first = values[0];
   return values.every(v => v === first) ? (first ?? '') : null;
 }
 
-/** Grubun tüm çerçevelerine aynı fiyatı yazar. */
-export function setGroupPrice(priceMap, size, group, value) {
+/** Sütundaki tüm çerçevelere aynı fiyatı yazar. */
+export function setColumnPrice(priceMap, size, column, value) {
   const price = Number(value) || 0;
   const next = { ...priceMap };
-  for (const frame of group.frames) {
+  for (const frame of column.frames) {
     next[`${size}_${frame}`] = price;
   }
   return next;
