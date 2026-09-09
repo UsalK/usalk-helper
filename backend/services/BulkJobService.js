@@ -343,6 +343,12 @@ async function processItem(job, item, config) {
       targetMarket: config.target_market || 'US/UK',
       shopStyle: config.shop_style || 'vintage poster, art deco',
       dryRun: !!config.dry_run,
+      agentOptions: {
+        requestKey: `bulk:${job.id}:${item.id}`,
+        context: { type: 'bulk_update', jobId: job.id, productId, listingId: item.target_listing_id, dryRun: !!config.dry_run, uploadAfterCompletion: !config.dry_run },
+        isCancelled: () => isCancelled(job.id),
+        onWaiting: ({ message }) => touchItem(item.id, { step: message })
+      },
       onStep: (s) => touchItem(item.id, { step: s })
     });
 
@@ -389,7 +395,13 @@ async function processItem(job, item, config) {
     shopId,
     'etsy',
     sections,
-    setInfo
+    setInfo,
+    {
+      requestKey: `bulk:${job.id}:${item.id}`,
+      context: { type: 'bulk_create', jobId: job.id, productId, dryRun: !!config.dry_run, listingState: config.listing_state || 'configured_default', uploadAfterCompletion: !config.dry_run },
+      isCancelled: () => isCancelled(job.id),
+      onWaiting: ({ message }) => touchItem(item.id, { step: message })
+    }
   );
 
   // AI bir bölüm seçtiyse ürüne yaz; yükleme adımı bunu kullanır
@@ -533,6 +545,10 @@ async function runWorker() {
               touchItem(it.id, { status: 'cancelled', step: 'İptal edildi' });
             }
           } catch (err) {
+            if (err.code === 'AGENT_CANCELLED' || isCancelled(job.id)) {
+              touchItem(it.id, { status: 'cancelled', step: 'İptal edildi' });
+              return;
+            }
             console.error(`[BulkJob] ${it.file_name} başarısız:`, err.response?.data || err.message);
             touchItem(it.id, {
               status: 'error',

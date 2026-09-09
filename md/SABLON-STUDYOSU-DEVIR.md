@@ -8,27 +8,38 @@ oturumun koddan **çıkaramayacağı** bilgiler.
 
 ---
 
-## 1. Hemen yapılacak: tarayıcı render yolları hizalanmalı
+## 1. Tamamlandı: mockup çıktısında minimum kısa kenar
 
-Mockup üretiminin **üç** ayrı yolu var ve ikisi çıktı boyutu ayarını hiç
-görmüyor:
+7 Eylül devam oturumunda kullanıcı önceki küçültme kararını değiştirdi:
+**Büyük şablonlar küçülmeyecek. Kısa kenar en az 2000 px olacak.**
+Şablon dosyası yüklenirken orijinal boyutunda saklanır; mockup çağrıldığında
+çıktı tuvali büyütülür ve eser bu çözünürlükte yerleştirilir. Etsy yükleme
+yolu oluşan JPEG'i ayrıca boyutlandırmadan gönderir.
 
-| Yol | Dosya | Çıktı boyutu |
-|---|---|---|
-| Toplu Yükleme işi (backend) | `backend/services/MockupRenderer.js` | `mockup_max_output_px` + büyütme ✅ |
-| Ürün Paneli → "Mockup Oluştur" | `frontend/src/pages/BulkUpload.jsx:797` | `const W = bgImg.width` ❌ |
-| Shopify toplu yükleme | `frontend/src/pages/ShopifyBulkUpload.jsx:443` | `const W = bgImg.width` ❌ |
+Backend (`backend/services/MockupRenderer.js`) ve Ürün Paneli
+(`frontend/src/pages/BulkUpload.jsx`) bu kuralla hizalandı; düz, perspektif
+ve statik şablonlar kapsanıyor. Shopify kullanıcının isteğiyle ertelendi,
+ileride kaldırılacak.
 
-Sonuç: 1024px şablon sihirbazdan **2000px**, panelden **1024px** çıkıyor;
-3000px şablon sihirbazdan 2000px, panelden 3000px.
+- 1024×1024 → 2000×2000
+- 1024×3072 → 2000×6000 (uzun kenar sınırı yok)
+- 600×600 → 2000×2000 (2×/4× büyütme sınırı yok)
+- 3000×3000 → 3000×3000
 
-**Yapılacak:** iki tarayıcı yolu da ayarları okuyup `MockupRenderer.js`
-içindeki `outputScaleFor()` ile aynı hesabı yapsın. Kullanıcı "tam hizala"yı
-tercih etti (büyük şablonlar da 2000'e insin: dosyalar küçülür, üretim
-hızlanır) ama onay son mesajda kaldı — **başlamadan teyit al.**
+Yeni ayar: `mockup_min_short_edge_px`, varsayılan ve alt sınır 2000.
+Eski `mockup_max_output_px` / `mockup_max_upscale` kayıtları artık okunmaz;
+koordinat veya şablon dosyası migration'ı gerekmez. Ürün Paneli JPEG
+kalitesini de mevcut `mockup_jpeg_quality` ayarından okur.
 
-Ayarlar: `mockup_max_output_px` (varsayılan 2000), `mockup_max_upscale`
-(varsayılan 2, `1` = kapalı). İkisi de Genel Ayarlar'da.
+Boyut hesabı `backend/services/mockupOutput.js` ve
+`frontend/src/utils/mockupOutput.js` içinde; birlikte güncellenmeli.
+Perspektif eser ön-ölçeklemesi de yeni çıktı boyutunu esas alıyor.
+
+Doğrulama (proje kökünden):
+`node --experimental-test-module-mocks backend/scripts/mockupOutputTest.mjs`
+Backend JPEG boyutları, orijinal dosyanın korunması, yerleşim, perspektif
+kaynak çözünürlüğü ve Ürün Paneli'nin düz/statik üretim kodu kontrol edilir.
+Frontend `npm run build` başarılı. Backend değişiklikten sonra yeniden başlatıldı.
 
 > Not: backend `node server.js` ile çalışıyor, otomatik yenilemiyor.
 > Backend değişikliklerinden sonra yeniden başlatmak gerekiyor.

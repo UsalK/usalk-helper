@@ -8,7 +8,21 @@ import { generateSEO } from '../services/KimiService.js';
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+router.get('/agent-guide', (req, res) => {
+  const guidePath = join(__dirname, '../../agent-help.md');
+  if (!fs.existsSync(guidePath)) {
+    return res.status(404).json({ error: `Agent rehberi bulunamadı: ${guidePath}` });
+  }
+  res.json({
+    guidePath,
+    prompt: `Önce şu dosyayı tamamen oku: "${guidePath}". usalk-helper üzerinden görsel yükleme, varyasyon eşleme, mockup oluşturma, SEO, section seçimi ve Etsy yayınlama akışını bu rehbere göre yürüt. Yalnızca bu görevde belirttiğim görselleri ve mağazaları işle; kapsam verilmemişse önce bunları sor. Kritik: geçerli kargo profili, eksiksiz fiyatlar ve ürünün gerçek mockupları yoksa yükleme yapma. Statik description ve görselleri sınıflandırmaya yeterli section bulunduğunu doğrula. Aktif AI Modeli ayarının kaydedilmiş değerini oku: AI Agent (desktop-agent) seçiliyse görseli kendin inceleyip SEO'yu bizzat oluştur ve agentSeo köprüsüyle teslim et; bir model seçiliyse uygulamanın OpenRouter çağrısını kullan, SEO'yu kendin yazma ve modeli değiştirme. Önce yerel hazırlık ve kontrolleri tamamla; ardından aynı ürünleri listing_state: active ile yükle ve Etsy'de gerçekten active olduklarını doğrula. Hazırlıkta oluşturduğun ürünleri yeniden create işine gönderme. Tüm akışı tamamla; ilgisiz ayarları değiştirme.`
+  });
+});
+
 router.post('/generate', async (req, res, next) => {
+  const controller = new AbortController();
+  const onClose = () => { if (!res.writableEnded) controller.abort(); };
+  res.on('close', onClose);
   try {
     const { productId, targetMarket, shopStyle } = req.body;
     
@@ -39,7 +53,11 @@ router.post('/generate', async (req, res, next) => {
     const setInfo = getSetProfileInfo(product.variation_profile_id, product.shop_id);
 
     // Call Kimi service for physical wall art SEO
-    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id, platform, null, setInfo);
+    const seoData = await generateSEO(imagePath, targetMarket, shopStyle, product.shop_id, platform, null, setInfo, {
+      signal: controller.signal,
+      context: { type: 'manual_seo', productId, uploadAfterCompletion: false }
+    });
+    if (controller.signal.aborted) return;
     
     // Extract info
     const title = seoData.title || '';
@@ -72,8 +90,11 @@ router.post('/generate', async (req, res, next) => {
       _meta: seoData._meta || null
     });
   } catch (err) {
+    if (controller.signal.aborted) return;
     console.error("SEO Generation Error:", err);
     next(err);
+  } finally {
+    res.off('close', onClose);
   }
 });
 

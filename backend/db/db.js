@@ -2,15 +2,17 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { importTemplatesFromSeed } from '../services/TemplateSync.js';
+import { initializeLocalSnapshots } from '../services/TemplateSync.js';
+import { initializeLocalData } from '../services/LocalData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const dbPath = join(__dirname, 'database.db');
+initializeLocalData();
 const db = new DatabaseSync(dbPath);
 
-// Default export'u BURADA veriyoruz, dosyanin sonunda degil. services/TemplateSync.js
+// Default export burada tanımlanır; yerel çıktı servisi bu bağlantıyı kullanır. services/TemplateSync.js
 // bu modulu default import'la geri cagiriyor (dairesel bagimlilik) ve seed importu
 // bu dosyanin en altina gelmeden, satir ~529'da calisiyor. Export en sonda kalirsa
 // o an binding hala TDZ'de olur ve seed yuklemesi her aciliista
@@ -453,16 +455,9 @@ export function seedDefaultProfilesForShop(shopId) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(shop_id, id) DO NOTHING
   `);
-  // Set profillerinin panel bilgisi kod tarafında tanımlıdır; eski satırlarda
-  // eksik olabileceği için her açılışta tazelenir.
-  const syncStmt = db.prepare(`
-    UPDATE variation_profiles
-    SET name = ?, ratio = ?, kind = ?, panel_count = ?, panel_ratio = ?
-    WHERE id = ? AND shop_id = ?
-  `);
 
   // Yeni baglanan bir magaza bos fiyat tablosuyla acilmasin: 'default_shop'
-  // satirlari config/profiles_seed.json'dan gelen referans olcu/cerceve/fiyat
+  // satirlari kullanicinin yerel veritabanindaki referans olcu/cerceve/fiyat
   // setini tasiyor ve yeni magazaya baslangic degeri olarak kopyalaniyor.
   // template_ids KOPYALANMAZ - mockup sablonlari magazaya ozel, baska bir
   // magazanin sablon ID'lerini tasimak kirik referans olur.
@@ -497,26 +492,10 @@ export function seedDefaultProfilesForShop(shopId) {
       panelCount,
       panelRatio
     );
-    if (kind === 'set') {
-      syncStmt.run(d.name, d.ratio, kind, panelCount, panelRatio, d.id, shopId);
-    }
   });
 }
 
-// Pasife alınan profilleri veritabanından da temizle.
-// Eski 'double_1_2' kaydı silinmezse şablon/fiyat listelerinde ölü veri kalıyor.
-try {
-  const purge = db.prepare('DELETE FROM variation_profiles WHERE id = ?');
-  DISABLED_PROFILE_IDS.forEach(id => {
-    const before = db.prepare('SELECT COUNT(*) as count FROM variation_profiles WHERE id = ?').get(id);
-    if (before && before.count > 0) {
-      purge.run(id);
-      console.log(`[Schema Upgrade] Pasif varyasyon profili '${id}' (${before.count} kayıt) temizlendi.`);
-    }
-  });
-} catch (err) {
-  console.error('Pasif varyasyon profilleri temizlenemedi:', err.message);
-}
+// Legacy profiles remain stored; UI filtering does not delete user data.
 
 // Global helper: Copy general settings template to a new shop
 export function copySettingsTemplateToShop(fromShopId, toShopId) {
@@ -566,19 +545,21 @@ try {
   seedDefaultProfilesForShop(activeShop.shop_id);
 }
 
-// Auto-restore templates and variation profiles from seed JSON if present
+// Create missing local exports only. Never overwrite DB rows from seed files.
 try {
-  importTemplatesFromSeed();
+  initializeLocalSnapshots();
 } catch (err) {
-  console.error("Failed to import templates from seed:", err);
+  console.error('Failed to initialize local exports:', err);
 }
 
 // Dynamic Shopify credentials auto-seed on startup
 async function seedDefaultShopifyAuth() {
-  const shop = process.env.SHOPIFY_SHOP || 'usalkarthouse.myshopify.com';
-  const clientId = process.env.SHOPIFY_CLIENT_ID || '2d0698ed54587eb48e6aaa59d29f4e3d';
+  const shop = process.env.SHOPIFY_SHOP || '';
+  const clientId = process.env.SHOPIFY_CLIENT_ID || '';
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET || '';
-  const themePath = join(__dirname, '..', 'storage', 'shopify', 'usalkarthouse', 'theme');
+  if (!shop || !clientId || !clientSecret) return;
+  if (db.prepare('SELECT 1 FROM shopify_auth LIMIT 1').get()) return;
+  const themePath = process.env.SHOPIFY_THEME_PATH || '';
 
   try {
     console.log('[Shopify Seed] Checking active Shopify connection...');
@@ -608,7 +589,7 @@ async function seedDefaultShopifyAuth() {
             theme_path = excluded.theme_path,
             is_active = 1
         `);
-        stmt.run(shop, 'Usalk Art House', accessToken, themePath);
+        stmt.run(shop, process.env.SHOPIFY_SHOP_NAME || shop, accessToken, themePath);
         db.exec('COMMIT');
         console.log('[Shopify Seed] Successfully auto-seeded Shopify connection & access token!');
       } catch (dbErr) {

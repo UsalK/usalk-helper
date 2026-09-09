@@ -6,6 +6,7 @@ import {
   Wand2, Plus, ArrowLeft, Trash2, Eye, CheckCircle, Trash, Folder
 } from 'lucide-react';
 import { warpImage } from '../utils/homography';
+import { getMockupOutputSize } from '../utils/mockupOutput';
 import { filterAutoMatchProfiles, isSetProfile } from '../utils/profileFlags';
 import {
   parseRatio, parseRatioKey, ratioKeyLabel, sourceRatioLabel,
@@ -818,6 +819,12 @@ export default function BulkUpload({ etsyConnected }) {
       throw new Error('Uyumlu şablon veya statik görsel bulunamadı.');
     }
 
+    const { data: mockupSettings } = await axios.get(`${API_BASE}/settings`);
+    const minShortEdge = mockupSettings.mockup_min_short_edge_px;
+    const requestedQuality = Number(mockupSettings.mockup_jpeg_quality ?? 92);
+    const jpegQuality = Number.isFinite(requestedQuality)
+      ? Math.min(100, Math.max(70, requestedQuality)) / 100 : 0.92;
+
     // 1. Generate normal mockups
     if (mockupTpls.length > 0) {
       const productImg = await loadImage(`http://localhost:3001/${p.image_path}`);
@@ -839,8 +846,7 @@ export default function BulkUpload({ etsyConnected }) {
 
           const canvas = renderCanvasRef.current;
           const ctx = canvas.getContext('2d');
-          const W = bgImg.width;
-          const H = bgImg.height;
+          const { width: W, height: H } = getMockupOutputSize(bgImg.width, bgImg.height, minShortEdge);
           canvas.width = W;
           canvas.height = H;
 
@@ -915,7 +921,7 @@ export default function BulkUpload({ etsyConnected }) {
               warpImage(ctx, preScaledImg, [tl, tr, br, bl], 24);
             });
           }
-          const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+          const base64Data = canvas.toDataURL('image/jpeg', jpegQuality);
           await axios.post(`${API_BASE}/mockup/save`, {
             productId: p.id,
             templateId: tpl.id,
@@ -926,7 +932,7 @@ export default function BulkUpload({ etsyConnected }) {
       }
     }
 
-    // 2. Process static templates (simply copy the template background unmodified)
+    // 2. Statik şablonlarda da kısa kenarı tamamla.
     for (const tpl of staticTpls) {
       try {
         const staticImg = await loadImage(`http://localhost:3001/${tpl.background_path}`);
@@ -939,11 +945,14 @@ export default function BulkUpload({ etsyConnected }) {
           
           const canvas = renderCanvasRef.current;
           const ctx = canvas.getContext('2d');
-          canvas.width = staticImg.width;
-          canvas.height = staticImg.height;
-          ctx.drawImage(staticImg, 0, 0);
+          const { width: W, height: H } = getMockupOutputSize(staticImg.width, staticImg.height, minShortEdge);
+          canvas.width = W;
+          canvas.height = H;
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(staticImg, 0, 0, W, H);
           
-          const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+          const base64Data = canvas.toDataURL('image/jpeg', jpegQuality);
           await axios.post(`${API_BASE}/mockup/save`, {
             productId: p.id,
             templateId: `static_${tpl.id}`,
@@ -972,9 +981,15 @@ export default function BulkUpload({ etsyConnected }) {
       // Asynchronously process the task to allow subsequent tasks to begin
       (async () => {
         try {
-          if (nextTask.type === 'seo') {
-            const res = await axios.post(`${API_BASE}/ai/generate`, { productId: nextTask.productId });
-            const modelUsed = res.data._meta?.model || 'Bilinmeyen Model';
+            if (nextTask.type === 'seo') {
+              const { data: aiSettings } = await axios.get(`${API_BASE}/settings`);
+              if (aiSettings.nvidia_model === 'desktop-agent') {
+                setQueue(prev => prev.map(t => t.id === nextTask.id
+                  ? { ...t, detail: 'AI Agent sonucu bekleniyor' } : t));
+              }
+              const res = await axios.post(`${API_BASE}/ai/generate`, { productId: nextTask.productId });
+              const modelUsed = res.data._meta?.model === 'desktop-agent'
+                ? 'AI Agent' : res.data._meta?.model || 'Bilinmeyen Model';
             const isFallback = res.data._meta?.fallbackUsed ? ' (Yedek Model)' : '';
             showToast(`"${nextTask.productTitle}" SEO içerikleri ${modelUsed}${isFallback} ile oluşturuldu.`, 'success');
             if (selectedProduct && selectedProduct.id === nextTask.productId) {
@@ -2395,7 +2410,7 @@ export default function BulkUpload({ etsyConnected }) {
         const isDone = activeTasks.length === 0;
         
         const sampleTask = activeTasks[0] || queue[queue.length - 1];
-        const typeLabel = sampleTask.type === 'seo' ? 'İçerik Sihirleniyor' : sampleTask.type === 'mockup' ? 'Mockup Hazırlanıyor' : 'Etsy\'de Yayınlanıyor';
+        const typeLabel = sampleTask.detail || (sampleTask.type === 'seo' ? 'İçerik Sihirleniyor' : sampleTask.type === 'mockup' ? 'Mockup Hazırlanıyor' : 'Etsy\'de Yayınlanıyor');
         const percent = Math.round((current / total) * 100);
 
         return (

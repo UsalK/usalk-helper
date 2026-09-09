@@ -64,7 +64,8 @@ export async function updateListingFromProduct(input) {
     targetMarket = 'US/UK',
     shopStyle = 'vintage poster, art deco',
     dryRun = false,
-    onStep = () => {}
+    onStep = () => {},
+    agentOptions = {}
   } = input;
 
   if (!listingId) throw new Error('listingId zorunludur.');
@@ -111,7 +112,16 @@ export async function updateListingFromProduct(input) {
   const imageAbs = join(PROJECT_ROOT, product.image_path);
   // Çok panelli profillerde SEO metni set diliyle yazılır
   const setInfo = getSetProfileInfo(product.variation_profile_id, activeShop.shop_id);
-  const seo = await generateSEO(imageAbs, targetMarket, shopStyle, activeShop.shop_id, 'etsy', sections, setInfo);
+  const seo = await generateSEO(imageAbs, targetMarket, shopStyle, activeShop.shop_id, 'etsy', sections, setInfo, {
+    ...agentOptions,
+    context: agentOptions.context || { type: 'listing_update', productId, listingId, dryRun, uploadAfterCompletion: !dryRun },
+    onWaiting: agentOptions.onWaiting || (({ message }) => onStep(message))
+  });
+  if (agentOptions.isCancelled?.()) {
+    const err = new Error('İş iptal edildi.');
+    err.code = 'AGENT_CANCELLED';
+    throw err;
+  }
 
   // Yerel kaydı da güncelle ki panelde doğru görünsün.
   // ID metin olarak saklanır: node:sqlite JS sayılarını REAL olarak bağlıyor

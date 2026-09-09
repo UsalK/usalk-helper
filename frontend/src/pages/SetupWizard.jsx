@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Check, Copy, ExternalLink, Loader2, AlertCircle, ShieldCheck,
-  Globe, Store, Truck, Sparkles, PartyPopper, ChevronRight, RefreshCw, Lock
+  Globe, Store, Truck, Sparkles, PartyPopper, ChevronRight, RefreshCw, SkipForward
 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -149,15 +149,16 @@ export default function SetupWizard({ onFinish, onShopChange }) {
   // OAuth penceresi açıkken bağlantıyı yokla.
   useEffect(() => {
     if (!polling) return;
+    let cancelled = false;
     const id = setInterval(async () => {
       const s = await loadStatus();
-      if (s?.shopConnected) {
+      if (!cancelled && s?.shopConnected) {
         setPolling(false);
         onShopChange?.();
         setStepIndex(2);
       }
     }, 2000);
-    return () => clearInterval(id);
+    return () => { cancelled = true; clearInterval(id); };
   }, [polling, loadStatus, onShopChange]);
 
   // Profil adımına gelindiğinde mevcut kayıtları varsayılan seçim yap.
@@ -251,15 +252,30 @@ export default function SetupWizard({ onFinish, onShopChange }) {
     setStepIndex(4);
   });
 
+  const goToStep = (index) => {
+    setPolling(false);
+    setError(null);
+    setStepIndex(index);
+  };
+
   const finish = () => run(async () => {
+    setPolling(false);
     await axios.post(`${API_BASE}/setup/complete`);
     onFinish?.();
   });
 
   if (!status) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0b0f19] text-amber-500">
-        <Loader2 className="animate-spin" size={28} />
+      <div className="flex items-center justify-center min-h-screen bg-[#0b0f19] text-slate-100 p-6">
+        <div className="max-w-md w-full space-y-4 text-center">
+          <h1 className="text-xl font-bold">Usalk Helper Kurulumu</h1>
+          {error ? <ErrorBox message={error} /> : <Loader2 className="animate-spin mx-auto text-amber-500" size={28} />}
+          <button onClick={finish} disabled={busy} className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-bold inline-flex items-center gap-2">
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <SkipForward size={14} />}
+            Hepsini atla
+          </button>
+          {error && <button onClick={loadStatus} disabled={busy} className="block mx-auto text-xs text-slate-400 hover:text-slate-200">Yeniden dene</button>}
+        </div>
       </div>
     );
   }
@@ -272,11 +288,17 @@ export default function SetupWizard({ onFinish, onShopChange }) {
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Başlık */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Usalk Helper Kurulumu</h1>
-          <p className="text-xs text-slate-400">
-            Aşağıdaki adımlar sırayla tamamlanmalı — her adım bir öncekinin ürettiği bilgiye dayanıyor.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold">Usalk Helper Kurulumu</h1>
+            <p className="text-xs text-slate-400">
+              İstediğiniz adıma geçebilir veya kurulumu atlayıp daha sonra tamamlayabilirsiniz.
+            </p>
+          </div>
+          <button onClick={finish} disabled={busy} className="shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-bold inline-flex items-center justify-center gap-2">
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <SkipForward size={14} />}
+            Hepsini atla
+          </button>
         </div>
 
         {/* Adım göstergesi */}
@@ -285,23 +307,22 @@ export default function SetupWizard({ onFinish, onShopChange }) {
             const Icon = s.icon;
             const done = s.id !== 'done' && stepDone(s.id);
             const active = i === stepIndex;
-            const locked = i > stepIndex && !done;
             return (
               <button
                 key={s.id}
-                disabled={locked}
-                onClick={() => !locked && setStepIndex(i)}
+                disabled={busy}
+                aria-current={active ? 'step' : undefined}
+                aria-label={`${i + 1}. ${s.title}`}
+                onClick={() => goToStep(i)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-semibold transition-colors ${
                   active
                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
                     : done
                     ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
-                    : locked
-                    ? 'bg-[#0e1726] border-[#1e293b] text-slate-600 cursor-not-allowed'
                     : 'bg-[#0e1726] border-[#1e293b] text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {done ? <Check size={13} /> : locked ? <Lock size={12} /> : <Icon size={13} />}
+                {done ? <Check size={13} /> : <Icon size={13} />}
                 <span className="hidden sm:inline">{i + 1}. {s.title}</span>
                 <span className="sm:hidden">{i + 1}</span>
               </button>
@@ -458,7 +479,8 @@ export default function SetupWizard({ onFinish, onShopChange }) {
                 </button>
                 {status.shopConnected && (
                   <button
-                    onClick={() => setStepIndex(2)}
+                    onClick={() => goToStep(2)}
+                    disabled={busy}
                     className="px-5 bg-[#151f32] hover:bg-[#1e293b] border border-[#1e293b] text-slate-200 font-bold text-xs rounded-xl transition-colors flex items-center gap-2"
                   >
                     Devam <ChevronRight size={14} />
@@ -598,8 +620,8 @@ export default function SetupWizard({ onFinish, onShopChange }) {
           {current.id === 'ai' && (
             <div className="space-y-5">
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Başlık, açıklama ve etiket üretimi OpenRouter üzerinden çalışıyor.
-                Anahtar olmadan "Sihir (SEO)" butonu çalışmaz.
+                Bir AI modeli seçtiğinizde başlık, açıklama ve etiket üretimi için OpenRouter anahtarı gerekir.
+                AI Agent kullanacaksanız bu adımı atlayıp Genel Ayarlar'dan AI Agent seçebilirsiniz.
               </p>
 
               <Field label="OpenRouter API Key" hint="openrouter.ai/keys adresinden alabilirsiniz.">
@@ -633,13 +655,22 @@ export default function SetupWizard({ onFinish, onShopChange }) {
                 <PartyPopper size={22} className="text-emerald-400" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-sm font-bold">Kurulum tamamlandı</h3>
+                <h3 className="text-sm font-bold">{status.allDone ? 'Kurulum tamamlandı' : 'Kuruluma daha sonra devam edebilirsiniz'}</h3>
                 <p className="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">
-                  Mağazanız bağlı, satış profilleri tanımlı ve yapay zekâ anahtarı kayıtlı.
-                  Varyasyon profilleriniz önerilen fiyatlarla hazır — Varyasyon Profilleri
-                  sayfasından dilediğiniz gibi düzenleyebilirsiniz.
+                  {status.allDone
+                    ? 'Kayıtlı kurulum adımlarınız hazır. Ayarlarınızı ilgili sayfalardan dilediğiniz zaman düzenleyebilirsiniz.'
+                    : 'Atladığınız adımları menüdeki Kurulum Sihirbazı üzerinden tamamlayabilirsiniz. Kayıtlı ayarlarınız korunur.'}
                 </p>
               </div>
+              {!status.allDone && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {STEPS.filter(s => s.id !== 'done' && !stepDone(s.id)).map(s => (
+                    <button key={s.id} onClick={() => goToStep(STEPS.findIndex(step => step.id === s.id))} disabled={busy} className="px-3 py-2 rounded-lg bg-[#151f32] border border-[#1e293b] text-xs text-slate-300 hover:text-white">
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 onClick={finish}
                 disabled={busy}
@@ -650,17 +681,17 @@ export default function SetupWizard({ onFinish, onShopChange }) {
               </button>
             </div>
           )}
+
+          {current.id !== 'done' && (
+            <div className="flex justify-end border-t border-[#1e293b] pt-4">
+              <button onClick={() => goToStep(stepIndex + 1)} disabled={busy} className="px-4 py-2.5 rounded-xl border border-slate-600 bg-[#151f32] hover:bg-[#1e293b] disabled:opacity-50 text-slate-200 text-xs font-semibold inline-flex items-center gap-2">
+                Bu adımı atla <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Sonradan tamamlama kaçışı */}
-        {!status.allDone && (
-          <button
-            onClick={finish}
-            className="w-full text-[11px] text-slate-500 hover:text-slate-300 transition-colors py-2"
-          >
-            Kurulumu şimdilik atla (Genel Ayarlar'dan tekrar açabilirsiniz)
-          </button>
-        )}
+        <p className="text-[11px] text-slate-500 text-center">Atlanan adımlar ayarları değiştirmez. Kurulum Sihirbazı'nı menüden tekrar açabilirsiniz.</p>
       </div>
     </div>
   );

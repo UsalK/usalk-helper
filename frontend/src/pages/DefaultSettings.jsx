@@ -23,8 +23,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
   const [settings, setSettings] = useState({
     default_price: 35.00,
     shop_discount_percent: 0,
-    mockup_max_output_px: 2000,
-    mockup_max_upscale: 2,
+    mockup_min_short_edge_px: 2000,
     mockup_jpeg_quality: 92,
     default_taxonomy_id: 1027, // Wall Decor
     default_who_made: 'i_did',
@@ -417,6 +416,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                   }`}
                 >
                   <option value="qwen/qwen3.7-plus">Qwen 3.7 Plus (Önerilen)</option>
+                  <option value="desktop-agent">AI Agent (Masaüstü)</option>
                   <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı)</option>
                   <option value="qwen/qwen3-vl-32b-instruct">Qwen 3 VL 32B Instruct</option>
                   <option value="openai/gpt-5-mini">OpenAI GPT-5 Mini</option>
@@ -427,8 +427,26 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                   <option value="google/gemini-3.8-flash">Gemini 3.8 Flash</option>
                 </select>
                 <p className="text-[10px] text-slate-500">
-                  Sihirli içerik analizinde kullanılacak yapay zeka modelini seçin.
+                  {settings.nvidia_model === 'desktop-agent'
+                    ? 'Başlık, etiket ve açıklama için masaüstü agentınızın sonucu beklenir; OpenRouter kullanılmaz. Agent sonucu teslim edince mevcut yükleme akışı devam eder. Agentı ayrıca çalıştırmanız gerekir.'
+                    : 'Başlık, etiket ve açıklama seçtiğiniz modelle OpenRouter üzerinden hazırlanır. Masaüstü agentı yükleme akışını yönetebilir.'}
                 </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const { data } = await axios.get(`${API_BASE}/ai/agent-guide`);
+                        await navigator.clipboard.writeText(data.prompt);
+                        setSuccessMsg('Agent talimatı kopyalandı. Masaüstü agentınıza yapıştırabilirsiniz.');
+                      } catch {
+                        setErrorMsg('Talimat kopyalanamadı. Arka uç bağlantısını kontrol edin veya agentınıza usalk-helper proje kökündeki agent-help.md dosyasını okutun.');
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs font-semibold hover:bg-amber-500/20"
+                  >
+                    Agent talimatını kopyala
+                  </button>
+                <p className="text-[10px] text-slate-500">Talimat tüm yükleme rehberinin dosya yolunu içerir. Agent kaydedilmiş model seçimini kullanır; seçimi değiştirdiyseniz önce kaydedin.</p>
               </div>
 
               {/* Otomatik Senkronizasyon Toggle */}
@@ -496,45 +514,22 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                     />
                   </div>
 
-                  {/* Mockup Çıktı Boyutu */}
+                  {/* Mockup Minimum Kısa Kenar */}
                   <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Mockup Çıktı Boyutu (px)</label>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Mockup Minimum Kısa Kenar (px)</label>
                     <input
                       type="number"
                       step="100"
-                      min="0"
-                      name="mockup_max_output_px"
-                      value={settings.mockup_max_output_px}
+                      min="2000"
+                      name="mockup_min_short_edge_px"
+                      value={settings.mockup_min_short_edge_px}
                       onChange={handleChange}
                       className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
                     />
                     <span className="text-[10px] text-slate-500 block leading-relaxed">
-                      Mockup'ların en uzun kenarı. Render süresinin ~%70'i JPEG sıkıştırma ve bu doğrudan
-                      piksel sayısına bağlı. <strong className="text-slate-400">2000</strong> Etsy'nin önerdiği alt sınır
-                      ve varsayılan. <strong className="text-slate-400">0</strong> yazarsan şablonun tam çözünürlüğü
-                      kullanılır (yaklaşık 2 kat yavaş).
-                    </span>
-                  </div>
-
-                  {/* Küçük Şablonları Büyütme */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Küçük Şablonları Büyütme (kat)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="4"
-                      name="mockup_max_upscale"
-                      value={settings.mockup_max_upscale}
-                      onChange={handleChange}
-                      className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
-                    />
-                    <span className="text-[10px] text-slate-500 block leading-relaxed">
-                      Çıktı boyutunun altında kalan şablonlar bu kata kadar büyütülür.
-                      <strong className="text-slate-400"> 2</strong> varsayılan: 1024px şablon 2000'e çıkar,
-                      600px şablon yalnızca 1200'e. Büyütme arka planda yeni ayrıntı üretmez; kazanç, eserin
-                      mockup içinde daha yüksek çözünürlükte işlenmesi ve Etsy'de yakınlaştırmanın çalışmasıdır.
-                      <strong className="text-slate-400"> 1</strong> yazarsan büyütme kapanır.
+                      En az <strong className="text-slate-400">2000</strong> px. Küçük şablonlar mockup
+                      üretilirken oranları korunarak büyütülür: 1024×3072 → 2000×6000.
+                      Büyük şablonlar küçültülmez. Kaydettiğiniz şablon dosyası orijinal boyutunda kalır.
                     </span>
                   </div>
 

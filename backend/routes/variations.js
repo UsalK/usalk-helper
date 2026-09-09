@@ -1,4 +1,5 @@
 import express from 'express';
+import { exportTemplatesToSeed } from '../services/TemplateSync.js';
 import db, { getActiveShop, DISABLED_PROFILE_IDS } from '../db/db.js';
 
 const router = express.Router();
@@ -73,6 +74,7 @@ router.post('/', (req, res, next) => {
       panelCount,
       panelRatio
     );
+    exportTemplatesToSeed();
     res.json({
       id, shop_id: activeShop.shop_id, name, ratio, sizes, frames, combinations, template_ids,
       kind, panel_count: panelCount, panel_ratio: panelRatio
@@ -111,6 +113,7 @@ router.put('/:id', (req, res, next) => {
       id,
       activeShop.shop_id
     );
+    exportTemplatesToSeed();
     res.json({
       id, shop_id: activeShop.shop_id, name, ratio, sizes, frames, combinations, template_ids,
       kind, panel_count: panelCount, panel_ratio: panelRatio
@@ -127,6 +130,7 @@ router.delete('/:id', (req, res, next) => {
     const activeShop = getActiveShop();
     const stmt = db.prepare('DELETE FROM variation_profiles WHERE id = ? AND shop_id = ?');
     stmt.run(id, activeShop.shop_id);
+    exportTemplatesToSeed();
     res.json({ success: true });
   } catch (err) {
     next(err);

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import db, { getActiveShop } from '../db/db.js';
 import { Jimp } from 'jimp';
 import { v4 as uuidv4 } from 'uuid';
+import { AGENT_MODEL, requestAgentSEO } from './AgentSEOService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -397,28 +398,6 @@ This listing sells a SET OF ${panelCount} separate panels that hang side by side
 }
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
-
-// Bir API anahtarının hangi sağlayıcıya ait olduğunu önekinden belirler.
-// NVIDIA anahtarını OpenRouter'a (veya tersini) göndermek her zaman 401 döner.
-function detectProvider(key) {
-  if (typeof key !== 'string' || !key.trim()) return null;
-  const k = key.trim();
-  if (k.startsWith('nvapi-')) return 'nvidia';
-  if (k.startsWith('sk-or-')) return 'openrouter';
-  return null; // bilinmeyen önek: kaynağına göre karar verilir
-}
-
-// Elde bulunan anahtarlardan sağlayıcı bazlı bir liste kurar.
-// Sıra korunur: OpenRouter birincil, NVIDIA yedek.
-function resolveProviderKeys({ openRouterKey, nvidiaEnvKey }) {
-  const found = { openrouter: null, nvidia: null };
-
-  if (openRouterKey?.trim()) found.openrouter = openRouterKey.trim();
-  if (nvidiaEnvKey?.trim()) found.nvidia = nvidiaEnvKey.trim();
-
-  return found;
-}
 
 // Provider-specific way of asking for "as little reasoning as possible".
 //
@@ -474,7 +453,7 @@ async function withRetry(fn, retries = 2, delayMs = 2000) {
  * @param {Array<{shop_section_id, title}>} sections Verilirse AI, görsele en uygun
  *   mağaza bölümünü bu listeden seçer ve sonuçta shop_section_id döner.
  */
-export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null, setInfo = null) {
+export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle = "vintage poster, art deco", shopId = null, platform = "etsy", sections = null, setInfo = null, agentOptions = {}) {
   const targetShopId = shopId || getActiveShop().shop_id;
 
   // 1. Read selected AI model from DB (default to openai/gpt-5-mini).
@@ -489,7 +468,7 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
     const setting = stmt.get(targetShopId, 'nvidia_model');
     if (setting) {
       const parsedModel = JSON.parse(setting.value);
-      if (parsedModel && validModels.includes(parsedModel)) {
+      if (parsedModel && (parsedModel === AGENT_MODEL || validModels.includes(parsedModel))) {
         selectedModel = parsedModel;
       }
     }
@@ -497,20 +476,23 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
     console.error("Error reading ai model from db:", err);
   }
 
-  // Get OpenRouter Key and NVIDIA Key from env
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const nvidiaEnvKey = process.env.NVIDIA_API_KEY;
+  // A named model must use OpenRouter; never silently switch provider or model.
+  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (selectedModel !== AGENT_MODEL && (!openRouterKey || openRouterKey.startsWith('nvapi-'))) {
+    throw new Error('Seçili model için geçerli bir OPENROUTER_API_KEY gerekli. AI Agent veya başka sağlayıcıya otomatik geçiş yapılmaz.');
+  }
 
   // Optimize and resize image using Jimp (down to 768px for token efficiency)
-  const imageBuffer = fs.readFileSync(imagePath);
-  const image = await Jimp.read(imageBuffer);
-  if (image.width > 768) {
-    image.resize({ w: 768 });
+  let dataUrl = null;
+  if (selectedModel !== AGENT_MODEL) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const image = await Jimp.read(imageBuffer);
+    if (image.width > 768) image.resize({ w: 768 });
+    const isPng = imagePath.toLowerCase().endsWith('.png');
+    const isWebp = imagePath.toLowerCase().endsWith('.webp');
+    const mimeType = isPng ? 'image/png' : (isWebp ? 'image/webp' : 'image/jpeg');
+    dataUrl = await image.getBase64(mimeType);
   }
-  const isPng = imagePath.toLowerCase().endsWith('.png');
-  const isWebp = imagePath.toLowerCase().endsWith('.webp');
-  const mimeType = isPng ? 'image/png' : (isWebp ? 'image/webp' : 'image/jpeg');
-  const dataUrl = await image.getBase64(mimeType);
 
   // Mağaza bölümü otomatik seçimi: bölüm listesi verilirse şemaya bir alan
   // eklenir ve AI görsele en uygun bölümü BU listeden seçer. Serbest metin
@@ -583,36 +565,31 @@ Schema:
 }${sectionInstruction}${setInstruction}${ARTIST_POLICY_PROMPT}${LISTING_COMPLIANCE_PROMPT}
 CRITICAL: Return ONLY raw JSON without markdown blocks.`;
 
-  // Sağlayıcı bazlı deneme sırası: OpenRouter (seçilen model) birincil, NVIDIA (Nemotron VL) yedek.
-  const providerKeys = resolveProviderKeys({ openRouterKey, nvidiaEnvKey });
+  // AI Agent runs locally; named models go only to the selected OpenRouter model.
   const queueToTry = [];
 
-  if (providerKeys.openrouter) {
+  if (selectedModel !== AGENT_MODEL) {
     queueToTry.push({
       url: OPENROUTER_URL,
       model: selectedModel,
-      key: providerKeys.openrouter,
+      key: openRouterKey,
       isOpenRouter: true
     });
-  }
-
-  if (providerKeys.nvidia) {
-    queueToTry.push({
-      url: NVIDIA_URL,
-      model: "nvidia/nemotron-nano-12b-v2-vl",
-      key: providerKeys.nvidia,
-      isOpenRouter: false
-    });
-  }
-
-  if (queueToTry.length === 0) {
-    throw new Error('AI anahtarı bulunamadı. .env dosyasına OPENROUTER_API_KEY ekleyin.');
   }
 
   let finalResponse = null;
   let successModel = null;
   let lastError = null;
   let reasoningSuppressed = false;
+
+  if (selectedModel === AGENT_MODEL) {
+    const result = await requestAgentSEO({
+      imagePath, shopId: targetShopId, platform, targetMarket, shopStyle,
+      systemPrompt, promptText, sections: usableSections, setInfo
+    }, agentOptions);
+    finalResponse = { choices: [{ message: { content: JSON.stringify(result) } }] };
+    successModel = AGENT_MODEL;
+  }
 
   for (const attempt of queueToTry) {
     const payload = {
@@ -1130,7 +1107,7 @@ CRITICAL: Return ONLY raw JSON without markdown blocks.`;
     shop_section_title: chosenSection ? chosenSection.title : null,
     _meta: {
       model: successModel,
-      fallbackUsed: successModel !== queueToTry[0].model,
+      fallbackUsed: selectedModel !== AGENT_MODEL && successModel !== queueToTry[0]?.model,
       reasoningSuppressed,          // kapatmayı istedik mi
       reasoningTokens,              // gerçekten düşündü mü (>0 ise istek yok sayılmış)
       aiTagCount,
@@ -1142,4 +1119,3 @@ CRITICAL: Return ONLY raw JSON without markdown blocks.`;
     }
   };
 }
-

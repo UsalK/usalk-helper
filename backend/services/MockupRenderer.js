@@ -19,6 +19,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import db, { getProductStorageFolder, DISABLED_PROFILE_IDS, isSetProfileId } from '../db/db.js';
 import { warpImageFast } from './warpFast.js';
+import { getMockupOutputSize } from './mockupOutput.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '../..');
@@ -534,11 +535,8 @@ export async function generateMockupsForProduct(product, options = {}) {
     throw new Error('Uyumlu şablon veya statik görsel bulunamadı.');
   }
 
-  // Çıktı ayarları. Render maliyetinin %74'ü JPEG encode ve bu doğrudan
-  // piksel sayısı ile kaliteye bağlı; ikisi de Genel Ayarlar'dan ayarlanabilir.
-  //
-  // Varsayılan 2000px, Etsy'nin kendi önerdiği alt sınır ("en az 2000 piksel").
-  // 0 girilirse şablonun tam çözünürlüğü kullanılır.
+  // Şablon dosyası ve önbelleği orijinal boyutta kalır; yalnızca çıktı büyür.
+  // Eski uzun kenar üst sınırı ve büyütme katsayısı artık kullanılmaz.
   const readSetting = (key, fallback) => {
     try {
       const row = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?').get(shopId, key);
@@ -550,32 +548,7 @@ export async function generateMockupsForProduct(product, options = {}) {
     return fallback;
   };
 
-  let maxOutputSize = readSetting('mockup_max_output_px', 2000);
-  if (maxOutputSize > 0 && maxOutputSize < 800) maxOutputSize = 800; // aşırı küçültmeyi engelle
-
-  // Küçük şablonların çıktı sınırına kadar büyütülme katsayısı.
-  // 1 = büyütme kapalı (eski davranış).
-  let maxUpscale = readSetting('mockup_max_upscale', 2);
-  if (!Number.isFinite(maxUpscale) || maxUpscale < 1) maxUpscale = 1;
-  if (maxUpscale > 4) maxUpscale = 4;
-
-  /**
-   * Şablon arka planının çıktı tuvaline ölçeği.
-   *
-   * Büyük şablonlar çıktı sınırına küçültülür. Sınırın altında kalan
-   * şablonlar ise büyütülür: büyütme arka planda yeni ayrıntı üretmez, ama
-   * eser (ürün görseli genelde 4000px+) mockup içinde iki kat daha yüksek
-   * çözünürlükte işlenir — alıcının yakınlaştırdığı yer orasıdır. Ayrıca
-   * Etsy'de yakınlaştırma 2000px altındaki görsellerde çalışmaz.
-   *
-   * Aşırı yumuşamayı önlemek için büyütme `maxUpscale` ile sınırlıdır:
-   * 1024px şablon 2000'e çıkar, 600px şablon yalnızca 1200'e.
-   */
-  const outputScaleFor = (w, h) => {
-    if (maxOutputSize <= 0) return 1;
-    const scale = maxOutputSize / Math.max(w, h);
-    return scale < 1 ? scale : Math.min(scale, maxUpscale);
-  };
+  const minShortEdge = readSetting('mockup_min_short_edge_px', 2000);
 
   let jpegQuality = readSetting('mockup_jpeg_quality', 92);
   if (jpegQuality < 70) jpegQuality = 70;
@@ -601,10 +574,11 @@ export async function generateMockupsForProduct(product, options = {}) {
       } catch {
         continue;
       }
+      const output = getMockupOutputSize(bg.width, bg.height, minShortEdge);
       for (const slot of getTemplateSlots(tpl.config)) {
         const c = slot.corners || DEFAULT_CORNERS;
-        const xs = [c.tl.x, c.tr.x, c.br.x, c.bl.x].map(v => v * bg.width);
-        const ys = [c.tl.y, c.tr.y, c.br.y, c.bl.y].map(v => v * bg.height);
+        const xs = [c.tl.x, c.tr.x, c.br.x, c.bl.x].map(v => v * output.width);
+        const ys = [c.tl.y, c.tr.y, c.br.y, c.bl.y].map(v => v * output.height);
         maxQuadW = Math.max(maxQuadW, Math.ceil(Math.max(...xs) - Math.min(...xs)));
         maxQuadH = Math.max(maxQuadH, Math.ceil(Math.max(...ys) - Math.min(...ys)));
       }
@@ -638,14 +612,9 @@ export async function generateMockupsForProduct(product, options = {}) {
       for (const ratio of ratios) {
         if (profile && ratio !== profile.ratio) continue;
 
-        // Çıktı çözünürlüğü sınırı. Şablon arka planları 3000x3000'e kadar
-        // çıkabiliyor ve maliyetin çoğu (warp örneklemesi + JPEG encode)
-        // doğrudan piksel sayısıyla orantılı. Yerleşim, köşe ve gölge
-        // değerlerinin hepsi oransal olduğu için tuvali küçültmek çıktıyı
-        // birebir aynı kompozisyonda, sadece daha düşük çözünürlükte üretir.
-        const outScale = outputScaleFor(bgImg.width, bgImg.height);
-        const W = Math.round(bgImg.width * outScale);
-        const H = Math.round(bgImg.height * outScale);
+        // Kısa kenarı tamamla; büyük şablonları küçültme. Normalize edilmiş
+        // yerleşim ve köşeler doğrudan bu çıktı boyutuna uygulanır.
+        const { width: W, height: H } = getMockupOutputSize(bgImg.width, bgImg.height, minShortEdge);
         const canvas = createCanvas(W, H);
         const ctx = canvas.getContext('2d');
 
@@ -732,7 +701,7 @@ export async function generateMockupsForProduct(product, options = {}) {
     }
   }
 
-  // 2. Statik şablonlar (arka planı olduğu gibi kopyalar)
+  // 2. Statik şablonlar da aynı kısa kenar kuralıyla çıktı üretir.
   for (const tpl of staticTpls) {
     if (shouldCancel && shouldCancel()) break;
     try {
@@ -744,9 +713,7 @@ export async function generateMockupsForProduct(product, options = {}) {
       for (const ratio of ratios) {
         if (profile && ratio !== profile.ratio) continue;
 
-        const sScale = outputScaleFor(staticImg.width, staticImg.height);
-        const sW = Math.round(staticImg.width * sScale);
-        const sH = Math.round(staticImg.height * sScale);
+        const { width: sW, height: sH } = getMockupOutputSize(staticImg.width, staticImg.height, minShortEdge);
 
         const canvas = createCanvas(sW, sH);
         const ctx = canvas.getContext('2d');

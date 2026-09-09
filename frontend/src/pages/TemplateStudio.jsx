@@ -566,7 +566,6 @@ export default function TemplateStudio() {
   // Otomatik davranış anahtarları kullanıcı tercihidir; tarayıcıda saklanır.
   const [autoRatioOn, setAutoRatioOn] = useState(() => boolPref('autoRatioOn', true));
   const [autoNameOn, setAutoNameOn] = useState(() => boolPref('autoNameOn', true));
-  const [autoRatio, setAutoRatio] = useState(null); // { key, error, aspect }
   const scanTokenRef = useRef(0);
 
   // Önizleme (köşelere yerleşmiş deneme eseri)
@@ -744,6 +743,12 @@ export default function TemplateStudio() {
         bgImage.naturalWidth || bgImage.width,
         bgImage.naturalHeight || bgImage.height
       )
+    : null;
+
+  // Köşeler, aktif panel veya mod değiştiğinde öneriyi canlı ölçümden türet.
+  // Hedef oran yalnızca kullanıcı seçtiğinde / yeni tarama uygulandığında değişir.
+  const autoRatio = measurement
+    ? nearestRatioKey(measurement.aspect, ratioPresets)
     : null;
 
   /* ------------------------------------------------------------------ */
@@ -1076,7 +1081,6 @@ export default function TemplateStudio() {
     setScanPhase('');
     setDetections([]);
     setDetectionIndex(0);
-    setAutoRatio(null);
     // Anahtarlar kullanıcı tercihine döner, sabit varsayılana değil
     setAutoRatioOn(boolPref('autoRatioOn', true));
     setAutoNameOn(boolPref('autoNameOn', true));
@@ -1140,7 +1144,6 @@ export default function TemplateStudio() {
     setType('perspective');
 
     const nearest = nearestRatioKey(m.aspect, ratioPresets);
-    setAutoRatio(nearest ? { ...nearest, aspect: m.aspect } : null);
 
     if (nearest && autoRatioOn && !isSetTemplate) {
       setActiveRatio(nearest.key);
@@ -1165,7 +1168,6 @@ export default function TemplateStudio() {
     setScanPhase('Görsel hazırlanıyor');
     setDetections([]);
     setDetectionIndex(0);
-    setAutoRatio(null);
 
     const startedAt = Date.now();
     let found = [];
@@ -2054,7 +2056,10 @@ export default function TemplateStudio() {
     const pct = (v) => (Number.isFinite(v) ? `%${(v * 100).toFixed(1)}` : '—');
 
     const skewTone = (v) => (v < 0.02 ? 'text-slate-300' : v < 0.12 ? 'text-amber-400' : 'text-rose-400');
-    const ratioDelta = autoRatio ? Math.abs(autoRatio.aspect / autoRatio.ratio - 1) : null;
+    const signedRatioDelta = measurement && activePanelRatio > 0
+      ? measurement.aspect / activePanelRatio - 1
+      : null;
+    const ratioDelta = signedRatioDelta === null ? null : Math.abs(signedRatioDelta);
 
     return (
       <div className="bg-[#0e1726] border border-[#1e293b] rounded-2xl p-6 space-y-5">
@@ -2192,11 +2197,23 @@ export default function TemplateStudio() {
               <span className="text-xs font-bold text-amber-500">{ratioKeyLabel(autoRatio.key)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-500">Orandan fark</span>
+              <span className="text-[11px] text-slate-400">Seçili hedef oran</span>
+              <span className="text-xs font-semibold text-slate-200">{ratioKeyLabel(activeRatio)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">Hedef orandan fark</span>
               <span className={`text-[11px] tabular-nums ${ratioDelta < 0.04 ? 'text-emerald-400' : ratioDelta < 0.12 ? 'text-amber-400' : 'text-rose-400'}`}>
-                %{(ratioDelta * 100).toFixed(1)}
+                {pct(ratioDelta)}
               </span>
             </div>
+            <p className="text-[10px] text-slate-400 leading-relaxed">
+              {ratioDelta < 0.0005
+                ? 'Hedef oranla eşleşiyor.'
+                : signedRatioDelta > 0
+                ? 'Alan hedef orana göre daha geniş.'
+                : 'Alan hedef orana göre daha dar.'}
+              {' '}Noktaları oynattıkça güncellenir; %0 hedef oranla eşleşir.
+            </p>
             {activeRatio !== autoRatio.key && (
               <button
                 type="button"
@@ -2238,16 +2255,17 @@ export default function TemplateStudio() {
           ))}
 
           {previewOn && (
-            <label className="block pt-1">
+            <div className="block pt-1">
               <span className="text-[10px] text-slate-500 block leading-relaxed">
                 {previewCustom ? 'Kendi deneme görseliniz kullanılıyor.' : 'Sentetik deneme eseri kullanılıyor.'}
                 {previewActive && ' Tuvalde: sol tık %150 → %200 → %100 yakınlaştırır, yakınlaştırınca sağ tıkla gezinilir. Köşe noktaları sönük durur, tutunca netleşir.'}
               </span>
               <div className="flex items-center space-x-2 mt-1.5">
-                <span className="flex-1 text-[11px] text-center py-1.5 rounded-lg bg-[#151f32] border border-[#1e293b] text-slate-300 cursor-pointer hover:border-amber-500/40">
-                  Deneme görseli yükle
-                  <input type="file" accept="image/*" onChange={handlePreviewUpload} className="hidden" />
-                </span>
+                <label className="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-center px-3 py-2.5 rounded-lg bg-amber-500 border border-amber-400 text-slate-950 shadow-md shadow-amber-500/20 cursor-pointer hover:bg-amber-400 focus-within:ring-2 focus-within:ring-amber-300 focus-within:ring-offset-2 focus-within:ring-offset-slate-900 transition-colors">
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                  <span>Deneme görseli yükle</span>
+                  <input type="file" accept="image/*" aria-label="Deneme görseli yükle" onChange={handlePreviewUpload} className="sr-only" />
+                </label>
                 {previewCustom && (
                   <button
                     type="button"
@@ -2258,7 +2276,7 @@ export default function TemplateStudio() {
                   </button>
                 )}
               </div>
-            </label>
+            </div>
           )}
         </div>
       </div>

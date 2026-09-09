@@ -18,6 +18,7 @@ build/
 backend/db/*.db
 backend/db/*.db-shm
 backend/db/*.db-wal
+backend/db/agent-seo/
 *.sqlite
 *.sqlite3
 
@@ -52,3 +53,14 @@ pnpm-debug.log*
 # Çalışma Dosyaları (Workspace Files)
 plan.md
 start.bat
+
+# Personal state and legacy exports (never publish)
+backend/db/local-state/
+backend/config/templates_seed.json
+backend/config/profiles_seed.json
+backend/scratch/
+backend/scripts/policy-remediation-plan.json
+etsy-policy-audit-*.csv
+md/varyasyon-fiyat-referansi.md
+logs/
+usalkhelper/
