@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -23,6 +24,8 @@ export default function VersionBadge() {
   const [staged, setStaged] = useState(null);   // indirilmiş, uygulanmayı bekleyen sürüm
   const [busy, setBusy] = useState(null);       // 'download' | 'apply'
   const [error, setError] = useState(null);
+  const [anchor, setAnchor] = useState(null);   // panelin ekrandaki konumu
+  const btnRef = useRef(null);
 
   // Backend'den gelen sürüm derlemedekiyle aynı olmalı; ayrıldıysa (yarım
   // güncelleme) backend'inki gerçeği yansıtır.
@@ -106,6 +109,34 @@ export default function VersionBadge() {
     } catch { /* yoksay */ }
   };
 
+  /**
+   * Paneli rozetin sağına yerleştirir.
+   *
+   * Panel doğrudan body'ye taşınır (portal): kenar çubuğu `position: sticky`
+   * olduğu için kendi yığın bağlamını yaratır ve içeride kalan panel z-50 olsa
+   * bile ana içeriğin altında kalır. Kenar çubuğuna z-index vermek ise tam
+   * ekran modalleri onun altında bırakırdı.
+   */
+  const openPanel = () => {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = 256;
+    setAnchor({
+      top: Math.min(rect.top, Math.max(8, window.innerHeight - 340)),
+      left: Math.min(rect.right + 12, window.innerWidth - width - 12)
+    });
+    setOpen(true);
+    if (!check) runCheck(true);
+  };
+
+  // Pencere boyutu değişince konum bozulur; paneli kapatmak en doğrusu.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener('resize', close);
+    return () => window.removeEventListener('resize', close);
+  }, [open]);
+
   if (!version) return null;
   const hasUpdate = !!check?.updateAvailable;
 
@@ -113,7 +144,8 @@ export default function VersionBadge() {
     <div className="relative">
       <button
         type="button"
-        onClick={() => { setOpen(o => !o); if (!check) runCheck(true); }}
+        ref={btnRef}
+        onClick={() => (open ? setOpen(false) : openPanel())}
         title={hasUpdate ? `Yeni sürüm: ${check.latest}` : 'Sürüm bilgisi ve güncelleme kontrolü'}
         className={`flex items-center space-x-1 text-[10px] font-semibold tabular-nums rounded-md px-1.5 py-0.5 border transition-colors ${
           hasUpdate
@@ -125,11 +157,14 @@ export default function VersionBadge() {
         {hasUpdate && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
       </button>
 
-      {open && (
+      {open && anchor && createPortal(
         <>
           {/* Dışarı tıklayınca kapansın */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-64 z-50 bg-[#0e1726] border border-[#1e293b] rounded-xl shadow-2xl p-4 space-y-3 animate-fade-in">
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+          <div
+            style={{ top: anchor.top, left: anchor.left }}
+            className="fixed w-64 z-[100] bg-[#1b2740] border border-slate-600 rounded-xl shadow-2xl shadow-black/80 p-4 space-y-3 animate-fade-in"
+          >
             <div className="flex items-baseline justify-between">
               <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Kurulu Sürüm</span>
               <span className="text-xs font-bold text-white tabular-nums">v{version}</span>
@@ -223,7 +258,8 @@ export default function VersionBadge() {
               Şimdi kontrol et
             </button>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
