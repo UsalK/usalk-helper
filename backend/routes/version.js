@@ -10,13 +10,14 @@ import express from 'express';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { stageUpdate, readStaged, discardStaged, launchApply } from '../services/UpdateService.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '../..');
 
 /** Güncellemelerin alınacağı depo. */
-const REPO = process.env.UPDATE_REPO || 'UsalK/usalk-helper';
+const REPO = process.env.UPDATE_REPO || 'UsalK/usalk-helper-setup';
 
 /** GitHub API sınırı saatte 60 istek; sonucu bir süre elde tutuyoruz. */
 const CHECK_CACHE_MS = 15 * 60 * 1000;
@@ -148,6 +149,66 @@ router.get('/check', async (req, res) => {
       updateAvailable: false,
       error: err.name === 'AbortError' ? 'GitHub yanıt vermedi.' : err.message
     });
+  }
+});
+
+/** Hazırlanmış (indirilmiş, doğrulanmış) güncelleme var mı? */
+router.get('/staged', (req, res) => {
+  res.json({ staged: readStaged() });
+});
+
+/**
+ * Yeni sürümü indirir, açar ve doğrular. Kuruluma hiçbir şey yazmaz;
+ * bu adımdan sonra kullanıcı hâlâ vazgeçebilir.
+ */
+router.post('/download', async (req, res, next) => {
+  try {
+    const current = readCurrentVersion();
+    const latest = await fetchLatest();
+
+    if (!latest) {
+      return res.status(400).json({ error: 'Yayımlanmış bir sürüm bulunamadı.' });
+    }
+    if (compareVersions(latest.version, current) <= 0) {
+      return res.status(400).json({ error: 'Zaten en güncel sürümü kullanıyorsunuz.' });
+    }
+
+    const staged = await stageUpdate({
+      repo: REPO,
+      tag: latest.version,
+      expectedVersion: latest.version
+    });
+    res.json({ success: true, staged });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Hazırlanan güncellemeyi uygular. Uygulama durdurulup dosyalar
+ * değiştirileceği için yanıt gönderildikten sonra sunucu kapanır.
+ */
+router.post('/apply', (req, res, next) => {
+  try {
+    const staged = readStaged();
+    if (!staged) {
+      return res.status(400).json({ error: 'Uygulanacak hazır güncelleme yok.' });
+    }
+
+    launchApply({ restart: req.body?.restart !== false });
+    res.json({ success: true, applying: staged.version });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** İndirilmiş güncellemeden vazgeç. */
+router.delete('/staged', async (req, res, next) => {
+  try {
+    await discardStaged();
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
   }
 });
 

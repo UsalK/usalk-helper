@@ -20,6 +20,9 @@ export default function VersionBadge() {
   const [check, setCheck] = useState(null); // { updateAvailable, latest, notes, url }
   const [checking, setChecking] = useState(false);
   const [open, setOpen] = useState(false);
+  const [staged, setStaged] = useState(null);   // indirilmiş, uygulanmayı bekleyen sürüm
+  const [busy, setBusy] = useState(null);       // 'download' | 'apply'
+  const [error, setError] = useState(null);
 
   // Backend'den gelen sürüm derlemedekiyle aynı olmalı; ayrıldıysa (yarım
   // güncelleme) backend'inki gerçeği yansıtır.
@@ -46,9 +49,62 @@ export default function VersionBadge() {
 
   useEffect(() => {
     runCheck(false);
+    axios.get(`${API_BASE}/version/staged`)
+      .then(res => setStaged(res.data?.staged || null))
+      .catch(() => {});
     const timer = setInterval(() => runCheck(false), RECHECK_MS);
     return () => clearInterval(timer);
   }, []);
+
+  /** Yeni sürümü indirir ve doğrular; kuruluma henüz dokunmaz. */
+  const download = async () => {
+    setBusy('download');
+    setError(null);
+    try {
+      const res = await axios.post(`${API_BASE}/version/download`);
+      setStaged(res.data.staged);
+    } catch (err) {
+      setError(err.response?.data?.error || 'İndirme başarısız oldu.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  /** İndirilen sürümü uygular: uygulama kapanır, dosyalar değişir, yeniden açılır. */
+  const apply = async () => {
+    const ok = window.confirm(
+      [
+        `Sürüm ${staged.version} kurulacak.`,
+        '',
+        'Uygulama kapanacak, dosyalar güncellenecek ve yeniden başlatılacak.',
+        'Veritabanınız, mağaza bağlantılarınız, şablonlarınız ve storage klasörünüz korunur.',
+        '',
+        'Devam edilsin mi?'
+      ].join('\n')
+    );
+    if (!ok) return;
+
+    setBusy('apply');
+    setError(null);
+    try {
+      await axios.post(`${API_BASE}/version/apply`, {});
+    } catch (err) {
+      // Sunucu kapandığı için bağlantı hatası beklenen durumdur.
+      if (err.response) {
+        setError(err.response.data?.error || 'Güncelleme başlatılamadı.');
+        setBusy(null);
+        return;
+      }
+    }
+    setError(null);
+  };
+
+  const discard = async () => {
+    try {
+      await axios.delete(`${API_BASE}/version/staged`);
+      setStaged(null);
+    } catch { /* yoksay */ }
+  };
 
   if (!version) return null;
   const hasUpdate = !!check?.updateAvailable;
@@ -79,6 +135,37 @@ export default function VersionBadge() {
               <span className="text-xs font-bold text-white tabular-nums">v{version}</span>
             </div>
 
+            {staged && (
+              <div className="space-y-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25">
+                <p className="text-[11px] text-emerald-300 font-semibold">
+                  {staged.version} indirildi, kurulmayı bekliyor.
+                </p>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  Kurulum sırasında uygulama kapanıp yeniden açılır. Veritabanı, mağaza
+                  bağlantıları, şablonlar ve storage klasörü korunur.
+                </p>
+                <button
+                  type="button"
+                  onClick={apply}
+                  disabled={busy === 'apply'}
+                  className="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 text-[11px] font-bold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                >
+                  {busy === 'apply' ? 'Kuruluyor, uygulama kapanıyor…' : 'Şimdi kur ve yeniden başlat'}
+                </button>
+                <button
+                  type="button"
+                  onClick={discard}
+                  className="w-full py-1 text-[10px] text-slate-500 hover:text-rose-400 transition-colors"
+                >
+                  İndirileni sil
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <p className="text-[10px] text-rose-400 leading-relaxed">{error}</p>
+            )}
+
             {checking && <p className="text-[11px] text-slate-400">Kontrol ediliyor…</p>}
 
             {!checking && check?.ok === false && (
@@ -103,14 +190,25 @@ export default function VersionBadge() {
                     {check.notes.slice(0, 400)}
                   </p>
                 )}
+                {!staged && (
+                  <button
+                    type="button"
+                    onClick={download}
+                    disabled={busy === 'download'}
+                    className="w-full py-2 rounded-lg bg-amber-500 text-slate-950 text-[11px] font-bold hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {busy === 'download' ? 'İndiriliyor…' : `${check.latest} sürümünü indir`}
+                  </button>
+                )}
+
                 {check.url && (
                   <a
                     href={check.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="block w-full text-center py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[11px] font-semibold hover:bg-amber-500/20 transition-colors"
+                    className="block w-full text-center py-1.5 rounded-lg text-slate-400 text-[10px] hover:text-amber-500 transition-colors"
                   >
-                    Sürüm notlarını aç
+                    Sürüm notlarını GitHub'da aç
                   </a>
                 )}
               </div>
