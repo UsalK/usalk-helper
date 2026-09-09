@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import {
   Plus, Save, Layers, Frame, Compass, Sliders, CheckCircle,
@@ -9,7 +9,7 @@ import {
 
 import {
   parseRatio, parseRatioKey, isSetRatioKey, ratioKeyLabel,
-  layoutPanels, placementToCorners,
+  layoutPanels, placementToCorners, buildPanelSources,
   DEFAULT_PLACEMENT, DEFAULT_CORNERS
 } from '../utils/panels';
 import { detectMockupQuads } from '../utils/mockupDetect';
@@ -811,8 +811,25 @@ export default function TemplateStudio() {
       setPreviewArt(previewCustom);
       return;
     }
-    setPreviewArt(buildPreviewArtwork(activePanelRatio));
-  }, [activePanelRatio, previewCustom]);
+    // 'split' modunda kaynak görsel panellere bölündüğü için setin tamamının
+    // oranında üretilir; bölündüğünde her dilim panel oranına oturur.
+    const sourceRatio = (activePanelCount > 1 && setSource === 'split')
+      ? activePanelRatio * activePanelCount
+      : activePanelRatio;
+    setPreviewArt(buildPreviewArtwork(sourceRatio));
+  }, [activePanelRatio, activePanelCount, setSource, previewCustom]);
+
+  /**
+   * Panel başına önizleme kaynağı. Render motoruyla aynı mantık:
+   * 'split' → tek görsel panel sayısı kadar dikey dilime bölünür,
+   * 'duplicate' → aynı görsel her panelde tekrar eder.
+   *
+   * Sürükleme sırasında her karede yeniden dilimlememek için önbelleklenir.
+   */
+  const previewSources = useMemo(() => {
+    if (!previewArt) return null;
+    return buildPanelSources(previewArt, slots.length, setSource);
+  }, [previewArt, slots.length, setSource]);
 
   // Oran değişince otomatik ad da güncellenir (kullanıcı adı elle yazdıysa
   // autoNameOn kapanır ve buraya girilmez).
@@ -898,7 +915,7 @@ export default function TemplateStudio() {
   // yerleşimi ezer. Tek panelli oranlarda çalışmaz.
   useEffect(() => {
     if (activePanelCount < 2 || !bgImage || detections.length === 0) return;
-    applyDetection(detections, detectionIndex, bgImage, activePanelCount);
+    applyDetection(detections, detectionIndex, bgImage, { panelCount: activePanelCount });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePanelCount, detections]);
 
@@ -1047,7 +1064,7 @@ export default function TemplateStudio() {
     if (view === 'editor' && bgImage) {
       drawEditor();
     }
-  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt, stageSize, zoomLevel, pan, overlayAlpha]);
+  }, [view, bgImage, type, slots, activeSlot, panelLocks, frameStyle, frameThickness, shadowEnabled, shadowSides, shadowOpacity, shadowDistance, shadowBlur, activeHandle, previewOn, previewArt, previewSources, stageSize, zoomLevel, pan, overlayAlpha]);
 
   // Sahne alanı büyüdükçe/küçüldükçe tuval yeniden sığdırılır.
   useEffect(() => {
@@ -1142,7 +1159,16 @@ export default function TemplateStudio() {
     placement: cornersToPlacement(corners)
   });
 
-  const applyDetection = (list, index, image, panelCount = activePanelCount) => {
+  /**
+   * @param {object} opts
+   *   panelCount — kaç panele dağıtılacağı (varsayılan: mevcut çizim oranı)
+   *   ratioKey   — tarama sonucu seçilen oran; state henüz güncellenmediği için
+   *                ölçülen tek panel oranıyla çakışmasın diye açıkça verilir
+   */
+  const applyDetection = (list, index, image, opts = {}) => {
+    const panelCount = opts.panelCount ?? activePanelCount;
+    const forcedRatio = opts.ratioKey || null;
+
     const cand = list[index];
     const target = image || bgImage;
     if (!cand || !target) return;
@@ -1180,17 +1206,54 @@ export default function TemplateStudio() {
 
     // Set şablonunda çizim oranını kullanıcı bilerek seçer; ölçülen tek panel
     // oranı buna karışmaz.
-    const ratioApplied = !!nearest && autoRatioOn && !isSetTemplate;
-    if (ratioApplied) {
+    const isSet = forcedRatio ? isSetRatioKey(forcedRatio) : isSetTemplate;
+    const ratioApplied = !forcedRatio && !!nearest && autoRatioOn && !isSet;
+
+    if (forcedRatio) {
+      setActiveRatio(forcedRatio);
+      setCompatibleRatios([forcedRatio]);
+    } else if (ratioApplied) {
       setActiveRatio(nearest.key);
       setCompatibleRatios([nearest.key]);
     }
     if (autoNameOn) {
       // Ad, gerçekten kullanılan orandan üretilir. Aksi halde set şablonunda
       // oran "2:3 × 2 panel" iken ad "7:12 Dikey" olabiliyordu.
-      const key = ratioApplied ? nearest.key : activeRatio;
+      const key = forcedRatio || (ratioApplied ? nearest.key : activeRatio);
       setName(suggestTemplateName(key, m.aspect, templates.map(t => t.name)));
     }
+  };
+
+  /**
+   * Sahnede yan yana N panel varsa ve o panel oranının N'li set karşılığı
+   * tanımlıysa, çizim oranı olarak seti önerir.
+   *
+   * Tek panelli bir şablonu yanlışlıkla sete çevirmemek için iki koşul birden
+   * aranır: adaylar gerçekten bir seri oluşturmalı (pickPanelRow) ve ölçülen
+   * panel oranı tanımlı bir set anahtarına yeterince yakın olmalı.
+   */
+  const suggestSetRatio = (candidates, image) => {
+    if (!image || candidates.length < 2) return null;
+    const imgW = image.naturalWidth || image.width;
+    const imgH = image.naturalHeight || image.height;
+
+    for (const count of [3, 2]) {
+      const row = pickPanelRow(candidates, count);
+      if (!row) continue;
+
+      // Ölçülen panel oranı, TANIMLI set oranlarıyla karşılaştırılır. Tek panel
+      // oranlarının en yakınını alıp sonuna "xN" eklemek işe yaramıyor: gerçek
+      // çerçeveler 7:12'ye yakın ölçülebiliyor ama tanımlı set 2:3x2 oluyor.
+      const options = ratioPresets.filter(
+        key => isSetRatioKey(key) && parseRatioKey(key).panelCount === count
+      );
+      if (options.length === 0) continue;
+
+      const m = measureQuad(row.panels[0].corners, imgW, imgH);
+      const best = nearestRatioKey(m.aspect, options, { allowSets: true });
+      if (best && best.error <= 0.20) return { setKey: best.key, count };
+    }
+    return null;
   };
 
   /**
@@ -1235,14 +1298,19 @@ export default function TemplateStudio() {
       return;
     }
 
-    applyDetection(found, 0, target);
+    // Sahnede yan yana panel serisi varsa çizim oranı doğrudan sete alınır;
+    // kullanıcı "2:3" görüp "×2"yi elle aramak zorunda kalmaz.
+    const setSuggestion = autoRatioOn ? suggestSetRatio(found, target) : null;
+    applyDetection(found, 0, target, setSuggestion
+      ? { panelCount: setSuggestion.count, ratioKey: setSuggestion.setKey }
+      : {});
     setScanState('done');
   };
 
   const cycleDetection = (delta) => {
     if (detections.length < 2) return;
     const next = (detectionIndex + delta + detections.length) % detections.length;
-    applyDetection(detections, next);
+    applyDetection(detections, next, bgImage, { panelCount: activePanelCount });
   };
 
   const drawEditor = () => {
@@ -1288,9 +1356,10 @@ export default function TemplateStudio() {
     // halde gölgeyi oluşturan beyaz dikdörtgen eserin üstünü kapatır.
     const art = (previewOn && previewArt) ? previewArt : null;
     if (art && type === 'perspective') {
-      slots.forEach(slot => {
+      slots.forEach((slot, idx) => {
+        const source = previewSources?.[idx] || art;
         const c = slot.corners || DEFAULT_CORNERS;
-        warpImage(ctx, art, [
+        warpImage(ctx, source, [
           { x: c.tl.x * w, y: c.tl.y * h },
           { x: c.tr.x * w, y: c.tr.y * h },
           { x: c.br.x * w, y: c.br.y * h },
@@ -1378,7 +1447,7 @@ export default function TemplateStudio() {
 
       // Eser (önizleme) gölgenin üstüne, çerçevenin altına gelir
       if (hasPreview) {
-        ctx.drawImage(previewArt, r.x, r.y, r.w, r.h);
+        ctx.drawImage(previewSources?.[idx] || previewArt, r.x, r.y, r.w, r.h);
       } else {
         chrome(() => {
           ctx.fillStyle = 'rgba(245, 158, 11, 0.1)';
