@@ -17,6 +17,7 @@ import {
   measureQuad, nearestRatioKey, suggestTemplateName, cornersToPlacement
 } from '../utils/quadGeometry';
 import { warpImage } from '../utils/homography';
+import { pickPanelRow } from '../utils/panelRow';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -566,6 +567,8 @@ export default function TemplateStudio() {
   // Otomatik davranış anahtarları kullanıcı tercihidir; tarayıcıda saklanır.
   const [autoRatioOn, setAutoRatioOn] = useState(() => boolPref('autoRatioOn', true));
   const [autoNameOn, setAutoNameOn] = useState(() => boolPref('autoNameOn', true));
+  // Set şablonunda paneller otomatik yerleşti mi? null = tek panelli şablon
+  const [panelRowFound, setPanelRowFound] = useState(null);
   const scanTokenRef = useRef(0);
 
   // Önizleme (köşelere yerleşmiş deneme eseri)
@@ -890,6 +893,15 @@ export default function TemplateStudio() {
     setActiveSlot(0);
   }, [activeRatio, bgImage]);
 
+  // Set oranına geçildiğinde paneller simetrik yerine tanınan çerçevelere
+  // oturur. Yukarıdaki efektten sonra çalışır ve onun kurduğu simetrik
+  // yerleşimi ezer. Tek panelli oranlarda çalışmaz.
+  useEffect(() => {
+    if (activePanelCount < 2 || !bgImage || detections.length === 0) return;
+    applyDetection(detections, detectionIndex, bgImage, activePanelCount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePanelCount, detections]);
+
   /* ---------------- Mockup dizilim yardımcıları ---------------- */
 
   const currentOrder = { ...DEFAULT_ORDER, ...(orderConfig[orderRatio] || {}) };
@@ -1123,7 +1135,14 @@ export default function TemplateStudio() {
    * Bulunan adaylardan birini editöre uygular: köşeler yerleşir, ölçülen
    * gerçek orana en yakın varyasyon oranı seçilir ve şablon adı üretilir.
    */
-  const applyDetection = (list, index, image) => {
+  /** Bir dörtgeni panele yazar (perspektif köşeleri + düz mod yerleşimi). */
+  const slotFromCorners = (slot, corners) => ({
+    ...slot,
+    corners,
+    placement: cornersToPlacement(corners)
+  });
+
+  const applyDetection = (list, index, image, panelCount = activePanelCount) => {
     const cand = list[index];
     const target = image || bgImage;
     if (!cand || !target) return;
@@ -1132,25 +1151,44 @@ export default function TemplateStudio() {
 
     const imgW = target.naturalWidth || target.width;
     const imgH = target.naturalHeight || target.height;
-    const m = measureQuad(cand.corners, imgW, imgH);
+
+    // Çok panelli sette adaylardan yan yana duran bir seri aranır; bulunursa
+    // paneller soldan sağa kendi çerçevelerine oturur. Bulunamazsa (ör. sahnede
+    // tek çerçeve var) yalnızca aktif panel yerleştirilir.
+    const row = panelCount > 1 ? pickPanelRow(list, panelCount) : null;
+    setPanelRowFound(panelCount > 1 ? !!row : null);
+
+    const primary = row ? row.panels[0] : cand;
+    const m = measureQuad(primary.corners, imgW, imgH);
 
     // Perspektif köşeleri ile düz mod yerleşimi birlikte güncellenir; kullanıcı
     // mod değiştirdiğinde yeniden çizim yapmak zorunda kalmaz.
-    setSlots(prev => prev.map((slot, idx) => (
-      idx === activeSlot
-        ? { ...slot, corners: cand.corners, placement: cornersToPlacement(cand.corners) }
-        : slot
-    )));
+    setSlots(prev => {
+      if (row) {
+        // Panel sayısı kadar slot garanti edilir
+        const next = Array.from({ length: panelCount }, (_, i) =>
+          prev[i] || { placement: DEFAULT_PLACEMENT, corners: DEFAULT_CORNERS });
+        return next.map((slot, idx) =>
+          row.panels[idx] ? slotFromCorners(slot, row.panels[idx].corners) : slot);
+      }
+      return prev.map((slot, idx) =>
+        idx === activeSlot ? slotFromCorners(slot, cand.corners) : slot);
+    });
     setType('perspective');
 
     const nearest = nearestRatioKey(m.aspect, ratioPresets);
 
-    if (nearest && autoRatioOn && !isSetTemplate) {
+    // Set şablonunda çizim oranını kullanıcı bilerek seçer; ölçülen tek panel
+    // oranı buna karışmaz.
+    const ratioApplied = !!nearest && autoRatioOn && !isSetTemplate;
+    if (ratioApplied) {
       setActiveRatio(nearest.key);
       setCompatibleRatios([nearest.key]);
     }
     if (autoNameOn) {
-      const key = (nearest && autoRatioOn) ? nearest.key : activeRatio;
+      // Ad, gerçekten kullanılan orandan üretilir. Aksi halde set şablonunda
+      // oran "2:3 × 2 panel" iken ad "7:12 Dikey" olabiliyordu.
+      const key = ratioApplied ? nearest.key : activeRatio;
       setName(suggestTemplateName(key, m.aspect, templates.map(t => t.name)));
     }
   };
@@ -1173,7 +1211,8 @@ export default function TemplateStudio() {
     let found = [];
     try {
       found = await detectMockupQuads(target, {
-        maxCandidates: 4,
+        // Set şablonlarında panelleri eşleştirmek için daha geniş bir havuz gerekir
+        maxCandidates: 8,
         onPhase: (phase) => {
           if (scanTokenRef.current === token) setScanPhase(phase);
         }
@@ -2100,6 +2139,22 @@ export default function TemplateStudio() {
             <p className="text-[11px] text-rose-200 leading-relaxed">
               Bu görselde çerçeve/tuval alanı bulunamadı (ör. boş duvar fotoğrafı).
               Çizim oranında ortalanmış bir dörtgen yerleştirildi; köşeleri sürükleyerek konumlandırın.
+            </p>
+          </div>
+        )}
+
+        {/* Set şablonunda panel eşleştirme durumu */}
+        {scanState === 'done' && panelRowFound !== null && (
+          <div className={`flex items-start space-x-2 p-2.5 rounded-xl border ${
+            panelRowFound
+              ? 'bg-emerald-500/10 border-emerald-500/25'
+              : 'bg-amber-500/10 border-amber-500/25'
+          }`}>
+            <Layers className={`w-4 h-4 shrink-0 mt-0.5 ${panelRowFound ? 'text-emerald-400' : 'text-amber-500'}`} />
+            <p className="text-[11px] leading-relaxed text-slate-300">
+              {panelRowFound
+                ? `${activePanelCount} panel yan yana bulundu ve soldan sağa yerleştirildi.`
+                : `Sahnede yan yana ${activePanelCount} çerçeve bulunamadı; paneller simetrik yerleştirildi, elle ayarlayın.`}
             </p>
           </div>
         )}
