@@ -4,8 +4,13 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./storage:/storage
-      - ./backend/db:/app/db
+      - ./storage:/app/storage
+      - ./backend/db:/app/backend/db
+      - type: bind
+        source: ./backend/.env
+        target: /app/backend/.env
+        bind:
+          create_host_path: false
 
   frontend:
     build: ./frontend

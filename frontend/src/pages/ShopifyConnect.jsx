@@ -84,7 +84,7 @@ export default function ShopifyConnect() {
                 type="password"
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
-                placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                placeholder="Admin API access token"
                 required={!activeShop} // Required only if not connected before
                 className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
               />

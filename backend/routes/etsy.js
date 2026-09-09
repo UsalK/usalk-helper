@@ -2118,12 +2118,7 @@ router.post('/analytics/import-sales-csv', multer({ dest: 'uploads/' }).single('
     } else if (req.body.csv_path && fs.existsSync(req.body.csv_path)) {
       csvContent = fs.readFileSync(req.body.csv_path, 'utf8');
     } else {
-      const defaultPath = 'C:\\Users\\usalk\\Downloads\\EtsySoldOrders2026.csv';
-      if (fs.existsSync(defaultPath)) {
-        csvContent = fs.readFileSync(defaultPath, 'utf8');
-      } else {
-        return res.status(400).json({ error: 'No CSV file provided or found.' });
-      }
+      return res.status(400).json({ error: 'Lütfen içe aktarılacak satış CSV dosyasını seçin.' });
     }
 
     const lines = csvContent.split('\n').filter(l => l.trim());
@@ -2240,7 +2235,6 @@ router.post('/analytics/import-sales-csv', multer({ dest: 'uploads/' }).single('
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 export default router;
-
 
 
 
