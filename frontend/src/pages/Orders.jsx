@@ -137,11 +137,12 @@ export default function Orders({ etsyConnected, activeShop }) {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Detayda kaynak görsel yüklenince / silinmiş bulununca listedeki kalemi de güncelle
-  const patchItem = useCallback((receiptId, transactionId, patch) => {
-    setOrders(list => list.map(o => (o.receipt_id !== receiptId ? o : {
+  // Detayda kaynak görsel yüklenince / silinmiş bulununca listeyi güncelle. Kaynak
+  // görsel listinge bağlı olduğu için aynı listingin TÜM siparişleri birlikte değişir.
+  const patchListing = useCallback((listingId, patch) => {
+    setOrders(list => list.map(o => (!o.items.some(it => it.listing_id === listingId) ? o : {
       ...o,
-      items: o.items.map(it => (it.transaction_id === transactionId ? { ...it, ...patch } : it))
+      items: o.items.map(it => (it.listing_id === listingId ? { ...it, ...patch } : it))
     })));
   }, []);
 
@@ -343,7 +344,7 @@ export default function Orders({ etsyConnected, activeShop }) {
         </div>
       )}
 
-      {selected && <OrderDetail order={selected} onClose={() => setSelected(null)} onItemUpdated={patchItem} />}
+      {selected && <OrderDetail order={selected} onClose={() => setSelected(null)} onListingUpdated={patchListing} />}
     </div>
   );
 }

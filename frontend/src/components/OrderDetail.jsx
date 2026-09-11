@@ -433,12 +433,13 @@ function UpscalePanel({ item, dims, shopId, onSourceMissing }) {
   );
 }
 
-export default function OrderDetail({ order, onClose, onItemUpdated }) {
+export default function OrderDetail({ order, onClose, onListingUpdated }) {
   const [idx, setIdx] = useState(0);
-  // Yükleme / silinmiş kaynak gibi yerel değişiklikler (liste de onItemUpdated ile güncellenir)
+  // Yükleme / silinmiş kaynak gibi yerel değişiklikler, listing bazında: kaynak görsel
+  // siparişe değil listinge bağlı (liste de onListingUpdated ile güncellenir)
   const [overrides, setOverrides] = useState({});
   const base = order.items[idx];
-  const item = { ...base, ...(overrides[base.transaction_id] || {}) };
+  const item = { ...base, ...(overrides[base.listing_id] || {}) };
   const [dims, setDims] = useState(null);
   const [insights, setInsights] = useState(null);
   const [insightsError, setInsightsError] = useState(null);
@@ -462,10 +463,10 @@ export default function OrderDetail({ order, onClose, onItemUpdated }) {
   }, [item.listing_id, item.etsy_product_id, order.shop_id]);
 
   const patchItem = useCallback((patch) => {
-    const tid = base.transaction_id;
-    setOverrides(o => ({ ...o, [tid]: { ...(o[tid] || {}), ...patch } }));
-    onItemUpdated?.(order.receipt_id, tid, patch);
-  }, [base.transaction_id, order.receipt_id, onItemUpdated]);
+    const lid = base.listing_id;
+    setOverrides(o => ({ ...o, [lid]: { ...(o[lid] || {}), ...patch } }));
+    onListingUpdated?.(lid, patch);
+  }, [base.listing_id, onListingUpdated]);
 
   const onSourceMissing = useCallback(() => {
     if (item.source === 'local') patchItem({ source: 'missing', source_image_path: null });
