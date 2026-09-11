@@ -8,7 +8,7 @@ import RECOMMENDED_DATA from './recommended_data.json';
 import { filterActiveProfiles, isSetProfile } from '../utils/profileFlags';
 import { buildPriceColumns, columnPriceOf, setColumnPrice } from '../utils/frameGroups';
 
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config';
 
 const DEFAULT_PROFILES = filterActiveProfiles([
   { id: 'ratio_2_3', name: '2:3 Oranı (Dikey)', ratio: '2:3' },
