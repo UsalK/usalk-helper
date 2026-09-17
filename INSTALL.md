@@ -107,6 +107,27 @@ yer almaz. Docker kullanımı için [README'deki Docker bölümüne](README.md#d
 
 ## 4. Bu repoyu kullanmaya başladıktan sonraki güncellemeler
 
+### Uygulama içinden (önerilen)
+
+Kenar çubuğundaki sürüm rozeti yeni sürüm olduğunda turuncu yanar. Rozete tıklayıp
+sürümü **indirin**, ardından **Şimdi kur ve yeniden başlat** deyin. Uygulama birkaç
+saniyeliğine kapanır, dosyalar güncellenir ve sayfa kendiliğinden yenilenir.
+Veritabanı, `.env`, `storage/` ve loglar değişmez. Kurulum sırasında bir hata olursa
+değişen dosyalar geri alınır, uygulama eski sürümle açılır ve rozet kırmızı yanar.
+
+Kurulum ekranında uzun süre kalırsa (2.1.3 ve öncesinde bu buton kurulumu hiç
+başlatmıyordu): indirme tamamlandıysa uygulama klasöründe **`Guncellemeyi Kur.bat`**
+dosyasını çalıştırın. Bu dosya 2.1.4 ile gelir; daha eski bir kurulumda yoksa uygulama
+klasöründe bir PowerShell penceresi açıp şunu çalıştırın:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\apply-update.ps1 -ProjectRoot (Get-Location).Path -Restart
+```
+
+Ayrıntılı kayıt: `.update-staging/apply.log`.
+
+### Elle
+
 1. İşleri tamamlayın, uygulamayı kapatın ve kişisel dosyalarınızın yedeğini alın.
 2. Bu repoyu Git ile klonladıysanız proje klasöründe `git pull --ff-only` çalıştırın.
    Yerel kod değişiklikleri nedeniyle hata alırsanız zorla üzerine yazmayın.
@@ -116,7 +137,6 @@ yer almaz. Docker kullanımı için [README'deki Docker bölümüne](README.md#d
 
 Kişisel dosyalar Git dışında tutulur. Bu, proje klasörünü silmenin güvenli olduğu
 anlamına gelmez. Yerel verileri de silebilen `git clean -fdx` gibi komutları kullanmayın.
-Otomatik tek tık güncelleme sistemi henüz yoktur.
 
 ## 5. Sorun olursa
 

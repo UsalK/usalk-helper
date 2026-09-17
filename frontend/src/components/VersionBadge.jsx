@@ -10,6 +10,17 @@ const BUILD_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ :
 /** Güncelleme kontrolü açılışta bir kez, sonra bu aralıkla tekrarlanır. */
 const RECHECK_MS = 6 * 60 * 60 * 1000;
 
+/** Kurulumdan sonra uygulamanın geri gelmesi için beklenen en uzun süre. */
+const APPLY_TIMEOUT_MS = 5 * 60 * 1000;
+const APPLY_POLL_MS = 2000;
+
+/** Gösterilmiş kurulum sonucunu tekrar göstermemek için (tarayıcı başına). */
+const SEEN_RESULT_KEY = 'usalk.update.seenResult';
+const readSeen = () => { try { return localStorage.getItem(SEEN_RESULT_KEY); } catch { return null; } };
+const writeSeen = (v) => { try { localStorage.setItem(SEEN_RESULT_KEY, v); } catch { /* yoksay */ } };
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 /**
  * Marka başlığının sağ altındaki sürüm rozeti.
  *
@@ -25,6 +36,8 @@ export default function VersionBadge() {
   const [busy, setBusy] = useState(null);       // 'download' | 'apply'
   const [error, setError] = useState(null);
   const [anchor, setAnchor] = useState(null);   // panelin ekrandaki konumu
+  const [applyStatus, setApplyStatus] = useState(null); // kurulum sırasında gösterilen metin
+  const [lastApply, setLastApply] = useState(null);     // son kurulum sonucu (başarısızsa)
   const btnRef = useRef(null);
 
   // Backend'den gelen sürüm derlemedekiyle aynı olmalı; ayrıldıysa (yarım
@@ -32,7 +45,15 @@ export default function VersionBadge() {
   useEffect(() => {
     let cancelled = false;
     axios.get(`${API_BASE}/version`)
-      .then(res => { if (!cancelled && res.data?.version) setVersion(res.data.version); })
+      .then(res => {
+        if (cancelled) return;
+        if (res.data?.version) setVersion(res.data.version);
+        // Başarısız bir kurulumdan sonra açıldıysak bunu bir kez göster.
+        const r = res.data?.lastApply;
+        if (r && r.ok === false && r.at && readSeen() !== r.at) {
+          setLastApply(r);
+        }
+      })
       .catch(() => { /* backend kapalıysa gömülü sürüm gösterilir */ });
     return () => { cancelled = true; };
   }, []);
@@ -89,17 +110,51 @@ export default function VersionBadge() {
 
     setBusy('apply');
     setError(null);
+    setApplyStatus('Kurulum başlatılıyor…');
     try {
-      await axios.post(`${API_BASE}/version/apply`, {});
+      await axios.post(`${API_BASE}/version/apply`, {}, { timeout: 60000 });
     } catch (err) {
-      // Sunucu kapandığı için bağlantı hatası beklenen durumdur.
-      if (err.response) {
-        setError(err.response.data?.error || 'Güncelleme başlatılamadı.');
-        setBusy(null);
+      setError(err.response?.data?.error || 'Güncelleme başlatılamadı. Uygulama çalışmaya devam ediyor.');
+      setApplyStatus(null);
+      setBusy(null);
+      return;
+    }
+
+    // Sunucu kendini kapatıp yeni sürümle geri gelecek; gelene kadar yokla.
+    setApplyStatus('Uygulama kapanıyor, dosyalar güncelleniyor…');
+    const started = Date.now();
+    while (Date.now() - started < APPLY_TIMEOUT_MS) {
+      await sleep(APPLY_POLL_MS);
+      let res;
+      try {
+        res = await axios.get(`${API_BASE}/version`, { timeout: 3000 });
+      } catch {
+        setApplyStatus(`Dosyalar güncelleniyor, uygulama yeniden başlatılıyor… (${Math.round((Date.now() - started) / 1000)} sn)`);
+        continue;
+      }
+      const r = res.data?.lastApply;
+      // Sonuç dosyası kurulum başlarken silinir; bundan sonraki bir sonuç bu kurulumundur.
+      if (r?.at && new Date(r.at).getTime() >= started - 5000) {
+        if (r.ok) {
+          setApplyStatus(`Sürüm ${res.data.version} kuruldu, sayfa yenileniyor…`);
+          writeSeen(r.at);
+          await sleep(800);
+          window.location.reload();
+        } else {
+          writeSeen(r.at);
+          setVersion(res.data.version);
+          // Paket diskte kalır; kullanıcı tekrar deneyebilsin.
+          axios.get(`${API_BASE}/version/staged`).then(s => setStaged(s.data?.staged || null)).catch(() => setStaged(null));
+          setApplyStatus(null);
+          setBusy(null);
+          setError(`Kurulum başarısız oldu, önceki sürüm geri yüklendi: ${r.error || 'bilinmeyen hata'}`);
+        }
         return;
       }
     }
-    setError(null);
+    setApplyStatus(null);
+    setBusy(null);
+    setError('Kurulum beklenenden uzun sürdü. Uygulama klasöründeki "Guncellemeyi Kur.bat" dosyasını çalıştırın; ayrıntı .update-staging\\apply.log dosyasında.');
   };
 
   const discard = async () => {
@@ -140,21 +195,28 @@ export default function VersionBadge() {
   if (!version) return null;
   const hasUpdate = !!check?.updateAvailable;
 
+  const dismissLastApply = () => {
+    if (lastApply?.at) writeSeen(lastApply.at);
+    setLastApply(null);
+  };
+
   return (
     <div className="relative">
       <button
         type="button"
         ref={btnRef}
         onClick={() => (open ? setOpen(false) : openPanel())}
-        title={hasUpdate ? `Yeni sürüm: ${check.latest}` : 'Sürüm bilgisi ve güncelleme kontrolü'}
+        title={lastApply ? 'Son güncelleme kurulamadı' : hasUpdate ? `Yeni sürüm: ${check.latest}` : 'Sürüm bilgisi ve güncelleme kontrolü'}
         className={`flex items-center space-x-1 text-[10px] font-semibold tabular-nums rounded-md px-1.5 py-0.5 border transition-colors ${
-          hasUpdate
+          lastApply
+            ? 'text-rose-400 border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20'
+            : hasUpdate
             ? 'text-amber-400 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20'
             : 'text-slate-600 border-transparent hover:text-slate-400 hover:border-[#1e293b]'
         }`}
       >
         <span>v{version}</span>
-        {hasUpdate && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
+        {(hasUpdate || lastApply) && <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${lastApply ? 'bg-rose-400' : 'bg-amber-400'}`} />}
       </button>
 
       {open && anchor && createPortal(
@@ -185,7 +247,7 @@ export default function VersionBadge() {
                   disabled={busy === 'apply'}
                   className="w-full py-2 rounded-lg bg-emerald-500 text-slate-950 text-[11px] font-bold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
                 >
-                  {busy === 'apply' ? 'Kuruluyor, uygulama kapanıyor…' : 'Şimdi kur ve yeniden başlat'}
+                  {busy === 'apply' ? 'Kuruluyor…' : 'Şimdi kur ve yeniden başlat'}
                 </button>
                 <button
                   type="button"
@@ -195,6 +257,22 @@ export default function VersionBadge() {
                   İndirileni sil
                 </button>
               </div>
+            )}
+
+            {lastApply && (
+              <div className="space-y-1.5 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/25">
+                <p className="text-[11px] text-rose-300 font-semibold">
+                  {lastApply.version} kurulamadı, {lastApply.from} sürümüne geri dönüldü.
+                </p>
+                {lastApply.error && <p className="text-[10px] text-slate-400 leading-relaxed break-words">{lastApply.error}</p>}
+                <button type="button" onClick={dismissLastApply} className="text-[10px] text-slate-500 hover:text-slate-300">
+                  Tamam
+                </button>
+              </div>
+            )}
+
+            {applyStatus && (
+              <p className="text-[11px] text-emerald-300 leading-relaxed">{applyStatus}</p>
             )}
 
             {error && (

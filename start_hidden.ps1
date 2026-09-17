@@ -12,6 +12,10 @@
 # ONEMLI: Bu dosya UTF-8 *BOM ile* kaydedilmelidir; yoksa Turkce karakterler
 # bozulur.
 
+# -NoBrowser: guncelleme sonrasi yeniden baslatmada kullanilir; acik sekme
+# kendini yeniler, ikinci bir sekme acilmaz.
+param([switch]$NoBrowser)
+
 $projectDir  = $PSScriptRoot
 $backendDir  = Join-Path $projectDir 'backend'
 $frontendDir = Join-Path $projectDir 'frontend'
@@ -124,8 +128,12 @@ try {
     Write-Log "frontend hazir mi (log): $frontendUp"
 
     if ($backendUp -and $frontendUp) {
-        Write-Log 'Backend ve frontend hazir, tarayici aciliyor.'
-        Start-Process $APP_URL
+        if ($NoBrowser) {
+            Write-Log 'Backend ve frontend hazir (tarayici acilmadi).'
+        } else {
+            Write-Log 'Backend ve frontend hazir, tarayici aciliyor.'
+            Start-Process $APP_URL
+        }
     } else {
         $hata = @()
         if (-not $backendUp)  { $hata += 'backend' }

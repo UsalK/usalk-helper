@@ -16,7 +16,7 @@ import fs from 'fs';
 import fsp from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { spawn, execFile } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
@@ -70,7 +70,9 @@ async function downloadZip(repo, tag, destFile) {
   const url = `https://api.github.com/repos/${repo}/zipball/${encodeURIComponent(tag)}`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'usalk-helper', 'Accept': 'application/vnd.github+json' },
-    redirect: 'follow'
+    redirect: 'follow',
+    // Asılı kalan bağlantı arayüzü sonsuza dek "İndiriliyor…" bırakmasın.
+    signal: AbortSignal.timeout(180000)
   });
   if (!res.ok) throw new Error(`Arşiv indirilemedi (HTTP ${res.status}).`);
 
@@ -176,12 +178,33 @@ export async function discardStaged() {
   await fsp.rm(STAGING_DIR, { recursive: true, force: true });
 }
 
+const APPLY_LOG = join(STAGING_DIR, 'apply.log');
+const LAST_RESULT = join(STAGING_DIR, 'last-result.json');
+
+/** Son kurulum denemesinin sonucu (apply-update.ps1 yazar). */
+export function readLastApplyResult() {
+  try {
+    return JSON.parse(fs.readFileSync(LAST_RESULT, 'utf8').replace(/^﻿/, ''));
+  } catch {
+    return null;
+  }
+}
+
+const psQuote = (s) => `'${String(s).replace(/'/g, "''")}'`;
+
 /**
- * Hazırlanan güncellemeyi uygulayacak betiği ayrı bir süreçte başlatır.
- * Betik uygulamayı durduracağı için bu çağrı döndükten kısa süre sonra
- * sunucu kapanır.
+ * Hazırlanan güncellemeyi uygulayacak betiği ayrı bir süreçte başlatır ve
+ * betiğin gerçekten çalışmaya başladığını (apply.log'a ilk satırı yazdığını)
+ * bekler. Başlamazsa hata fırlatır; kullanıcı sonsuz "kuruluyor" ekranında
+ * kalmaz.
+ *
+ * Neden `spawn(..., { detached: true })` değil: Windows PowerShell 5.1,
+ * DETACHED_PROCESS ile (konsolsuz) başlatılınca betiğin tek satırını bile
+ * çalıştırmadan 0 koduyla çıkıyor. Ayrılmadan başlatılırsa da backend'in
+ * konsolu kapanınca onunla birlikte öldürülüyor. Bu yüzden kısa ömürlü bir
+ * PowerShell, betiği Start-Process ile kendi (gizli) konsolunda başlatıyor.
  */
-export function launchApply({ restart = true } = {}) {
+export async function launchApply({ restart = true, timeoutMs = 20000 } = {}) {
   if (!isWindows) {
     throw new Error('Otomatik güncelleme şu an yalnızca Windows üzerinde destekleniyor.');
   }
@@ -190,14 +213,31 @@ export function launchApply({ restart = true } = {}) {
     throw new Error('apply-update.ps1 bulunamadı.');
   }
 
-  const child = spawn('powershell.exe', [
+  await fsp.rm(APPLY_LOG, { force: true });
+  await fsp.rm(LAST_RESULT, { force: true });
+
+  // Start-Process -ArgumentList boşluklu öğeleri tırnaklamıyor; elle sarıyoruz.
+  const quoteArg = (a) => (/\s/.test(a) ? `"${a}"` : a);
+  const args = [
     '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
     '-File', script,
     '-ProjectRoot', PROJECT_ROOT,
     '-ParentPid', String(process.pid),
     ...(restart ? ['-Restart'] : [])
-  ], { detached: true, stdio: 'ignore' });
+  ].map(a => psQuote(quoteArg(a)));
+  const command =
+    `Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -WorkingDirectory ${psQuote(PROJECT_ROOT)} ` +
+    `-ArgumentList @(${args.join(',')})`;
 
-  child.unref();
-  return true;
+  await execFileAsync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command], {
+    windowsHide: true,
+    timeout: 15000
+  });
+
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (fs.existsSync(APPLY_LOG)) return true;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  throw new Error('Kurulum betiği başlatılamadı. Uygulama çalışmaya devam ediyor; tekrar deneyin veya "Guncellemeyi Kur.bat" dosyasını çalıştırın.');
 }

@@ -10,7 +10,7 @@ import express from 'express';
 import fs from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { stageUpdate, readStaged, discardStaged, launchApply } from '../services/UpdateService.js';
+import { stageUpdate, readStaged, discardStaged, launchApply, readLastApplyResult } from '../services/UpdateService.js';
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -112,7 +112,7 @@ async function fetchLatest() {
 
 /** Kurulu sürüm. */
 router.get('/', (req, res) => {
-  res.json({ version: readCurrentVersion(), repo: REPO });
+  res.json({ version: readCurrentVersion(), repo: REPO, lastApply: readLastApplyResult() });
 });
 
 /** Güncelleme kontrolü. ?force=1 önbelleği atlar. */
@@ -185,18 +185,32 @@ router.post('/download', async (req, res, next) => {
 });
 
 /**
- * Hazırlanan güncellemeyi uygular. Uygulama durdurulup dosyalar
- * değiştirileceği için yanıt gönderildikten sonra sunucu kapanır.
+ * Hazırlanan güncellemeyi uygular. Kurulum betiği çalışmaya başladıktan sonra
+ * yanıt gönderilir ve sunucu kendini kapatır; betik dosyaları değiştirip
+ * uygulamayı yeniden başlatır. Arayüz sunucu geri gelene kadar bekler.
  */
-router.post('/apply', (req, res, next) => {
+let applying = false;
+router.post('/apply', async (req, res, next) => {
   try {
     const staged = readStaged();
     if (!staged) {
       return res.status(400).json({ error: 'Uygulanacak hazır güncelleme yok.' });
     }
+    if (applying) {
+      return res.status(409).json({ error: 'Kurulum zaten başladı.' });
+    }
 
-    launchApply({ restart: req.body?.restart !== false });
-    res.json({ success: true, applying: staged.version });
+    applying = true;
+    try {
+      await launchApply({ restart: req.body?.restart !== false });
+    } catch (err) {
+      applying = false;
+      throw err;
+    }
+    res.json({ success: true, applying: staged.version, from: readCurrentVersion() });
+
+    // Betik bu süreç kapanana kadar bekliyor; beklemeyi uzatmayalım.
+    res.on('finish', () => setTimeout(() => process.exit(0), 500));
   } catch (err) {
     next(err);
   }
