@@ -420,6 +420,7 @@ export default function DefaultSettings({ etsyConnected, appMode }) {
                   <option value="qwen/qwen3.7-flash">Qwen 3.7 Flash (Hızlı)</option>
                   <option value="qwen/qwen3-vl-32b-instruct">Qwen 3 VL 32B Instruct</option>
                   <option value="openai/gpt-5-mini">OpenAI GPT-5 Mini</option>
+                  <option value="openai/gpt-6-luna">OpenAI GPT-6 Luna</option>
                   <option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option>
                   <option value="google/gemini-3.5-flash">Gemini 3.5 Flash</option>
                   <option value="google/gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>

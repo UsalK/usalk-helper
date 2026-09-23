@@ -520,7 +520,10 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 function buildReasoningConfig(model) {
   const m = (model || '').toLowerCase();
 
-  const isOpenAiReasoner = m.startsWith('openai/') && (m.includes('gpt-5') || m.includes('o1') || m.includes('o3') || m.includes('o4'));
+  // gpt-5, gpt-6 ... ve sonraki ana sürümler (ayrıca o1/o3/o4 muhakeme modelleri)
+  const gptMajor = m.startsWith('openai/') ? Number(m.match(/gpt-(\d+)/)?.[1]) : NaN;
+  const isOpenAiReasoner = m.startsWith('openai/') &&
+    ((Number.isFinite(gptMajor) && gptMajor >= 5) || m.includes('o1') || m.includes('o3') || m.includes('o4'));
   if (isOpenAiReasoner) return { effort: 'minimal', exclude: true };
 
   // gemini-3, gemini-3.5, gemini-3.7 ... ve sonraki ana sürümler
@@ -557,7 +560,7 @@ export async function generateSEO(imagePath, targetMarket = "US/UK", shopStyle =
   // (~1.8s), and was the only model to fill all 13 tag slots with genuine
   // long-tail phrases on every run.
   let selectedModel = "openai/gpt-5-mini";
-  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "qwen/qwen3-vl-32b-instruct", "openai/gpt-5-mini", "google/gemini-2.5-flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite", "google/gemini-3.7-flash", "google/gemini-3.8-flash"];
+  const validModels = ["qwen/qwen3.7-flash", "qwen/qwen3.7-plus", "qwen/qwen3-vl-32b-instruct", "openai/gpt-5-mini", "openai/gpt-6-luna", "google/gemini-2.5-flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash-lite", "google/gemini-3.7-flash", "google/gemini-3.8-flash"];
   try {
     const stmt = db.prepare('SELECT value FROM settings WHERE shop_id = ? AND key = ?');
     const setting = stmt.get(targetShopId, 'nvidia_model');
@@ -773,6 +776,7 @@ CRITICAL: Return ONLY raw JSON without markdown blocks.`;
     "qwen/qwen3.7-plus": { input: 0.32 / 1000000, output: 1.28 / 1000000 },
     "qwen/qwen3-vl-32b-instruct": { input: 0.20 / 1000000, output: 0.60 / 1000000 },
     "openai/gpt-5-mini": { input: 0.25 / 1000000, output: 1.00 / 1000000 },
+    "openai/gpt-6-luna": { input: 0.10 / 1000000, output: 0.50 / 1000000 },
     "google/gemini-2.5-flash": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
     "google/gemini-3.5-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
     "google/gemini-3.5-flash-lite": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
