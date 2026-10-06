@@ -15,6 +15,11 @@ import {
 } from '../utils/panels';
 
 import { API_BASE, API_ORIGIN } from '../config';
+import SectionSummary, { ImagePreviewModal, matchesSpec } from '../components/SectionSummary';
+import {
+  isImageFile, parentFolderOf, folderTitle, matchFolderToSection, collectDroppedFiles, filesFromInput,
+  loadFolderMemory, rememberFolderSection, recallFolderSection
+} from '../utils/folderSections';
 
 /**
  * Yüklemede Etsy'ye ana/ikincil renk olarak gidecek renk aileleri
@@ -304,7 +309,7 @@ const drawRealisticFrame = (ctx, x, y, w, h, style, thickness) => {
   ctx.stroke();
 };
 
-export default function BulkUpload({ etsyConnected }) {
+export default function BulkUpload({ etsyConnected, activeShop }) {
   const [view, setView] = useState('drafts'); // 'drafts' | 'active' | 'upload'
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -350,6 +355,12 @@ export default function BulkUpload({ etsyConnected }) {
   // File Queue upload states
   const [filesQueue, setFilesQueue] = useState([]);
   const [defaultUploadSectionId, setDefaultUploadSectionId] = useState('');
+  // Klasör → bölüm eşleşmesi: { [klasör]: { sectionId, status: 'auto'|'manual'|'none', exact } }
+  const [folderMap, setFolderMap] = useState({});
+  // Yeni bölüm açılan klasör: { folder, title, busy }
+  const [newSectionDraft, setNewSectionDraft] = useState(null);
+  // Özetten açılan görsel önizlemesi: { ratio, sectionId?, unmatched }
+  const [previewSpec, setPreviewSpec] = useState(null);
   const [dragActive, setDragActive] = useState(false);
 
   // Yükleme modu: tekli ürün mü, çok panelli set mi
@@ -482,12 +493,17 @@ export default function BulkUpload({ etsyConnected }) {
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleQueueFiles({ target: { files: e.dataTransfer.files } });
+    if (!e.dataTransfer.files || !e.dataTransfer.files[0]) return;
+    try {
+      // Klasör bırakıldıysa içi gezilir; alt klasör adı mağaza bölümünü belirler.
+      await queueEntries(await collectDroppedFiles(e.dataTransfer));
+    } catch (err) {
+      console.error(err);
+      showToast('Bırakılan klasör okunamadı.', 'error');
     }
   };
 
@@ -694,8 +710,49 @@ export default function BulkUpload({ etsyConnected }) {
   };
 
   const handleQueueFiles = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+    const entries = filesFromInput(e.target.files);
+    e.target.value = '';
+    await queueEntries(entries);
+  };
+
+  /** { file, relPath } listesini kuyruğa ekler; bölümü klasör adından çözer. */
+  const queueEntries = async (rawEntries) => {
+    const entries = rawEntries
+      .filter(en => isImageFile(en.file))
+      .sort((a, b) => a.relPath.localeCompare(b.relPath, 'tr', { numeric: true }));
+    if (entries.length === 0) {
+      if (rawEntries.length > 0) showToast('Seçimde görsel bulunamadı.', 'error');
+      return;
+    }
+
+    // Her yeni klasör için ada en benzer bölümü bul (ID'ye güvenilmez).
+    const nextMap = { ...folderMap };
+    const unmatched = [];
+    const memory = loadFolderMemory(activeShop?.shop_id);
+    for (const en of entries) {
+      const folder = parentFolderOf(en.relPath);
+      if (!folder || nextMap[folder]) continue;
+      // Kullanıcının daha önce verdiği karar, ad benzerliğinden önce gelir.
+      const remembered = recallFolderSection(memory, folder, shopSections);
+      if (remembered) {
+        nextMap[folder] = { sectionId: remembered, status: 'remembered', exact: true };
+        continue;
+      }
+      const m = matchFolderToSection(folder, shopSections);
+      nextMap[folder] = m
+        ? { sectionId: m.sectionId, status: 'auto', exact: m.exact }
+        : { sectionId: '', status: 'none', exact: false };
+      if (!m) unmatched.push(folderTitle(folder));
+    }
+    setFolderMap(nextMap);
+    if (unmatched.length > 0) {
+      showToast(`${unmatched.length} klasör için bölüm bulunamadı (${unmatched.slice(0, 2).join(', ')}${unmatched.length > 2 ? '…' : ''}). Bölüm Özeti'ndeki ⚠ satırına tıklayın.`, 'error');
+    }
+
+    const sectionFor = (en) => {
+      const folder = parentFolderOf(en.relPath);
+      return { folder, sectionManual: false, sectionId: nextMap[folder]?.sectionId || defaultUploadSectionId || '' };
+    };
 
     // Otomatik set modunda profil sabittir: görsel panel sayısı kadar dilime
     // bölüneceği için kaynağın oranı, panellerin yan yana dizilmiş halidir.
@@ -703,7 +760,8 @@ export default function BulkUpload({ etsyConnected }) {
     const expectedAspect = autoSet ? activePanelRatio * activePanelCount : null;
 
     const newQueueItems = [];
-    for (const file of files) {
+    for (const en of entries) {
+      const { file } = en;
       const id = Math.random().toString(36).substring(7);
       const ratioVal = await getAspectOfFile(file);
 
@@ -722,7 +780,7 @@ export default function BulkUpload({ etsyConnected }) {
           // Beklenen kaynak oranı (1:2 × 2 panel → 1:1). Sapma varsa uyarılır.
           aspectOk: Math.abs(ratioVal - expectedAspect) <= 0.02,
           expectedAspect,
-          sectionId: defaultUploadSectionId || ''
+          ...sectionFor(en)
         });
         continue;
       }
@@ -738,15 +796,71 @@ export default function BulkUpload({ etsyConnected }) {
         profileName: closestProfile ? closestProfile.name : 'Belirlenemedi',
         ratioName: closestProfile ? closestProfile.ratio : '2:3',
         isSet: false,
-        sectionId: defaultUploadSectionId || ''
+        ...sectionFor(en)
       });
     }
 
     setFilesQueue(prev => [...prev, ...newQueueItems]);
   };
 
+  /** Bir klasörün tüm görsellerini (tek tek değiştirilmemiş olanları) bölüme bağlar. */
+  const assignFolderSection = (folder, sectionId) => {
+    setFolderMap(prev => ({ ...prev, [folder]: { sectionId, status: sectionId ? 'manual' : 'none', exact: false } }));
+    if (sectionId) setNewSectionDraft(d => (d?.folder === folder && !d.busy ? null : d));
+    rememberFolderSection(activeShop?.shop_id, folder, sectionId);
+    setFilesQueue(prev => prev.map(item => (item.folder === folder && !item.sectionManual
+      ? { ...item, sectionId: sectionId || defaultUploadSectionId || '' }
+      : item)));
+  };
+
+  /** Klasör için Etsy'de yeni bölüm açar ve klasörü ona bağlar. */
+  const createSectionForFolder = async () => {
+    if (!newSectionDraft) return;
+    const { folder } = newSectionDraft;
+    const title = newSectionDraft.title.trim();
+    if (!title) return showToast('Bölüm adı boş olamaz.', 'error');
+    const existing = shopSections.find(s => s.title.trim().toLocaleLowerCase('tr') === title.toLocaleLowerCase('tr'));
+    if (existing) {
+      assignFolderSection(folder, String(existing.shop_section_id));
+      setNewSectionDraft(null);
+      return showToast(`"${existing.title}" zaten var, klasör ona bağlandı.`, 'info');
+    }
+    setNewSectionDraft(d => ({ ...d, busy: true }));
+    try {
+      const res = await axios.post(`${API_BASE}/etsy/shop-sections`, { title });
+      const created = res.data;
+      if (!created?.shop_section_id) throw new Error('Etsy bölüm ID döndürmedi.');
+      const list = await axios.get(`${API_BASE}/etsy/shop-sections`).then(r => r.data).catch(() => null);
+      setShopSections(Array.isArray(list) && list.length ? list : prev => [...prev, created]);
+      assignFolderSection(folder, String(created.shop_section_id));
+      setNewSectionDraft(null);
+      showToast(`"${created.title || title}" bölümü açıldı.`, 'success');
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      showToast(`Bölüm açılamadı: ${msg}`, 'error');
+      setNewSectionDraft(d => (d ? { ...d, busy: false } : d));
+    }
+  };
+
+  const previewItems = previewSpec ? filesQueue.filter(i => matchesSpec(i, previewSpec, folderMap)) : [];
+  const closePreview = () => { setPreviewSpec(null); setNewSectionDraft(null); };
+
+  // Karar verilip eşleşmeyen görsel kalmayınca önizleme kendiliğinden kapanır.
+  useEffect(() => {
+    if (previewSpec && previewItems.length === 0) setPreviewSpec(null);
+  }, [previewSpec, previewItems.length]);
+
   const handleUploadQueue = async () => {
     if (filesQueue.length === 0) return;
+    const unresolved = [...new Set(filesQueue
+      .filter(i => i.folder && !i.sectionManual && folderMap[i.folder]?.status === 'none')
+      .map(i => folderTitle(i.folder)))];
+    if (unresolved.length > 0) {
+      const fallback = shopSections.find(s => String(s.shop_section_id) === String(defaultUploadSectionId))?.title || 'bölümsüz';
+      const ok = window.confirm(`${unresolved.length} klasör bir bölüme bağlanmadı:\n\n${unresolved.join('\n')}\n\nBu görseller "${fallback}" olarak yüklenecek. Devam edilsin mi?`);
+      if (!ok) return;
+    }
     setLoading(true);
     
     const formData = new FormData();
@@ -775,6 +889,9 @@ export default function BulkUpload({ etsyConnected }) {
 
       showToast('Görseller başarıyla yüklendi ve taslağa eklendi.', 'success');
       setFilesQueue([]);
+      setFolderMap({});
+      setNewSectionDraft(null);
+      setPreviewSpec(null);
       await fetchProducts();
       setView('drafts');
     } catch (err) {
@@ -2246,6 +2363,20 @@ export default function BulkUpload({ etsyConnected }) {
                       className="hidden"
                     />
                   </label>
+                  <label className="ml-3 bg-[#151f32] hover:bg-[#1e293b] border border-[#1e293b] text-slate-200 font-bold py-3 px-8 rounded-xl transition-colors cursor-pointer text-xs">
+                    Klasör Seç
+                    <input
+                      type="file"
+                      webkitdirectory=""
+                      directory=""
+                      multiple
+                      onChange={handleQueueFiles}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="block text-[10px] text-slate-500 mt-5">
+                    Klasör yüklerken alt klasör adı bölümü belirler: <span className="text-slate-400">Abstract Wall Art (59012638)</span>
+                  </span>
                 </div>
 
                 {/* Default Section Selector */}
@@ -2257,7 +2388,7 @@ export default function BulkUpload({ etsyConnected }) {
                       onChange={(e) => {
                         const newSection = e.target.value;
                         setDefaultUploadSectionId(newSection);
-                        setFilesQueue(prev => prev.map(item => ({ ...item, sectionId: newSection })));
+                        setFilesQueue(prev => prev.map(item => (item.sectionManual || folderMap[item.folder]?.sectionId ? item : { ...item, sectionId: newSection })));
                       }}
                       className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none"
                     >
@@ -2275,7 +2406,7 @@ export default function BulkUpload({ etsyConnected }) {
                       onChange={(e) => {
                         const newSection = e.target.value;
                         setDefaultUploadSectionId(newSection);
-                        setFilesQueue(prev => prev.map(item => ({ ...item, sectionId: newSection })));
+                        setFilesQueue(prev => prev.map(item => (item.sectionManual || folderMap[item.folder]?.sectionId ? item : { ...item, sectionId: newSection })));
                       }}
                       placeholder="Bölüm ID girin"
                       className="w-full bg-[#151f32] border border-[#1e293b] rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none"
@@ -2296,6 +2427,27 @@ export default function BulkUpload({ etsyConnected }) {
 
               {/* Right Column: Files Queue */}
               <div className="lg:col-span-5 space-y-6">
+                <SectionSummary
+                  items={filesQueue}
+                  folderMap={folderMap}
+                  shopSections={shopSections}
+                  onOpen={setPreviewSpec}
+                />
+                {previewSpec && previewItems.length > 0 && (
+                  <ImagePreviewModal
+                    // Her açılış yeni bir modal: kapanış animasyonundaki örnek yeniden kullanılmasın.
+                    key={`${previewSpec.ratio}|${previewSpec.sectionId}|${previewSpec.unmatched}|${previewSpec.origin?.top}|${previewSpec.origin?.left}`}
+                    items={previewItems}
+                    unmatched={previewSpec.unmatched}
+                    origin={previewSpec.origin}
+                    onClose={closePreview}
+                    shopSections={shopSections}
+                    onAssign={assignFolderSection}
+                    draft={newSectionDraft}
+                    onDraftChange={setNewSectionDraft}
+                    onCreate={createSectionForFolder}
+                  />
+                )}
                 <div className="bg-[#0e1726] border border-[#1e293b] rounded-3xl p-6 space-y-4">
                   <h4 className="text-sm font-bold text-white border-b border-[#1e293b] pb-3">Seçilen Dosyalar ({filesQueue.length})</h4>
 
@@ -2309,6 +2461,11 @@ export default function BulkUpload({ etsyConnected }) {
                           <div className="min-w-0">
                             <span className="text-xs font-semibold text-white block truncate max-w-[150px] sm:max-w-[200px]">{item.name}</span>
                             <span className="text-[10px] text-slate-500 block">{item.size}</span>
+                            {item.folder && (
+                              <span className="flex items-center truncate max-w-[150px] sm:max-w-[200px] text-[9px] text-slate-500">
+                                <Folder className="w-2.5 h-2.5 mr-1 flex-shrink-0" />{folderTitle(item.folder)}
+                              </span>
+                            )}
                             <span className="inline-flex mt-1 text-[9px] font-bold text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">Profil: {item.ratioName} ({item.profileName})</span>
                             {item.isSet && !item.aspectOk && (
                               <span className="flex items-center mt-1 text-[9px] font-bold text-rose-400">
@@ -2326,7 +2483,7 @@ export default function BulkUpload({ etsyConnected }) {
                               value={item.sectionId}
                               onChange={(e) => {
                                 const newSec = e.target.value;
-                                setFilesQueue(prev => prev.map(q => q.id === item.id ? { ...q, sectionId: newSec } : q));
+                                setFilesQueue(prev => prev.map(q => q.id === item.id ? { ...q, sectionId: newSec, sectionManual: true } : q));
                               }}
                               className="bg-[#0e1726] border border-[#1e293b] rounded-lg px-2 py-1 text-[10px] text-slate-400 focus:outline-none"
                             >
